@@ -1,0 +1,646 @@
+{
+ "_provenance": {
+  "source": "https://liveprice.pluckagro.com",
+  "collected_at": "2026-10-22",
+  "collection_method": "Public HTML pages scraped read-only (no credentials, no write access).",
+  "licence_note": "Data below was publicly published by Pluck Agro on the live site.",
+  "reconstruction_note": "The live site publishes only daily OHLC aggregates. Individual observations below were reconstructed deterministically from those aggregates; see scripts/build_legacy_dataset.py for the rule and its validation.",
+  "known_unknowns": [
+   "measurement unit",
+   "package/bag weight",
+   "price type",
+   "collection time of day",
+   "grade or variety",
+   "verification status and officer",
+   "currency field"
+  ],
+  "observed_count": 28,
+  "date_range": [
+   "2023-07-20",
+   "2025-07-14"
+  ],
+  "validation": {
+   "published_latest_values_checked": 5,
+   "mismatches": []
+  },
+  "unreconstructable_groups": []
+ },
+ "markets": [
+  {
+   "legacy_id": 10,
+   "name": "Anchau Grains Market",
+   "location": "Anchau, Kaduna, Nigeria",
+   "published_entry_count": 0
+  },
+  {
+   "legacy_id": 7,
+   "name": "Dawanau International Grains Market",
+   "location": "Kano, Kano, Nigeria",
+   "published_entry_count": 17
+  },
+  {
+   "legacy_id": 8,
+   "name": "Funtua Grains Market",
+   "location": "Funtua, Katsina, Nigeria",
+   "published_entry_count": 0
+  },
+  {
+   "legacy_id": 9,
+   "name": "Gujungu Market",
+   "location": "Gujungu, Jigawa, Nigeria",
+   "published_entry_count": 5
+  },
+  {
+   "legacy_id": 12,
+   "name": "Gusau Central Market",
+   "location": "Gusau, Zamfara, Nigeria",
+   "published_entry_count": 0
+  },
+  {
+   "legacy_id": 16,
+   "name": "Lafia Modern Market",
+   "location": "Lafia, Nasarawa, Nigeria",
+   "published_entry_count": 0
+  },
+  {
+   "legacy_id": 13,
+   "name": "Maiduguri Monday Market",
+   "location": "Maiduguri, Borno, Nigeria",
+   "published_entry_count": 0
+  },
+  {
+   "legacy_id": 1,
+   "name": "Mile 12 Market",
+   "location": "Lagos, Lagos, Nigeria",
+   "published_entry_count": 6
+  },
+  {
+   "legacy_id": 11,
+   "name": "Sokoto Central Market",
+   "location": "Sokoto, Sokoto, Nigeria",
+   "published_entry_count": 0
+  },
+  {
+   "legacy_id": 14,
+   "name": "Wunti Market",
+   "location": "Bauchi, Bauchi, Nigeria",
+   "published_entry_count": 0
+  },
+  {
+   "legacy_id": 15,
+   "name": "Zaki Biam International Yam Market",
+   "location": "Zaki Biam, Benue, Nigeria",
+   "published_entry_count": 0
+  }
+ ],
+ "commodities": [
+  {
+   "legacy_id": 33,
+   "name": "Bambara Nuts",
+   "category": "Legumes",
+   "description": "A type of groundnut, a popular legume in Nigeria.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 23,
+   "name": "Brown Beans (Oloyin)",
+   "category": "Legumes",
+   "description": "A variety of cowpea known for its sweet taste.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 30,
+   "name": "Dried Chilli Pepper",
+   "category": "Spices",
+   "description": "Dried fruit of plants from the genus Capsicum, used as a spice.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 29,
+   "name": "Dried Ginger",
+   "category": "Spices",
+   "description": "The dried rhizome of the ginger plant, used as a spice.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 25,
+   "name": "Groundnut",
+   "category": "Legumes",
+   "description": "Also known as peanut, a legume crop grown mainly for its edible seeds.",
+   "published_market_count": 1
+  },
+  {
+   "legacy_id": 13,
+   "name": "Gum Arabic GR-I",
+   "category": "Cash Crops",
+   "description": "",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 34,
+   "name": "Gum Arabic GR-II",
+   "category": "Cash Crops",
+   "description": "",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 35,
+   "name": "Gum Arabic GR-III",
+   "category": "Cash Crops",
+   "description": "",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 20,
+   "name": "Imported Rice",
+   "category": "Grains",
+   "description": "Rice imported from other countries, typically parboiled.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 21,
+   "name": "Local Rice",
+   "category": "Grains",
+   "description": "Locally grown and processed rice, such as Ofada or Abakaliki rice.",
+   "published_market_count": 1
+  },
+  {
+   "legacy_id": 14,
+   "name": "Maize (White)",
+   "category": "Grains",
+   "description": "A common cereal grain, white variety.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 15,
+   "name": "Maize (Yellow)",
+   "category": "Grains",
+   "description": "A common cereal grain, yellow variety.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 18,
+   "name": "Millet",
+   "category": "Grains",
+   "description": "A small-seeded grass, highly tolerant of drought and other extreme weather conditions.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 19,
+   "name": "Paddy Rice",
+   "category": "Grains",
+   "description": "Unhusked rice, a major staple food.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 1,
+   "name": "Paddy Rice",
+   "category": "Grains",
+   "description": "Locally grown paddy rice, unprocessed.",
+   "published_market_count": 3
+  },
+  {
+   "legacy_id": 31,
+   "name": "Sesame Seed",
+   "category": "Grains",
+   "description": "A flowering plant in the genus Sesamum, also called benne.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 17,
+   "name": "Sorghum (Red)",
+   "category": "Grains",
+   "description": "A variety of sorghum often used in traditional drinks and porridges.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 16,
+   "name": "Sorghum (White)",
+   "category": "Grains",
+   "description": "A versatile grain used for food and feed.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 22,
+   "name": "Soya Beans",
+   "category": "Legumes",
+   "description": "A species of legume native to East Asia, widely grown for its edible bean.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 28,
+   "name": "Sweet Potato",
+   "category": "Tubers",
+   "description": "A large, starchy, sweet-tasting tuberous root.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 32,
+   "name": "Wheat",
+   "category": "Grains",
+   "description": "A cereal grain which is a worldwide staple food.",
+   "published_market_count": 0
+  },
+  {
+   "legacy_id": 24,
+   "name": "White Beans",
+   "category": "Legumes",
+   "description": "A variety of cowpea with a white skin.",
+   "published_market_count": 0
+  }
+ ],
+ "observations": [
+  {
+   "legacy_market_id": 1,
+   "legacy_commodity_id": 1,
+   "collection_date": "2023-07-21",
+   "sequence": 1,
+   "reported_amount": 41550.75,
+   "source_group": {
+    "open": 41550.75,
+    "high": 41550.75,
+    "low": 41550.75,
+    "close": 41550.75,
+    "volume": 1
+   }
+  },
+  {
+   "legacy_market_id": 1,
+   "legacy_commodity_id": 1,
+   "collection_date": "2023-07-20",
+   "sequence": 1,
+   "reported_amount": 40450.5,
+   "source_group": {
+    "open": 40450.5,
+    "high": 40912.0,
+    "low": 40450.5,
+    "close": 40912.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 1,
+   "legacy_commodity_id": 1,
+   "collection_date": "2023-07-20",
+   "sequence": 2,
+   "reported_amount": 40912.0,
+   "source_group": {
+    "open": 40450.5,
+    "high": 40912.0,
+    "low": 40450.5,
+    "close": 40912.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 1,
+   "legacy_commodity_id": 21,
+   "collection_date": "2025-07-14",
+   "sequence": 1,
+   "reported_amount": 41550.75,
+   "source_group": {
+    "open": 41550.75,
+    "high": 41550.75,
+    "low": 41550.75,
+    "close": 41550.75,
+    "volume": 1
+   }
+  },
+  {
+   "legacy_market_id": 1,
+   "legacy_commodity_id": 21,
+   "collection_date": "2025-07-02",
+   "sequence": 1,
+   "reported_amount": 42550.75,
+   "source_group": {
+    "open": 42550.75,
+    "high": 42550.75,
+    "low": 42550.75,
+    "close": 42550.75,
+    "volume": 1
+   }
+  },
+  {
+   "legacy_market_id": 1,
+   "legacy_commodity_id": 21,
+   "collection_date": "2025-06-29",
+   "sequence": 1,
+   "reported_amount": 43000.0,
+   "source_group": {
+    "open": 43000.0,
+    "high": 43000.0,
+    "low": 43000.0,
+    "close": 43000.0,
+    "volume": 1
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-06",
+   "sequence": 1,
+   "reported_amount": 43500.0,
+   "source_group": {
+    "open": 43500.0,
+    "high": 43500.0,
+    "low": 40200.0,
+    "close": 40550.0,
+    "volume": 3
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-06",
+   "sequence": 2,
+   "reported_amount": 40200.0,
+   "source_group": {
+    "open": 43500.0,
+    "high": 43500.0,
+    "low": 40200.0,
+    "close": 40550.0,
+    "volume": 3
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-06",
+   "sequence": 3,
+   "reported_amount": 40550.0,
+   "source_group": {
+    "open": 43500.0,
+    "high": 43500.0,
+    "low": 40200.0,
+    "close": 40550.0,
+    "volume": 3
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-05",
+   "sequence": 1,
+   "reported_amount": 42500.0,
+   "source_group": {
+    "open": 42500.0,
+    "high": 43500.0,
+    "low": 42500.0,
+    "close": 43500.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-05",
+   "sequence": 2,
+   "reported_amount": 43500.0,
+   "source_group": {
+    "open": 42500.0,
+    "high": 43500.0,
+    "low": 42500.0,
+    "close": 43500.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-04",
+   "sequence": 1,
+   "reported_amount": 40500.0,
+   "source_group": {
+    "open": 40500.0,
+    "high": 43550.0,
+    "low": 40500.0,
+    "close": 43550.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-04",
+   "sequence": 2,
+   "reported_amount": 43550.0,
+   "source_group": {
+    "open": 40500.0,
+    "high": 43550.0,
+    "low": 40500.0,
+    "close": 43550.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-03",
+   "sequence": 1,
+   "reported_amount": 42000.0,
+   "source_group": {
+    "open": 42000.0,
+    "high": 42000.0,
+    "low": 40500.0,
+    "close": 40500.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-03",
+   "sequence": 2,
+   "reported_amount": 40500.0,
+   "source_group": {
+    "open": 42000.0,
+    "high": 42000.0,
+    "low": 40500.0,
+    "close": 40500.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-02",
+   "sequence": 1,
+   "reported_amount": 41500.0,
+   "source_group": {
+    "open": 41500.0,
+    "high": 41500.0,
+    "low": 41200.0,
+    "close": 41200.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-02",
+   "sequence": 2,
+   "reported_amount": 41200.0,
+   "source_group": {
+    "open": 41500.0,
+    "high": 41500.0,
+    "low": 41200.0,
+    "close": 41200.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-01",
+   "sequence": 1,
+   "reported_amount": 41000.0,
+   "source_group": {
+    "open": 41000.0,
+    "high": 41200.0,
+    "low": 41000.0,
+    "close": 41200.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-01",
+   "sequence": 2,
+   "reported_amount": 41200.0,
+   "source_group": {
+    "open": 41000.0,
+    "high": 41200.0,
+    "low": 41000.0,
+    "close": 41200.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 25,
+   "collection_date": "2025-07-02",
+   "sequence": 1,
+   "reported_amount": 12500.0,
+   "source_group": {
+    "open": 12500.0,
+    "high": 12500.0,
+    "low": 11900.0,
+    "close": 11900.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 25,
+   "collection_date": "2025-07-02",
+   "sequence": 2,
+   "reported_amount": 11900.0,
+   "source_group": {
+    "open": 12500.0,
+    "high": 12500.0,
+    "low": 11900.0,
+    "close": 11900.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 25,
+   "collection_date": "2025-07-01",
+   "sequence": 1,
+   "reported_amount": 12000.0,
+   "source_group": {
+    "open": 12000.0,
+    "high": 12500.0,
+    "low": 12000.0,
+    "close": 12500.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 7,
+   "legacy_commodity_id": 25,
+   "collection_date": "2025-07-01",
+   "sequence": 2,
+   "reported_amount": 12500.0,
+   "source_group": {
+    "open": 12000.0,
+    "high": 12500.0,
+    "low": 12000.0,
+    "close": 12500.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 9,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-02",
+   "sequence": 1,
+   "reported_amount": 41700.0,
+   "source_group": {
+    "open": 41700.0,
+    "high": 42500.0,
+    "low": 41200.0,
+    "close": 41200.0,
+    "volume": 3
+   }
+  },
+  {
+   "legacy_market_id": 9,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-02",
+   "sequence": 2,
+   "reported_amount": 42500.0,
+   "source_group": {
+    "open": 41700.0,
+    "high": 42500.0,
+    "low": 41200.0,
+    "close": 41200.0,
+    "volume": 3
+   }
+  },
+  {
+   "legacy_market_id": 9,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-02",
+   "sequence": 3,
+   "reported_amount": 41200.0,
+   "source_group": {
+    "open": 41700.0,
+    "high": 42500.0,
+    "low": 41200.0,
+    "close": 41200.0,
+    "volume": 3
+   }
+  },
+  {
+   "legacy_market_id": 9,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-01",
+   "sequence": 1,
+   "reported_amount": 41000.0,
+   "source_group": {
+    "open": 41000.0,
+    "high": 41700.0,
+    "low": 41000.0,
+    "close": 41700.0,
+    "volume": 2
+   }
+  },
+  {
+   "legacy_market_id": 9,
+   "legacy_commodity_id": 1,
+   "collection_date": "2025-07-01",
+   "sequence": 2,
+   "reported_amount": 41700.0,
+   "source_group": {
+    "open": 41000.0,
+    "high": 41700.0,
+    "low": 41000.0,
+    "close": 41700.0,
+    "volume": 2
+   }
+  }
+ ]
+}

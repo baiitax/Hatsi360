@@ -1,0 +1,494 @@
+{
+ "markets": [
+  {
+   "market_id": 10,
+   "name": "Anchau Grains Market",
+   "location": "Anchau, Kaduna, Nigeria",
+   "entry_count": 0
+  },
+  {
+   "market_id": 7,
+   "name": "Dawanau International Grains Market",
+   "location": "Kano, Kano, Nigeria",
+   "entry_count": 17
+  },
+  {
+   "market_id": 8,
+   "name": "Funtua Grains Market",
+   "location": "Funtua, Katsina, Nigeria",
+   "entry_count": 0
+  },
+  {
+   "market_id": 9,
+   "name": "Gujungu Market",
+   "location": "Gujungu, Jigawa, Nigeria",
+   "entry_count": 5
+  },
+  {
+   "market_id": 12,
+   "name": "Gusau Central Market",
+   "location": "Gusau, Zamfara, Nigeria",
+   "entry_count": 0
+  },
+  {
+   "market_id": 16,
+   "name": "Lafia Modern Market",
+   "location": "Lafia, Nasarawa, Nigeria",
+   "entry_count": 0
+  },
+  {
+   "market_id": 13,
+   "name": "Maiduguri Monday Market",
+   "location": "Maiduguri, Borno, Nigeria",
+   "entry_count": 0
+  },
+  {
+   "market_id": 1,
+   "name": "Mile 12 Market",
+   "location": "Lagos, Lagos, Nigeria",
+   "entry_count": 6
+  },
+  {
+   "market_id": 11,
+   "name": "Sokoto Central Market",
+   "location": "Sokoto, Sokoto, Nigeria",
+   "entry_count": 0
+  },
+  {
+   "market_id": 14,
+   "name": "Wunti Market",
+   "location": "Bauchi, Bauchi, Nigeria",
+   "entry_count": 0
+  },
+  {
+   "market_id": 15,
+   "name": "Zaki Biam International Yam Market",
+   "location": "Zaki Biam, Benue, Nigeria",
+   "entry_count": 0
+  }
+ ],
+ "commodities": [
+  {
+   "commodity_id": 33,
+   "name": "Bambara Nuts",
+   "category": "Legumes",
+   "description": "A type of groundnut, a popular legume in Nigeria.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 23,
+   "name": "Brown Beans (Oloyin)",
+   "category": "Legumes",
+   "description": "A variety of cowpea known for its sweet taste.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 30,
+   "name": "Dried Chilli Pepper",
+   "category": "Spices",
+   "description": "Dried fruit of plants from the genus Capsicum, used as a spice.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 29,
+   "name": "Dried Ginger",
+   "category": "Spices",
+   "description": "The dried rhizome of the ginger plant, used as a spice.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 25,
+   "name": "Groundnut",
+   "category": "Legumes",
+   "description": "Also known as peanut, a legume crop grown mainly for its edible seeds.",
+   "markets_available": 1
+  },
+  {
+   "commodity_id": 13,
+   "name": "Gum Arabic GR-I",
+   "category": "Cash Crops",
+   "description": "",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 34,
+   "name": "Gum Arabic GR-II",
+   "category": "Cash Crops",
+   "description": "",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 35,
+   "name": "Gum Arabic GR-III",
+   "category": "Cash Crops",
+   "description": "",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 20,
+   "name": "Imported Rice",
+   "category": "Grains",
+   "description": "Rice imported from other countries, typically parboiled.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 21,
+   "name": "Local Rice",
+   "category": "Grains",
+   "description": "Locally grown and processed rice, such as Ofada or Abakaliki rice.",
+   "markets_available": 1
+  },
+  {
+   "commodity_id": 14,
+   "name": "Maize (White)",
+   "category": "Grains",
+   "description": "A common cereal grain, white variety.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 15,
+   "name": "Maize (Yellow)",
+   "category": "Grains",
+   "description": "A common cereal grain, yellow variety.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 18,
+   "name": "Millet",
+   "category": "Grains",
+   "description": "A small-seeded grass, highly tolerant of drought and other extreme weather conditions.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 19,
+   "name": "Paddy Rice",
+   "category": "Grains",
+   "description": "Unhusked rice, a major staple food.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 1,
+   "name": "Paddy Rice",
+   "category": "Grains",
+   "description": "Locally grown paddy rice, unprocessed.",
+   "markets_available": 3
+  },
+  {
+   "commodity_id": 31,
+   "name": "Sesame Seed",
+   "category": "Grains",
+   "description": "A flowering plant in the genus Sesamum, also called benne.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 17,
+   "name": "Sorghum (Red)",
+   "category": "Grains",
+   "description": "A variety of sorghum often used in traditional drinks and porridges.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 16,
+   "name": "Sorghum (White)",
+   "category": "Grains",
+   "description": "A versatile grain used for food and feed.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 22,
+   "name": "Soya Beans",
+   "category": "Legumes",
+   "description": "A species of legume native to East Asia, widely grown for its edible bean.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 28,
+   "name": "Sweet Potato",
+   "category": "Tubers",
+   "description": "A large, starchy, sweet-tasting tuberous root.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 32,
+   "name": "Wheat",
+   "category": "Grains",
+   "description": "A cereal grain which is a worldwide staple food.",
+   "markets_available": 0
+  },
+  {
+   "commodity_id": 24,
+   "name": "White Beans",
+   "category": "Legumes",
+   "description": "A variety of cowpea with a white skin.",
+   "markets_available": 0
+  }
+ ],
+ "market_detail_products": [],
+ "market_price_history": [
+  {
+   "market_id": 1,
+   "market_name": "Mile 12 Market",
+   "commodity_id": null,
+   "commodity_name": null,
+   "date": "Jul 14, 2025",
+   "open": 41550.75,
+   "high": 41550.75,
+   "low": 41550.75,
+   "close": 41550.75,
+   "volume": 1
+  },
+  {
+   "market_id": 1,
+   "market_name": "Mile 12 Market",
+   "commodity_id": null,
+   "commodity_name": null,
+   "date": "Jul 2, 2025",
+   "open": 42550.75,
+   "high": 42550.75,
+   "low": 42550.75,
+   "close": 42550.75,
+   "volume": 1
+  },
+  {
+   "market_id": 1,
+   "market_name": "Mile 12 Market",
+   "commodity_id": null,
+   "commodity_name": null,
+   "date": "Jun 29, 2025",
+   "open": 43000.0,
+   "high": 43000.0,
+   "low": 43000.0,
+   "close": 43000.0,
+   "volume": 1
+  },
+  {
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "commodity_id": null,
+   "commodity_name": null,
+   "date": "Jul 2, 2025",
+   "open": 12500.0,
+   "high": 12500.0,
+   "low": 11900.0,
+   "close": 11900.0,
+   "volume": 2
+  },
+  {
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "commodity_id": null,
+   "commodity_name": null,
+   "date": "Jul 1, 2025",
+   "open": 12000.0,
+   "high": 12500.0,
+   "low": 12000.0,
+   "close": 12500.0,
+   "volume": 2
+  },
+  {
+   "market_id": 9,
+   "market_name": "Gujungu Market",
+   "commodity_id": null,
+   "commodity_name": null,
+   "date": "Jul 2, 2025",
+   "open": 41700.0,
+   "high": 42500.0,
+   "low": 41200.0,
+   "close": 41200.0,
+   "volume": 3
+  },
+  {
+   "market_id": 9,
+   "market_name": "Gujungu Market",
+   "commodity_id": null,
+   "commodity_name": null,
+   "date": "Jul 1, 2025",
+   "open": 41000.0,
+   "high": 41700.0,
+   "low": 41000.0,
+   "close": 41700.0,
+   "volume": 2
+  }
+ ],
+ "commodity_price_history": [
+  {
+   "commodity_id": 1,
+   "commodity_name": "Paddy Rice",
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "date": "Jul 6, 2025",
+   "open": 43500.0,
+   "high": 43500.0,
+   "low": 40200.0,
+   "close": 40550.0,
+   "volume": 3
+  },
+  {
+   "commodity_id": 1,
+   "commodity_name": "Paddy Rice",
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "date": "Jul 5, 2025",
+   "open": 42500.0,
+   "high": 43500.0,
+   "low": 42500.0,
+   "close": 43500.0,
+   "volume": 2
+  },
+  {
+   "commodity_id": 1,
+   "commodity_name": "Paddy Rice",
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "date": "Jul 4, 2025",
+   "open": 40500.0,
+   "high": 43550.0,
+   "low": 40500.0,
+   "close": 43550.0,
+   "volume": 2
+  },
+  {
+   "commodity_id": 1,
+   "commodity_name": "Paddy Rice",
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "date": "Jul 3, 2025",
+   "open": 42000.0,
+   "high": 42000.0,
+   "low": 40500.0,
+   "close": 40500.0,
+   "volume": 2
+  },
+  {
+   "commodity_id": 1,
+   "commodity_name": "Paddy Rice",
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "date": "Jul 2, 2025",
+   "open": 41500.0,
+   "high": 41500.0,
+   "low": 41200.0,
+   "close": 41200.0,
+   "volume": 2
+  },
+  {
+   "commodity_id": 1,
+   "commodity_name": "Paddy Rice",
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "date": "Jul 1, 2025",
+   "open": 41000.0,
+   "high": 41200.0,
+   "low": 41000.0,
+   "close": 41200.0,
+   "volume": 2
+  },
+  {
+   "commodity_id": 21,
+   "commodity_name": "Local Rice",
+   "market_id": 1,
+   "market_name": "Mile 12 Market",
+   "date": "Jul 14, 2025",
+   "open": 41550.75,
+   "high": 41550.75,
+   "low": 41550.75,
+   "close": 41550.75,
+   "volume": 1
+  },
+  {
+   "commodity_id": 21,
+   "commodity_name": "Local Rice",
+   "market_id": 1,
+   "market_name": "Mile 12 Market",
+   "date": "Jul 2, 2025",
+   "open": 42550.75,
+   "high": 42550.75,
+   "low": 42550.75,
+   "close": 42550.75,
+   "volume": 1
+  },
+  {
+   "commodity_id": 21,
+   "commodity_name": "Local Rice",
+   "market_id": 1,
+   "market_name": "Mile 12 Market",
+   "date": "Jun 29, 2025",
+   "open": 43000.0,
+   "high": 43000.0,
+   "low": 43000.0,
+   "close": 43000.0,
+   "volume": 1
+  },
+  {
+   "commodity_id": 25,
+   "commodity_name": "Groundnut",
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "date": "Jul 2, 2025",
+   "open": 12500.0,
+   "high": 12500.0,
+   "low": 11900.0,
+   "close": 11900.0,
+   "volume": 2
+  },
+  {
+   "commodity_id": 25,
+   "commodity_name": "Groundnut",
+   "market_id": 7,
+   "market_name": "Dawanau International Grains Market",
+   "date": "Jul 1, 2025",
+   "open": 12000.0,
+   "high": 12500.0,
+   "low": 12000.0,
+   "close": 12500.0,
+   "volume": 2
+  }
+ ],
+ "commodity_market_comparison": [
+  {
+   "commodity_id": 1,
+   "commodity_name": "Paddy Rice",
+   "market": "Dawanau International Grains Market",
+   "state": "Kano",
+   "price": 40550.0,
+   "trend": "",
+   "status": "Lowest"
+  },
+  {
+   "commodity_id": 1,
+   "commodity_name": "Paddy Rice",
+   "market": "Gujungu Market",
+   "state": "Jigawa",
+   "price": 41200.0,
+   "trend": "",
+   "status": "Average"
+  },
+  {
+   "commodity_id": 1,
+   "commodity_name": "Paddy Rice",
+   "market": "Mile 12 Market",
+   "state": "Lagos",
+   "price": 41550.75,
+   "trend": "",
+   "status": "Highest"
+  },
+  {
+   "commodity_id": 21,
+   "commodity_name": "Local Rice",
+   "market": "Mile 12 Market",
+   "state": "Lagos",
+   "price": 41550.75,
+   "trend": "",
+   "status": "Average"
+  },
+  {
+   "commodity_id": 25,
+   "commodity_name": "Groundnut",
+   "market": "Dawanau International Grains Market",
+   "state": "Kano",
+   "price": 11900.0,
+   "trend": "",
+   "status": "Average"
+  }
+ ]
+}

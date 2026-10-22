@@ -1,0 +1,152 @@
+[
+ {
+  "market_id": 1,
+  "commodity_id": 1,
+  "date": "2023-07-20",
+  "open": 40450.5,
+  "high": 40912.0,
+  "low": 40450.5,
+  "close": 40912.0,
+  "volume": 2
+ },
+ {
+  "market_id": 1,
+  "commodity_id": 1,
+  "date": "2023-07-21",
+  "open": 41550.75,
+  "high": 41550.75,
+  "low": 41550.75,
+  "close": 41550.75,
+  "volume": 1
+ },
+ {
+  "market_id": 7,
+  "commodity_id": 1,
+  "date": "2025-07-01",
+  "open": 41000.0,
+  "high": 41200.0,
+  "low": 41000.0,
+  "close": 41200.0,
+  "volume": 2
+ },
+ {
+  "market_id": 7,
+  "commodity_id": 1,
+  "date": "2025-07-02",
+  "open": 41500.0,
+  "high": 41500.0,
+  "low": 41200.0,
+  "close": 41200.0,
+  "volume": 2
+ },
+ {
+  "market_id": 7,
+  "commodity_id": 1,
+  "date": "2025-07-03",
+  "open": 42000.0,
+  "high": 42000.0,
+  "low": 40500.0,
+  "close": 40500.0,
+  "volume": 2
+ },
+ {
+  "market_id": 7,
+  "commodity_id": 1,
+  "date": "2025-07-04",
+  "open": 40500.0,
+  "high": 43550.0,
+  "low": 40500.0,
+  "close": 43550.0,
+  "volume": 2
+ },
+ {
+  "market_id": 7,
+  "commodity_id": 1,
+  "date": "2025-07-05",
+  "open": 42500.0,
+  "high": 43500.0,
+  "low": 42500.0,
+  "close": 43500.0,
+  "volume": 2
+ },
+ {
+  "market_id": 7,
+  "commodity_id": 1,
+  "date": "2025-07-06",
+  "open": 43500.0,
+  "high": 43500.0,
+  "low": 40200.0,
+  "close": 40550.0,
+  "volume": 3
+ },
+ {
+  "market_id": 9,
+  "commodity_id": 1,
+  "date": "2025-07-01",
+  "open": 41000.0,
+  "high": 41700.0,
+  "low": 41000.0,
+  "close": 41700.0,
+  "volume": 2
+ },
+ {
+  "market_id": 9,
+  "commodity_id": 1,
+  "date": "2025-07-02",
+  "open": 41700.0,
+  "high": 42500.0,
+  "low": 41200.0,
+  "close": 41200.0,
+  "volume": 3
+ },
+ {
+  "market_id": 1,
+  "commodity_id": 21,
+  "date": "2025-06-29",
+  "open": 43000.0,
+  "high": 43000.0,
+  "low": 43000.0,
+  "close": 43000.0,
+  "volume": 1
+ },
+ {
+  "market_id": 1,
+  "commodity_id": 21,
+  "date": "2025-07-02",
+  "open": 42550.75,
+  "high": 42550.75,
+  "low": 42550.75,
+  "close": 42550.75,
+  "volume": 1
+ },
+ {
+  "market_id": 1,
+  "commodity_id": 21,
+  "date": "2025-07-14",
+  "open": 41550.75,
+  "high": 41550.75,
+  "low": 41550.75,
+  "close": 41550.75,
+  "volume": 1
+ },
+ {
+  "market_id": 7,
+  "commodity_id": 25,
+  "date": "2025-07-01",
+  "open": 12000.0,
+  "high": 12500.0,
+  "low": 12000.0,
+  "close": 12500.0,
+  "volume": 2
+ },
+ {
+  "market_id": 7,
+  "commodity_id": 25,
+  "date": "2025-07-02",
+  "open": 12500.0,
+  "high": 12500.0,
+  "low": 11900.0,
+  "close": 11900.0,
+  "volume": 2
+ }
+]
