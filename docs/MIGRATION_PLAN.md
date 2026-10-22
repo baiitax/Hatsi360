@@ -196,12 +196,12 @@ an explicit command:
 
 | Check | Command | Status |
 | --- | --- | --- |
-| Every public route responds 200, unknown routes 404 | route smoke test | 27/27 and 404 confirmed |
+| Every public route responds 200, unknown routes 404 | route smoke test | 31/31 public URLs return 200; unknown URLs return 404 |
 | The two legacy id-based URLs still resolve | `curl -L` on the legacy URLs | Confirmed: `/commodity-detail.php?id=1` → `/prices/paddy-rice` |
 | The API returns the documented envelope | API smoke test | Confirmed for all six endpoints |
 | The migrated prices match the raw capture | `npm test` → `tests/data-integrity.test.ts` | 28 assertions |
 | The permissions hold against a real database | `bash scripts/validate_migrations.sh` | 49 assertions |
-| The build is clean | `npm run build` | 37 routes |
+| The build is clean | `npm run build` | 35 route entries, 39 pages |
 
 ## 7. Go-live sequence
 

@@ -6,7 +6,7 @@ rebuild in this repository (`pluck-live`).
 **Auditor:** the Pluck Live rebuild team (automated capture + manual review + code review).
 **Status of the rebuild at the time of writing:** migrations apply cleanly to PostgreSQL 18.4,
 148 automated unit/integration tests pass, 49 Row Level Security assertions pass against a real
-database, and the Next.js 16.4.2 application builds 36 routes.
+database, and the Next.js 16.4.2 application builds 35 route entries (39 pages).
 
 ---
 
@@ -38,7 +38,7 @@ verified**, not how important it is.
 
 **Material used**
 
-* 40 raw HTML captures of the legacy site (`audit/source/legacy-pages/`) — the independent truth
+* 46 raw HTML captures of the legacy site (`audit/legacy-pages/`) — the independent truth
   for the data-integrity tests.
 * `audit/source/legacy-catalogue.json`, `legacy-pairs.json`, `legacy-price-history.json` — the
   extracted markets, commodities and price history.
@@ -224,9 +224,12 @@ is stated by the coverage notice, and the disclaimer explains the limits.
 
 ### F-12 · The legacy output carries no unit, price type, currency, source or verification trail — `VERIFIED_IN_UI`
 
-**Method.** A case-insensitive unit grep for `unit`, `kg`, `bag`, `tonne`, `naira`, `₦`, `NGN`,
-`wholesale`, `retail`, `verified`, `source`, `collected` across all 40 captured pages returned
-**zero** matches. The rendered price blocks are bare numbers.
+**Method.** A case-insensitive grep for `unit`, `kg`, `bag`, `tonne`, `naira`, `NGN`, `wholesale`,
+`retail`, `verified`, `source` and `collected` across all **46** captured pages
+(`audit/legacy-pages/`) returned **no data-field matches**. The only hits are marketing copy:
+`unit` occurs inside the word "opportunities" in the homepage, and `verified` occurs in the FAQ
+sentence "We have a network of verified data collectors". The rendered price blocks are bare
+numbers with no unit, price type, currency or source.
 
 **Impact.** A price without a unit is not a price: "₦40,550" could be per bag, per kg, per tonne
 or per 50 kg bag, and bags do not all weigh the same. Without a price type, a retail quote cannot
@@ -468,8 +471,8 @@ Everything in this section was executed in this repository, on the dates shown.
 | RLS permissions | same run, `tests/rls/permission-tests.sql` | **49 assertions across 9 blocks, all passed** |
 | Unit and integration tests | `npm test` | **148 passed** (46 pricing, 32 observation validation, 28 data integrity, 14 API auth, 28 API routes) |
 | Type check | `npm run typecheck` | clean |
-| Production build | `npm run build` | 36 routes |
-| Route smoke test | `curl` over 25 public routes | 25/25 HTTP 200; unknown path → HTTP 404 |
+| Production build | `npm run build` | 35 route entries (39 pages) |
+| Route smoke test | `curl` over 31 public URLs | 31/31 HTTP 200; unknown paths → HTTP 404 |
 | API smoke test | `curl` over the six `/api/v1` endpoints | 200 with `{data, meta}`; 400 on invalid parameters; 404 for an unknown commodity |
 | Privilege-escalation exploit | direct SQL against PostgreSQL 18.4 | pre-fix: escalation succeeded; post-fix: rejected (F-21) |
 

@@ -18,7 +18,7 @@ publication** workflow that produces fresh, traceable prices.
 | --- | --- |
 | Migrations | 9 files, apply cleanly to PostgreSQL 18.4 — 39 tables, all with RLS, 74 policies, 2 views |
 | Tests | 148 Vitest assertions + 49 Row Level Security assertions against a real database |
-| Build | Next.js 16.4.2, 37 routes, production build clean |
+| Build | Next.js 16.4.2 — 35 route entries (39 pages including the four article pages), production build clean |
 | Data | 28 migrated legacy observations (the live site's entire public price history) + a live collection path |
 | Not built yet | Reports, alert delivery, evidence upload, billing, forecasting — see `docs/KNOWN_LIMITATIONS.md` |
 
