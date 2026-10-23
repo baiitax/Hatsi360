@@ -82,6 +82,25 @@ begin
 end $$;
 
 -- ------------------------------------------------------------- fixtures ---
+-- The safety interlock. This suite must never run against a database that
+-- holds real market observations: it would put synthetic prices beside them
+-- and, if it were interrupted, leave them behind. The check refuses to run
+-- unless every observation already in the table is itself a labelled test
+-- fixture.
+do $$
+declare v_real integer;
+begin
+  select count(*) into v_real
+  from public.price_observations
+  where coalesce(source_system, 'agent_app'::public.observation_source) <> 'test_fixture';
+
+  if v_real > 0 then
+    raise exception
+      'The RLS suite refuses to run: price_observations already holds % row(s) that are not labelled test fixtures. Run it against a scratch database, never against production.',
+      v_real;
+  end if;
+end $$;
+
 -- Test users. The ids are fixed so the JWT claim can be set to them.
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'admin@test.local'),
@@ -129,20 +148,39 @@ insert into public.price_observations (
 ) values
   ('aaaaaaaa-0000-0000-0000-000000000001', 1, 1, 'wholesale_transaction', 40550, 1,
    'NGN', '2025-07-06T09:00:00Z', 'minute', '2025-07-06T09:05:00Z', '2025-07-06T10:00:00Z',
-   '2025-07-06T10:00:00Z', '33333333-3333-3333-3333-333333333333', 'verified', 'agent_app', true),
+   '2025-07-06T10:00:00Z', '33333333-3333-3333-3333-333333333333', 'verified', 'test_fixture', true),
   ('aaaaaaaa-0000-0000-0000-000000000002', 1, 1, 'wholesale_transaction', 41000, 1,
    'NGN', '2025-07-07T09:00:00Z', 'minute', '2025-07-07T09:05:00Z', null, null,
-   '33333333-3333-3333-3333-333333333333', 'pending_verification', 'agent_app', true),
+   '33333333-3333-3333-3333-333333333333', 'pending_verification', 'test_fixture', true),
   ('aaaaaaaa-0000-0000-0000-000000000003', 1, 1, 'wholesale_transaction', 42000, 1,
    'NGN', '2025-07-08T09:00:00Z', 'minute', null, null, null,
-   '33333333-3333-3333-3333-333333333333', 'draft', 'agent_app', true)
+   '33333333-3333-3333-3333-333333333333', 'draft', 'test_fixture', true)
 on conflict (id) do nothing;
+
+-- One collection task per agent, for the market each agent covers. The ids are
+-- fixed so the assertions can name a task directly.
+insert into public.collection_tasks (
+  id, market_id, commodity_id, assigned_to, due_on, status, priority, deadline_at, expected_commodity_ids
+)
+overriding system value
+values
+  (901, 1, 1, '33333333-3333-3333-3333-333333333333', current_date, 'open', 'normal',
+   current_date + time '16:00', array[1]),
+  (902, 2, 1, '44444444-4444-4444-4444-444444444444', current_date, 'open', 'normal',
+   current_date + time '16:00', array[1])
+on conflict do nothing;
+
+-- A collection schedule for the first agent's market.
+insert into public.market_collection_schedules (
+  market_id, commodity_id, frequency, days_of_week, deadline_time, assigned_agent_id, priority
+) values
+  (1, 1, 'daily', array[0,1,2,3,4,5,6], '16:00', '33333333-3333-3333-3333-333333333333', 'high')
+on conflict do nothing;
 
 -- Customer data that must stay private to its owner.
 insert into public.saved_commodities (user_id, commodity_id)
 values ('55555555-5555-5555-5555-555555555555', 1)
 on conflict do nothing;
-
 insert into public.price_alerts (user_id, commodity_id, direction, threshold_amount)
 values ('55555555-5555-5555-5555-555555555555', 1, 'above', 50000)
 on conflict do nothing;
@@ -151,6 +189,21 @@ on conflict do nothing;
 -- 1. Anonymous visitors
 -- =============================================================================
 begin;
+  -- The control row. It stands for a genuinely published price and exists
+  -- only for the length of this transaction: the rollback at the end of the
+  -- block removes it. It carries no 'test_fixture' label, because that is
+  -- exactly what a real published observation looks like to the policy.
+  insert into public.price_observations (
+    id, commodity_id, market_id, price_type, reported_amount, reported_unit_id,
+    currency_code, collected_at, collected_at_precision, submitted_at, verified_at,
+    published_at, agent_user_id, verification_status, source_system, is_current
+  ) values (
+    'bbbbbbbb-0000-0000-0000-000000000001', 1, 1, 'wholesale_transaction', 40550, 1,
+    'NGN', '2025-07-06T09:00:00Z', 'minute', '2025-07-06T09:05:00Z', '2025-07-06T10:00:00Z',
+    '2025-07-06T10:00:00Z', '33333333-3333-3333-3333-333333333333', 'verified',
+    'agent_app', true
+  ) on conflict (id) do nothing;
+
   set local role anon;
   set local request.jwt.claim.sub = '';
 
@@ -163,6 +216,14 @@ begin;
     (select count(*) from public.price_observations
       where verification_status <> 'verified') = 0,
     'anon must not see pending or draft observations'
+  );
+
+  -- The fixtures are published and current, yet the public read refuses them
+  -- because they are labelled. A synthetic price can never reach a visitor.
+  select rls_test.assert_true(
+    (select count(*) from public.price_observations
+      where id = 'aaaaaaaa-0000-0000-0000-000000000001') = 0,
+    'a published test fixture must not be publicly readable'
   );
 
   select rls_test.assert_true(
@@ -409,7 +470,14 @@ begin;
   set local role authenticated;
   set local request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 
-  -- An administrator may publish a pending observation.
+  -- A pending observation must be approved before it can be published.
+  select rls_test.assert_raises(
+    'a pending observation must not be publishable before it is approved',
+    $q$select public.publish_observation('aaaaaaaa-0000-0000-0000-000000000002')$q$
+  );
+
+  -- An administrator approves, then publishes.
+  select public.approve_observation('aaaaaaaa-0000-0000-0000-000000000002', 'Checked against the market sheet.');
   select public.publish_observation('aaaaaaaa-0000-0000-0000-000000000002');
 
   select rls_test.assert_true(
@@ -420,8 +488,16 @@ begin;
 
   select rls_test.assert_true(
     (select count(*) from public.price_verification_events
-      where observation_id = 'aaaaaaaa-0000-0000-0000-000000000002') = 1,
+      where observation_id = 'aaaaaaaa-0000-0000-0000-000000000002'
+        and action = 'published') = 1,
     'publish_observation should record a verification event'
+  );
+
+select rls_test.assert_true(
+    (select count(*) from public.price_verification_events
+      where observation_id = 'aaaaaaaa-0000-0000-0000-000000000002'
+        and action = 'approved') = 1,
+    'approve_observation should record a verification event'
   );
 
   -- A published observation's economic fields are immutable, even for an admin.
@@ -497,6 +573,192 @@ begin;
 rollback;
 
 -- =============================================================================
+-- 9. Notifications
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '55555555-5555-5555-5555-555555555555';
+
+  -- A notification is created for the customer by the database function.
+  select public.notify(
+    '55555555-5555-5555-5555-555555555555',
+    'system_alert',
+    'Your access has been restored',
+    'A test notification.',
+    'profile',
+    '55555555-5555-5555-5555-555555555555',
+    '/agent/profile',
+    'normal',
+    '{}'::jsonb
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.notifications) = 1,
+    'a customer should see their own notification'
+  );
+
+  -- A notification for somebody else is invisible, even to an administrator.
+  select rls_test.assert_true(
+    (select count(*) from public.notifications
+      where user_id = '33333333-3333-3333-3333-333333333333') = 0,
+    'a notification addressed to another user must not be readable'
+  );
+
+  select rls_test.assert_raises(
+    'a customer must not be able to write a notification into another inbox',
+    $q$insert into public.notifications (user_id, kind, title)
+      values ('33333333-3333-3333-3333-333333333333', 'system_alert', 'Forged')$q$
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.notifications
+      where user_id = '55555555-5555-5555-5555-555555555555'
+        and read_at is null) = 1,
+    'a new notification should be unread'
+  );
+rollback;
+
+-- =============================================================================
+-- 10. Collection tasks and their history
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select rls_test.assert_true(
+    (select count(*) from public.collection_tasks
+      where assigned_to = '33333333-3333-3333-3333-333333333333') = 1,
+    'an agent should see the task assigned to them'
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.collection_tasks
+      where assigned_to = '44444444-4444-4444-4444-444444444444') = 0,
+    'an agent must not see another agent''s task'
+  );
+
+  select rls_test.assert_no_rows_affected(
+    'an agent must not be able to take over another agent''s task',
+    $q$update public.collection_tasks set assigned_to = '33333333-3333-3333-3333-333333333333'
+      where assigned_to = '44444444-4444-4444-4444-444444444444'$q$
+  );
+
+  select rls_test.assert_raises(
+    'an agent must not be able to delete a collection task',
+    $q$delete from public.collection_tasks
+      where assigned_to = '44444444-4444-4444-4444-444444444444'$q$
+  );
+
+  select rls_test.assert_raises(
+    'an agent must not be able to forge a task history entry for another agent''s task',
+    $q$insert into public.collection_task_events (task_id, event_type, reason)
+      values (902, 'completed', 'forged')$q$
+  );
+rollback;
+
+-- =============================================================================
+-- 11. Collection schedules
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select rls_test.assert_true(
+    (select count(*) from public.market_collection_schedules
+      where market_id in (select public.assigned_market_ids())) >= 0,
+    'an agent may read the plan for the markets they cover'
+  );
+
+  select rls_test.assert_no_rows_affected(
+    'an agent must not be able to change the collection plan',
+    $q$update public.market_collection_schedules set expected_observations = 99
+      where market_id in (select public.assigned_market_ids())$q$
+  );
+
+  select rls_test.assert_no_rows_affected(
+    'an agent must not be able to delete a collection schedule',
+    $q$delete from public.market_collection_schedules
+      where market_id in (select public.assigned_market_ids())$q$
+  );
+rollback;
+
+-- =============================================================================
+-- 12. Account administration
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select rls_test.assert_no_rows_affected(
+    'an agent must not be able to suspend another account',
+    $q$update public.profiles set account_status = 'suspended'
+      where id = '55555555-5555-5555-5555-555555555555'$q$
+  );
+
+  select rls_test.assert_raises(
+    'an agent must not be able to suspend an account through the account-status function',
+    $q$select public.set_account_status(
+        '55555555-5555-5555-5555-555555555555', 'suspended', 'testing')$q$
+  );
+
+  select rls_test.assert_no_rows_affected(
+    'an agent must not be able to read another agent''s agent profile',
+    $q$update public.agent_profiles set region = 'Somewhere'
+      where profile_id = '44444444-4444-4444-4444-444444444444'$q$
+  );
+rollback;
+
+-- =============================================================================
+-- 13. Exports and job history
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select rls_test.assert_true(
+    (select count(*) from public.export_jobs) = 0,
+    'an agent must not see an administrator''s export jobs'
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.scheduled_job_runs) = 0,
+    'an agent must not see the scheduled job history'
+  );
+rollback;
+
+-- =============================================================================
+-- 14. A suspended agent writes nothing
+-- =============================================================================
+begin;
+  -- The administrator suspends the agent.
+  set local role authenticated;
+  set local request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+  select public.set_account_status(
+    '33333333-3333-3333-3333-333333333333', 'suspended', 'RLS test suspension');
+
+  -- The suspended agent tries to carry on working.
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select rls_test.assert_raises(
+    'a suspended agent must not be able to submit an observation',
+    $q$insert into public.price_observations
+        (commodity_id, market_id, price_type, reported_amount, reported_unit_id,
+         currency_code, collected_at, agent_user_id, verification_status, source_system)
+      values (1, 1, 'retail', 41000, 1, 'NGN', now(),
+              '33333333-3333-3333-3333-333333333333', 'submitted', 'agent_app')$q$
+  );
+
+  select rls_test.assert_raises(
+    'a suspended agent must not be able to move a collection task',
+    $q$select public.transition_task(
+        (select id from public.collection_tasks
+          where assigned_to = '33333333-3333-3333-3333-333333333333' limit 1),
+        'in_progress', 'testing')$q$
+  );
+rollback;
+
+-- =============================================================================
 -- 8. The public views
 -- =============================================================================
 begin;
@@ -514,5 +776,92 @@ begin;
     'the published view must not expose unpublished observations'
   );
 rollback;
+
+-- =============================================================================
+-- 9. Cleanup
+--
+-- Everything above is a fixture. It is removed here so that running the suite
+-- against a scratch database leaves it exactly as it was found. Every case in
+-- the body of the suite is wrapped in a transaction that is rolled back; this
+-- section removes the fixture rows that were inserted outside one.
+-- =============================================================================
+delete from public.price_revision_history
+where observation_id in (select id from public.price_observations where source_system = 'test_fixture');
+
+delete from public.price_verification_events
+where observation_id in (select id from public.price_observations where source_system = 'test_fixture');
+
+delete from public.data_quality_flags
+where observation_id in (select id from public.price_observations where source_system = 'test_fixture');
+
+delete from public.price_observation_evidence
+where observation_id in (select id from public.price_observations where source_system = 'test_fixture');
+
+delete from public.notifications
+where user_id in (
+  '11111111-1111-1111-1111-111111111111',
+  '22222222-2222-2222-2222-222222222222',
+  '33333333-3333-3333-3333-333333333333',
+  '44444444-4444-4444-4444-444444444444',
+  '55555555-5555-5555-5555-555555555555',
+  '66666666-6666-6666-6666-666666666666',
+  '88888888-8888-8888-8888-888888888888'
+);
+
+delete from public.audit_logs
+where entity_id in (
+  'aaaaaaaa-0000-0000-0000-000000000001',
+  'aaaaaaaa-0000-0000-0000-000000000002',
+  'aaaaaaaa-0000-0000-0000-000000000003'
+);
+
+delete from public.collection_task_events
+where task_id in (select id from public.collection_tasks where id in (901, 902));
+
+delete from public.price_observations where source_system = 'test_fixture';
+
+delete from public.collection_tasks where id in (901, 902);
+
+delete from public.market_collection_schedules
+where assigned_agent_id = '33333333-3333-3333-3333-333333333333';
+
+delete from public.market_agent_assignments
+where (user_id, market_id) in (
+  ('33333333-3333-3333-3333-333333333333', 1),
+  ('44444444-4444-4444-4444-444444444444', 2)
+);
+
+delete from public.saved_commodities where user_id = '55555555-5555-5555-5555-555555555555';
+delete from public.price_alerts where user_id = '55555555-5555-5555-5555-555555555555';
+
+delete from public.agent_profiles
+where profile_id in (
+  '33333333-3333-3333-3333-333333333333',
+  '44444444-4444-4444-4444-444444444444',
+  '88888888-8888-8888-8888-888888888888'
+);
+
+delete from public.profiles
+where id in (
+  '11111111-1111-1111-1111-111111111111',
+  '22222222-2222-2222-2222-222222222222',
+  '33333333-3333-3333-3333-333333333333',
+  '44444444-4444-4444-4444-444444444444',
+  '55555555-5555-5555-5555-555555555555',
+  '66666666-6666-6666-6666-666666666666',
+  '88888888-8888-8888-8888-888888888888'
+);
+
+delete from auth.users
+where id in (
+  '11111111-1111-1111-1111-111111111111',
+  '22222222-2222-2222-2222-222222222222',
+  '33333333-3333-3333-3333-333333333333',
+  '44444444-4444-4444-4444-444444444444',
+  '55555555-5555-5555-5555-555555555555',
+  '66666666-6666-6666-6666-666666666666',
+  '77777777-7777-7777-7777-777777777777',
+  '88888888-8888-8888-8888-888888888888'
+);
 
 drop schema rls_test cascade;

@@ -114,11 +114,14 @@ inserts the key hash into `api_applications` manually, and the plaintext key is 
 
 ## 9. Commercial features are modelled but not built
 
+The Tier-1 build added the operational reports. Everything else in this table is unchanged.
+
 | Feature | State | What works today |
 | --- | --- | --- |
-| Reports (PDF) | Schema + policy only | The legacy generator returned HTTP 500 (F-04); a report must be generated from published observations and carry its own provenance. |
-| Price alerts | Tables + UI + RLS | Alerts can be created and are visible in `/dashboard`. **No email or SMS is sent** — there is no delivery worker. |
-| Evidence photos | Table + policy | The `price_observation_evidence` table exists; the Storage bucket and its upload path do not. |
+| Operational reports | **Built** | Twelve reports in `/admin/reports` — daily prices, agent performance, coverage against plan, commodity summary, quality summary, rejection reasons, and six more — each exportable as a CSV, recorded in `export_jobs`, audited and expiring. |
+| Published PDF reports | Schema + policy only | The legacy generator returned HTTP 500 (F-04). The operational CSV reports are not the same thing as a customer-facing PDF. |
+| Price alerts | Tables + UI + RLS | Alerts can be created and are visible in `/dashboard`. **No email or SMS is sent** — the delivery worker has no provider credential. |
+| Evidence photos | Table + policy | The `price_observation_evidence` table exists; the Storage bucket and its upload path do not, and the field app does not yet attach a photograph. |
 | Subscriptions | Tables + entitlement checks | The entitlement logic is implemented and exercised by RLS; there is no billing integration. |
 | API key issuance | Tables + verification | Issued manually, as described above. |
 
@@ -144,15 +147,61 @@ table and the full observation list on `/prices`, but the chart itself has no te
 
 ## 12. Operational gaps
 
+The Tier-1 build closed most of these. What remains:
+
 * **No monitoring or alerting.** Nothing pages anybody when collection stops or the verification
   queue grows. The signals to watch are listed in `docs/DEPLOYMENT.md` §8, but they are not
   instrumented.
-* **No background jobs.** Nothing runs on a schedule: alerts are never delivered, subscriptions
-  are never expiring-notified, nothing is pruned.
-* **No offline collection.** `/agent` requires a connection; a field agent in a market with no
-  signal cannot submit.
+* **The background jobs have never run against a live database.** The runner, the five job
+  definitions, the idempotency constraint and the run history are implemented and tested; they
+  need a Supabase project and a platform cron to do their first real run.
+* **No external notification delivery.** The in-app inbox is real. Email, SMS and WhatsApp are
+  typed adapters that report `skipped` when no credential is configured — they never claim a
+  delivery they did not make.
 * **Rate limiting on the contact form** is a server-side check, not a CAPTCHA or a proof-of-work.
-* **Search covers commodities and markets only**, not observations or articles.
+* **No geographic coverage map.** The market table and a coverage chart are shown instead of a
+  map, because the coordinates exist but a decorative map is worse than a table.
+* **No evidence upload in the field app.** The agent records that a price was observed; the
+  photograph that would corroborate it is not yet captured.
+* **The search box covers agents, markets, commodities and observations.** It does not cover
+  articles, which is a deliberate scope limit rather than an oversight.
+
+## 12a. The signed-in journeys have not been clicked through
+
+The Tier-1 build was completed in an environment with **no Supabase project configured**. The
+database behaviour is proved by two SQL suites executed against a real PostgreSQL 18.4 with the
+migrations applied (150 permission statements, 206 workflow statements). The TypeScript behaviour
+is proved by 271 unit tests. The routing and the guards are proved by a 40-route HTTP sweep in
+which every `/admin/*` and `/agent/*` route returns 307 → `/login?next=…` when signed out.
+
+**What is therefore unverified:** the browser click-through of signing in, collecting a price,
+reviewing it, publishing it, exporting it. This is the first item on the launch checklist
+(`docs/BUILD_REPORT.md` §10) and it must be completed before go-live. It is recorded here as
+`UNKNOWN`, not as a pass.
+
+**Limitation.** Any defect that exists only in the rendering of a signed-in screen, or only in
+the interaction between a server action and the browser, has not been caught by the automated
+suites in this repository.
+
+## 12b. The analytics snapshot is bounded
+
+The metric layer reads a bounded snapshot rather than the full history: at most 5,000
+observations and 2,000 collection tasks, plus every market, agent, assignment and schedule. When
+a cap is reached the snapshot is marked `truncated` and the console says so next to the figure.
+
+**Limitation.** On a dataset larger than that bound, the analytics centre reports the figures it
+could compute and flags that it could not compute them all. It does not silently extrapolate. The
+stored daily aggregate in `analytics_snapshots` is the intended answer at scale; the console does
+not yet read it for every metric.
+
+## 12c. A stored aggregate is not yet the source for the console charts
+
+`refresh_analytics_snapshot` writes a daily aggregate, and the job is idempotent. The console's
+trend chart reads the stored snapshots; its headline figures are computed from the live window.
+
+**Limitation.** The two paths can differ for a metric whose definition depends on the window
+rather than on the day. The metric registry records the window for each metric so the difference
+is explainable, but the console does not yet read one source for everything.
 
 ## 13. Performance and scale
 
@@ -167,7 +216,9 @@ table and the full observation list on `/prices`, but the chart itself has no te
 ## 14. Platform and tooling
 
 * **Node 22 or newer is required.** The build and the runtime both warn on Node 20 because
-  `@supabase/supabase-js` has dropped it.
+  `@supabase/supabase-js` has dropped it, and the user-experience test suite cannot start on
+  Node 20 either — jsdom loads a version of undici that needs Node's zstd support. `package.json`
+  now declares `"node": ">=22.0.0"`.
 * **npm requires `--legacy-peer-deps`** on npm 10 to install the vitest 5 tree.
 * The migration validator uses an **embedded PostgreSQL 18.4** downloaded into `pgtest/`. It is
   not part of the application bundle, and it is disposable: every run drops and recreates the
@@ -185,9 +236,10 @@ table and the full observation list on `/prices`, but the chart itself has no te
 | 6 | RLS verified against a stub, not against hosted Supabase | High | Engineering | Run the assertions against the hosted project before go-live |
 | 7 | Rate limiter is per instance | Medium | Engineering | Move the counter into the database |
 | 8 | No self-service API key issuance | Medium | Product | Build the issuance screen |
-| 9 | Reports, alerts delivery, evidence upload, billing not built | Medium | Product | Backlog (`docs/MIGRATION_PLAN.md` §8) |
-| 10 | No forecasting | By design | Product | Gated on method + error band + retrospective evaluation |
-| 11 | Accessibility not machine-verified | Medium | Engineering | Add an axe/Lighthouse CI gate |
-| 12 | No monitoring, jobs or offline collection | Medium | Engineering | Backlog |
-| 13 | No load testing at realistic volume | Low | Engineering | Load test before the dataset grows |
+| 9 | Customer-facing PDF reports, alerts delivery, evidence upload, billing not built | Medium | Product | Backlog (`docs/MIGRATION_PLAN.md` §8). The operational CSV reports are built. |
 | 14 | Node 22 required; npm legacy peer deps | Low | Engineering | Documented |
+| 15 | The signed-in browser journeys are unverified (no Supabase project in the build environment) | **High** | Engineering | Complete `docs/BUILD_REPORT.md` §10 before go-live |
+| 16 | No geographic coverage map | Low | Product | Build it when the coverage data is worth a map |
+| 17 | No evidence upload in the field app | Medium | Operations | Build the Storage bucket and the capture screen |
+| 18 | The analytics snapshot is bounded and the console does not read the stored aggregate everywhere | Low | Engineering | Read `analytics_snapshots` for the trend metrics |
+

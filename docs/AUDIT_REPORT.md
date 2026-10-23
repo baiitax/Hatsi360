@@ -499,3 +499,61 @@ Everything in this section was executed in this repository, on the dates shown.
 | `PLANNED` | 1 |
 | `UNKNOWN` | 1 |
 | `FAILED_TEST` | 1 |
+
+
+---
+
+# Addendum — Tier-1 operations build (22 October 2026)
+
+The original audit (F-01 … F-32) covered the legacy site and the first rebuild. The
+Tier-1 build added the operations system: the central login, the Super Admin Control Centre, the
+phone-first Market Agent App, the analytics centre, the reports and exports, and the scheduled
+jobs. The findings below cover that work.
+
+The full phase-by-phase report, with the evidence for each phase, is in `docs/BUILD_REPORT.md`.
+
+## A. Findings
+
+| ID | Finding | Classification | Evidence | Remediation |
+| --- | --- | --- | --- | --- |
+| F-33 | The rebuild had no operational data model: no agent identity, no assignment, no task lifecycle, no verification trail, no notifications, no jobs, no exports. | `VERIFIED_IN_CODE` | Full tree review of the first rebuild | Migrations `0010`–`0013` added 12 operational tables, 22 database functions, the RLS policies for them, and the transactional business rules. |
+| F-34 | The first rebuild's `approveObservation` published in one step, so approval and publication could not be audited separately. | `VERIFIED_IN_CODE` | `src/lib/verification/actions.ts` (removed) | Split into `approve_observation` and `publish_observation`; the latter refuses to run without a prior approval. The single-step action was deleted. |
+| F-35 | The first rebuild's agent console posted prices through a form action with no idempotency key, so a retried request on a flaky connection could create a duplicate price. | `VERIFIED_IN_CODE` | `src/lib/observations/actions.ts` (removed) | `submit_observation` takes a `submission_key` with a unique index; the field app sends a UUID per price and reuses it when retrying. |
+| F-36 | The first rebuild had no way to suspend an agent. | `VERIFIED_IN_CODE` | Tree review | `profiles.account_status` plus `set_account_status`; suspension is enforced in the server guard, at sign-in, and by the database functions. |
+| F-37 | The first rebuild had no scheduled work: no task generation, no overdue marking, no snapshot refresh, no export expiry. | `VERIFIED_IN_CODE` | Tree review | Five jobs in `src/lib/jobs/index.ts`, each recorded in `scheduled_job_runs` and idempotent through a unique `(job_name, scheduled_for)` constraint. |
+| F-38 | The first rebuild had no analytics: no productivity, no coverage, no metric definitions, no prior-period comparison. | `VERIFIED_IN_CODE` | Tree review | The metric registry, the snapshot, the pure computation and the comparison rules, with 48 tests. |
+| F-39 | The first rebuild had no export path and no export audit. | `VERIFIED_IN_CODE` | Tree review | Twelve reports, `create_export_job` / `complete_export_job`, and an export history on the reports screen. |
+| F-40 | The first rebuild had no sign-in throttling. | `VERIFIED_IN_CODE` | Tree review | `auth_login_attempts` with hashed identifiers, `checkSignInLimit`, and a limiter that fails open so an outage cannot lock every agent out of the field. |
+| F-41 | The first rebuild's `/admin` and `/agent` pages read the session in a way that let Next.js prerender them as static HTML when the build ran without a Supabase configuration. | `VERIFIED_IN_TEST` | The first Tier-1 build listed `/admin/settings`, `/admin/system` and every `/agent/*` route as `○ (Static)` | `export const dynamic = 'force-dynamic'` on the admin and agent layouts and on the login page. The build now lists all 23 of those routes as `ƒ (Dynamic)`. |
+| F-42 | The `round()` helper produced 1 for 1.005 because of binary floating point. | `VERIFIED_IN_TEST` | `tests/analytics/format.test.ts` | The helper now nudges by `Number.EPSILON` before rounding. Money in the interface must not lose a half-naira to a floating-point artefact. |
+| F-43 | The role table in the auth module and the module list in the navigation module disagreed: a market supervisor was offered the agents screen but the path guard refused it. | `VERIFIED_IN_TEST` | `tests/operations/navigation.test.ts` | One table of allowed paths per role in `src/lib/auth/routing.ts`, and a test that asserts the navigation and the guard agree for every role. |
+| F-44 | `src/lib/supabase/server.ts` was not marked `server-only`, so a client component could have imported the cookie-bound server client. | `VERIFIED_IN_CODE` | `tests/security/client-bundle.test.ts` | The module is now marked `import 'server-only'`, and the test asserts the marker on every module that reads the database. |
+| F-45 | The first rebuild's password fields had no way to reveal a mistyped password on a phone. | `VERIFIED_IN_CODE` | `src/components/forms/CentralSignInForm.tsx` | A show/hide control on the central sign-in form, with the button labelled for screen readers. |
+| F-46 | The scheduled job endpoint could have been triggered by anyone. | `VERIFIED_IN_CODE` | `src/app/api/jobs/run/route.ts` | A `JOB_RUNNER_SECRET` compared in constant time; without it the endpoint refuses every request, and `GET` is refused with 405. |
+| F-47 | The notification service could have reported an email as delivered without a provider. | `VERIFIED_IN_CODE` | `src/lib/notifications/index.ts` | The external channels are adapters. Without a credential they report `skipped`, and the delivery log keeps that status. The settings screen shows each channel's state. |
+| F-48 | There is no geographic coverage map. | `PLANNED` | `src/app/admin/overview/page.tsx` | The coordinates exist in `markets`, but a decorative map is worse than a table. A table and a chart are shown instead. |
+| F-49 | The permission suites create synthetic price observations that were indistinguishable from collected prices: same source value, same dates as the real legacy data, and no protection against reaching the public record. | `VERIFIED_IN_CODE` | `tests/rls/permission-tests.sql`, `tests/operations/workflow-tests.sql` | Migrations `0014` and `0015` add the `test_fixture` source value and exclude it from the public read policy. Both suites now refuse to run against a database that holds any non-fixture observation, and both delete everything they created. The validator fails if a single row is left behind. |
+
+## B. What could not be verified in this environment
+
+| Item | Classification | Why |
+| --- | --- | --- |
+| The signed-in browser journey: signing in as an agent, collecting a price, seeing it in the review queue, approving it, publishing it. | `UNKNOWN` | No Supabase project is configured in this environment. The database behaviour is proved by the workflow suite against a real PostgreSQL; the interface behaviour is proved by the route sweep; the click-through itself is outstanding. |
+| The delivery of an email, SMS or WhatsApp notification. | `DOCUMENTATION_ONLY` | No provider credential exists. The adapters and the boundary are documented in `.env.example` and `docs/KNOWN_LIMITATIONS.md`. |
+| The offline queue in a real browser on a real phone. | `PLANNED` | The queue is now exercised in a DOM test (`tests/ux/experience.test.tsx`): a dropped connection, a retry with the same idempotency key, a server refusal and a restored draft are all asserted. What is still unverified is the behaviour on a physical device with a real radio. |
+| PostgREST's role switching and JWT handling. | `UNKNOWN` | The SQL suites run against a real PostgreSQL with a stub of the `auth` schema. The policies are exercised faithfully; the hosted gateway's own behaviour is not. |
+
+## C. The verification record after the Tier-1 build
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Migrations | `bash scripts/validate_migrations.sh` | **15 migrations applied cleanly.** 51 tables, 51 with RLS, 97 policies, 2 views |
+| RLS permission suite | included in the validator | **169 statements, all assertions passed** |
+| Operations workflow suite | included in the validator | **221 statements, all assertions passed** |
+| No leftovers | included in the validator | the suites leave **no rows behind**; the validator fails the run if they do |
+| Unit and integration tests | `npm test` | **296 passed** (23 analytics format, 25 analytics metrics, 23 quality rules, 25 auth routing, 12 navigation, 9 reports, 6 security, 25 user experience, 148 pre-existing) |
+| Type check | `npm run typecheck` | clean |
+| Production build | `npm run build` | **62 route entries** (51 pages, 11 API routes); all 23 admin and agent routes are dynamic |
+| Route smoke test | `curl` over 40 URLs | public routes 200; every `/admin/*` and `/agent/*` route 307 → `/login?next=…`; `/api/v1/*` 200 |
+| API guard checks | `curl` over 4 protected endpoints | 503 when unconfigured, 405 for `GET /api/jobs/run` |
+| Credential exposure | `tests/security/client-bundle.test.ts` | the service-role key appears only in a `server-only` module and in no built client asset |

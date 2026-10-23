@@ -6,12 +6,16 @@ import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/server';
 import type { UserRole } from '@/types/domain';
 
+export type AccountStatus = 'active' | 'suspended' | 'deactivated';
+
 export interface SessionProfile {
   id: string;
   email: string;
   fullName: string | null;
   role: UserRole;
   phone: string | null;
+  /** active | suspended | deactivated. A non-active account is refused. */
+  accountStatus: AccountStatus;
 }
 
 export interface Session {
@@ -37,7 +41,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, role, phone')
+    .select('id, full_name, role, phone, account_status')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -50,6 +54,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
           fullName: (profile.full_name as string | null) ?? null,
           role: (profile.role as UserRole) ?? 'public_user',
           phone: (profile.phone as string | null) ?? null,
+          accountStatus: (profile.account_status as AccountStatus) ?? 'active',
         }
       : null,
   };

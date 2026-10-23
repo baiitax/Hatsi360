@@ -119,6 +119,26 @@ function splitSqlStatements(sql) {
   return statements.map((s) => s.trim()).filter((s) => s.length > 0);
 }
 
+/**
+ * Run a SQL script one statement at a time, so that explicit transaction
+ * control inside the script behaves as written. Reports the failing statement.
+ */
+async function runSqlScript(db, sql, label) {
+  const statements = splitSqlStatements(sql);
+  console.log(`    ${statements.length} statements`);
+  for (const [index, statement] of statements.entries()) {
+    try {
+      await db.query(statement);
+    } catch (err) {
+      console.error(`\n${label.toUpperCase()} FAILED (statement ${index + 1}):\n${err.message}`);
+      console.error('--- statement ---\n' + statement.slice(0, 900));
+      await db.query('rollback;').catch(() => {});
+      throw err;
+    }
+  }
+  console.log(`    all ${label} assertions passed`);
+}
+
 async function main() {
   const admin = new Client({ host: '127.0.0.1', port: PORT, user: 'postgres', database: 'postgres' });
   await admin.connect();
@@ -238,24 +258,49 @@ async function main() {
 
   console.log('==> running Row Level Security permission tests');
   const rlsSql = readFileSync(join(ROOT, 'tests', 'rls', 'permission-tests.sql'), 'utf8');
-  const rlsStatements = splitSqlStatements(rlsSql);
-  console.log(`    ${rlsStatements.length} statements`);
-  try {
-    for (const [index, statement] of rlsStatements.entries()) {
-      try {
-        await db.query(statement);
-      } catch (err) {
-        console.error(`\nRLS PERMISSION TEST FAILED (statement ${index + 1}):\n${err.message}`);
-        console.error('--- statement ---\n' + statement.slice(0, 900));
-        throw err;
-      }
-    }
-    console.log('    all RLS permission assertions passed');
-  } catch (err) {
-    await db.query('rollback;').catch(() => {});
-    await db.end();
-    process.exit(1);
+  await runSqlScript(db, rlsSql, 'RLS permission tests');
+
+  console.log('==> running operations workflow tests');
+  const workflowSql = readFileSync(join(ROOT, 'tests', 'operations', 'workflow-tests.sql'), 'utf8');
+  await runSqlScript(db, workflowSql, 'operations workflow tests');
+
+  // The suites must leave nothing behind. A leftover synthetic price would be
+  // a synthetic price in the database, so the check is part of the contract.
+  console.log('==> checking that the suites left nothing behind');
+  const leftovers = await db.query(`
+    select
+      (select count(*) from public.price_observations) as observations,
+      (select count(*) from public.profiles
+        where id in (
+          '11111111-1111-1111-1111-111111111111',
+          '22222222-2222-2222-2222-222222222222',
+          '33333333-3333-3333-3333-333333333333',
+          '44444444-4444-4444-4444-444444444444',
+          '55555555-5555-5555-5555-555555555555',
+          '66666666-6666-6666-6666-666666666666',
+          '88888888-8888-8888-8888-888888888888'
+        )) as profiles,
+      (select count(*) from auth.users
+        where id in (
+          '11111111-1111-1111-1111-111111111111',
+          '22222222-2222-2222-2222-222222222222',
+          '33333333-3333-3333-3333-333333333333',
+          '44444444-4444-4444-4444-444444444444',
+          '55555555-5555-5555-5555-555555555555',
+          '66666666-6666-6666-6666-666666666666',
+          '77777777-7777-7777-7777-777777777777',
+          '88888888-8888-8888-8888-888888888888'
+        )) as auth_users,
+      (select count(*) from public.collection_tasks where id in (901, 902)) as tasks;
+  `);
+  const l = leftovers.rows[0];
+  if (Number(l.observations) !== 0 || Number(l.profiles) !== 0
+      || Number(l.auth_users) !== 0 || Number(l.tasks) !== 0) {
+    throw new Error(
+      `The suites left rows behind: observations=${l.observations}, profiles=${l.profiles}, ` +
+      `auth_users=${l.auth_users}, tasks=${l.tasks}. The cleanup section is not complete.`);
   }
+  console.log('    no leftover rows');
 
   await db.end();
   console.log('\nALL MIGRATIONS APPLIED CLEANLY');

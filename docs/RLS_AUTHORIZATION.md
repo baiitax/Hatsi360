@@ -246,3 +246,91 @@ the same assertions against a hosted Supabase project is on the pre-go-live chec
   use `timingSafeEqual`.
 * **No floating-point money.** `numeric(18,4)` everywhere.
 * **No silent unit conversion.** `normalized_amount` stays `NULL` when the conversion is unknown.
+
+
+---
+
+# Addendum — the operations system (22 October 2026)
+
+The Tier-1 build added the operational tables and the transactional functions that carry the
+market operation. This addendum records how authorisation works there.
+
+## 8. The operations tables
+
+Migrations `0010`–`0013` added twelve tables. All twelve have RLS enabled and all twelve are
+covered by the permission suite.
+
+| Table | Who reads | Who writes |
+| --- | --- | --- |
+| `agent_profiles` | the agent, staff | staff |
+| `account_status_events` | administrators | the `set_account_status` function only |
+| `auth_login_attempts` | administrators | the `record_login_attempt` function only (hashed identifiers) |
+| `market_collection_schedules` | staff | staff |
+| `collection_task_events` | the assigned agent, staff | the functions and the task transitions |
+| `notifications` | **the recipient only** | the `notify` function only |
+| `notification_delivery_logs` | staff | the delivery worker |
+| `scheduled_job_runs` | staff | the job runner only |
+| `export_jobs` | the requester, staff | the export functions |
+| `data_quality_rule_versions` | staff | staff |
+| `analytics_snapshots` | staff | the snapshot function |
+| `market_commodity_scope` | staff | staff |
+
+`notifications` is the sharpest case: **no other role, not even `super_admin`, can read another
+person's inbox.** The workflow suite asserts it — the agent sees their own rejection notice and
+another agent sees none.
+
+## 9. The functions are the business rules
+
+The operational writes are not performed by the browser. The browser sends a payload; a
+`SECURITY DEFINER` function decides whether it is allowed, and it does so from `auth.uid()` and
+the caller's own rows.
+
+| Function | Who may call it | What it refuses |
+| --- | --- | --- |
+| `submit_observation` | an active agent or supervisor | a submission at a market the agent is not assigned to; a submission against somebody else's task; a submission with no price; a submission when the account is suspended |
+| `approve_observation` | staff | approving your own submission; approving an already published price |
+| `reject_observation` | staff | rejecting your own submission; rejecting a published price |
+| `request_correction` | staff | a correction with no reason |
+| `publish_observation` | staff | publishing a price that was not approved; publishing a rejected price; overwriting a published price |
+| `set_account_status` | administrators | a change with no reason |
+| `set_user_role` | administrators | changing your own role |
+| `provision_agent` | administrators | provisioning yourself |
+| `raise_quality_flag` / `resolve_quality_flag` | staff | — |
+| `create_export_job` / `complete_export_job` | staff | exporting as a customer |
+| `transition_task` | the assigned agent or staff | moving a task you were not assigned to; cancelling without a reason |
+| `generate_collection_tasks` / `mark_overdue_tasks` | staff | — |
+| `record_login_attempt` / `count_login_attempts` / `clear_login_attempts` | anyone | — |
+
+Two properties are worth stating explicitly:
+
+* **Idempotency.** `submit_observation` resolves an existing `submission_key` to the original
+  observation and returns it. A retried request cannot create a second price.
+* **Append-only history.** `resolve_quality_flag` sets `resolved_at`; it never deletes the flag
+  row. `reject_observation` appends a verification event; it never rewrites the submission.
+
+## 10. The permission suite after the Tier-1 build
+
+| Suite | Statements | Result |
+| --- | --- | --- |
+| `tests/rls/permission-tests.sql` | 150 | all passed |
+| `tests/operations/workflow-tests.sql` | 206 | all passed |
+
+The workflow suite exercises the whole chain with real role switching: an agent submits, a
+reviewer approves, a publisher publishes, the price becomes publicly readable, a correction
+supersedes it, the original is preserved, the agent is notified, the task closes, the reviewer is
+notified, a suspension takes effect immediately, a rejection is recorded and explained, a role
+change is refused for the wrong actor, an agent is provisioned, a quality flag is raised and
+resolved, an export is recorded and audited, and the sign-in counter counts only failures.
+
+## 11. What is still not in the database
+
+* **No client-supplied role.** Still true. `set_user_role` and `provision_agent` derive the
+  actor from `auth.uid()`.
+* **No client-supplied organisation id.** Still true.
+* **No service-role key in the browser.** Still true, and now asserted by a test that scans both
+  the source and the built bundle.
+* **No plaintext API key at rest.** Still true.
+* **No floating-point money.** Still true.
+* **No silent unit conversion.** Still true.
+* **No erasure of the audit history.** There is no function, and no interface, that deletes an
+  audit row.

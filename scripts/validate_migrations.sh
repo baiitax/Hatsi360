@@ -31,13 +31,28 @@ if [ ! -d "$PGDATA" ]; then
   "$PGHOME/bin/initdb" -D "$PGDATA" -U postgres --auth=trust >/dev/null
 fi
 
-if ! "$PGHOME/bin/pg_ctl" -D "$PGDATA" status >/dev/null 2>&1; then
-  echo "==> starting postgres on port $PGPORT"
-  "$PGHOME/bin/pg_ctl" -D "$PGDATA" -l "$LOG" -o "-p $PGPORT -c listen_addresses=127.0.0.1 -c fsync=off -c full_page_writes=off" start >/dev/null
+start_postgres() {
+  "$PGHOME/bin/pg_ctl" -D "$PGDATA" -l "$LOG" \
+    -o "-p $PGPORT -c listen_addresses=127.0.0.1 -c fsync=off -c full_page_writes=off" start >/dev/null
   for _ in $(seq 1 30); do
-    "$PGHOME/bin/pg_ctl" -D "$PGDATA" status >/dev/null 2>&1 && break
+    "$PGHOME/bin/pg_ctl" -D "$PGDATA" status >/dev/null 2>&1 && return 0
     sleep 1
   done
+  return 1
+}
+
+if ! "$PGHOME/bin/pg_ctl" -D "$PGDATA" status >/dev/null 2>&1; then
+  echo "==> starting postgres on port $PGPORT"
+  if ! start_postgres; then
+    # A data directory that was restored from a snapshot can be missing the
+    # empty directories PostgreSQL needs. It is a throwaway instance, so it
+    # is safe to rebuild it from scratch and try once more.
+    echo "==> the data directory is unusable, rebuilding it"
+    rm -rf "$PGDATA"
+    mkdir -p "$PGDATA"
+    "$PGHOME/bin/initdb" -D "$PGDATA" -U postgres --auth=trust >/dev/null
+    start_postgres
+  fi
 fi
 
 echo "==> running SQL through the node driver"

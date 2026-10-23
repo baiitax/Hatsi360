@@ -2,9 +2,9 @@
   "name": "pluck-live",
   "version": "1.0.0",
   "private": true,
-  "description": "Pluck Live — agricultural commodity price transparency & market intelligence platform for Pluck Agro.",
+  "description": "Pluck Live \u2014 agricultural commodity price transparency & market intelligence platform for Pluck Agro.",
   "engines": {
-    "node": ">=20.11.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "dev": "next dev",

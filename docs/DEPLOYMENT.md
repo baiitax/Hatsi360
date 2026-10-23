@@ -24,7 +24,11 @@ dashboard. **Never commit `.env.local`.**
 | `NEXT_PUBLIC_SITE_URL` | build + runtime | production | The canonical origin used for `sitemap.xml`, `robots.txt`, Open Graph URLs and Supabase auth redirects. |
 | `NEXT_PUBLIC_SUPABASE_URL` | build + runtime | production | The Supabase project URL. Its presence is what switches the app from the migrated fixture to the real database. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | build + runtime | production | The publishable (anon) key. Safe in the browser **only** because RLS is what protects the data. |
-| `SUPABASE_SERVICE_ROLE_KEY` | runtime only | for the API | Server-side only. Used by the API-key verifier and the usage logger. Never exposed to the browser, never logged. |
+| `SUPABASE_SERVICE_ROLE_KEY` | runtime only | for the API + provisioning | Server-side only. Used by the API-key verifier, the usage logger and the agent-provisioning action. Never exposed to the browser, never logged. |
+| `JOB_RUNNER_SECRET` | runtime only | for the scheduler | The shared secret the platform cron presents as `Authorization: Bearer <secret>` when it calls `POST /api/jobs/run`. Without it the endpoint refuses every request. Generate with `openssl rand -hex 32`. |
+| `NOTIFICATION_EMAIL_*` | runtime only | optional | The email adapter. Without it the channel reports `skipped`, never `delivered`. |
+| `NOTIFICATION_SMS_*` | runtime only | optional | The SMS adapter. Same rule. |
+| `NOTIFICATION_WHATSAPP_*` | runtime only | optional | The WhatsApp adapter. Same rule. |
 
 **If the Supabase variables are absent, the application runs on the migrated fixture dataset** and
 says so on every page that shows prices. That is a supported mode for design review and demos; it
@@ -242,10 +246,10 @@ sudo systemctl start pluck-live
 
 ## 7. Pre-go-live checklist
 
-- [ ] `bash scripts/validate_migrations.sh` passes locally (49 assertions).
+- [ ] `bash scripts/validate_migrations.sh` passes locally (15 migrations, 169 permission statements, 221 workflow statements, no leftover rows).
 - [ ] The same RLS assertions run against the **hosted** project — the local run uses a stub of
       the `auth` schema, so the hosted run is the one that proves PostgREST behaves as expected.
-- [ ] `npm test` passes (148 assertions).
+- [ ] `npm test` passes (296 tests).
 - [ ] `npm run build` succeeds and every public route returns 200, unknown routes 404.
 - [ ] The legacy import has run exactly once and the counts match the capture.
 - [ ] The first administrator exists and can log in to `/admin`.
@@ -257,6 +261,14 @@ sudo systemctl start pluck-live
 - [ ] The Google Maps key exposed by the legacy site has been revoked at the provider.
 - [ ] A first backup has been taken **and restored** successfully.
 - [ ] The DNS plan keeps the legacy host reachable in read-only mode for 30 days.
+- [ ] The signed-in journeys have been clicked through: sign in as an agent, collect a price, see it
+      in `/admin/verification`, approve it (it must **not** be public yet), publish it (it must
+      appear on `/prices`), then open the agent's submission history and read the reviewer note.
+- [ ] A suspended agent is refused immediately, both in the field app and at the API.
+- [ ] Each of the five jobs has been run once by hand from `/admin/system` and the outcome is in
+      `scheduled_job_runs`.
+- [ ] Each of the twelve reports has been exported and the CSV matches the screen.
+- [ ] The platform cron is configured to call `POST /api/jobs/run` with `JOB_RUNNER_SECRET`.
 
 ## 8. Monitoring
 
@@ -279,3 +291,108 @@ If a wrong number reaches the public:
 5. If the cause is systemic (a bad conversion factor, a mis-trained agent, a broken form), fix the
    cause and then correct every affected row — the `is_current` flag makes the affected set
    queryable.
+
+
+## 10. The scheduled jobs
+
+Five jobs run on the platform cron. All five are idempotent: the runner refuses to run the same
+`(job_name, scheduled_for)` slot twice and reports it as `skipped`.
+
+| Job | Suggested cadence | What it does |
+| --- | --- | --- |
+| `generate_collection_tasks` | daily, early morning | Creates the tasks that are due from `market_collection_schedules`. |
+| `mark_overdue_tasks` | hourly | Records an `overdue` event on the tasks that passed their deadline. |
+| `refresh_analytics_snapshot` | daily | Stores the daily metric snapshot in `analytics_snapshots`. |
+| `retry_notification_delivery` | every 15 minutes | Retries the queued and failed notification deliveries. |
+| `expire_exports` | hourly | Expires the export artefacts that have passed their expiry. |
+
+Calling the runner:
+
+```bash
+# all jobs, using the slot the server computes
+curl -X POST https://liveprice.pluckagro.com/api/jobs/run \
+  -H "Authorization: Bearer $JOB_RUNNER_SECRET" \
+  -H "content-type: application/json" \
+  -d '{}'
+
+# one job, for a specific slot (a backfill)
+curl -X POST https://liveprice.pluckagro.com/api/jobs/run \
+  -H "Authorization: Bearer $JOB_RUNNER_SECRET" \
+  -H "content-type: application/json" \
+  -d '{"job":"generate_collection_tasks","scheduledFor":"2026-10-23"}'
+```
+
+The response lists each job with its outcome (`succeeded`, `skipped`, `failed`) and the number of
+records it touched. Every run is also written to `scheduled_job_runs`, which is what
+`/admin/system` displays.
+
+**There is no public trigger.** The endpoint answers 401/503 without the secret and refuses
+`GET` with 405. The secret is compared in constant time.
+
+## 11. Migrating the operations schema
+
+Migrations `0010`–`0015` add the operations system. Apply them in order with the same command as
+the rest:
+
+```bash
+supabase db push            # applies every pending migration in filename order
+```
+
+Or, one at a time, so a failure is unambiguous:
+
+```bash
+for f in supabase/migrations/001[0-5]_*.sql; do
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
+done
+```
+
+**Verify immediately after, on the hosted project:**
+
+```bash
+psql "$DATABASE_URL" -c "select count(*) from pg_tables where schemaname = 'public';"
+psql "$DATABASE_URL" -c "select count(*) from pg_policies where schemaname = 'public';"
+psql "$DATABASE_URL" -c "select count(*) from pg_tables t join pg_class c on c.oid = t.oid
+                          where t.schemaname = 'public' and c.relrowsecurity;"
+```
+
+The expected values are **51 tables, 51 with RLS, 97 policies** and 2 views. A different number
+means a migration did not apply; do not continue.
+
+### 11.1 Creating the first administrator
+
+There is no public path to an administrative role. Create the account, then set the role once,
+directly in the database, and audit the change by hand:
+
+```sql
+-- the account must already exist in auth.users
+insert into public.profiles (id, full_name, role, account_status)
+values ('<auth-user-uuid>', 'Platform Owner', 'super_admin', 'active')
+on conflict (id) do update set role = 'super_admin', account_status = 'active';
+```
+
+After that, use `/admin/agents` to provision every other agent. A provisioned agent is created
+with the service role **on the server**; the browser never holds a privileged key and cannot
+choose the role it creates.
+
+### 11.2 Running the permission suites against the hosted project
+
+The local run uses a stub of the `auth` schema. On the hosted project, replace the stub with the
+real one — Supabase provides `auth.users`, `auth.uid()` and `auth.jwt()` — and run the same
+assertions:
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/rls/permission-tests.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/operations/workflow-tests.sql
+```
+
+Both suites are written to be safe to run repeatedly: every case is wrapped in a transaction that
+is rolled back, and a cleanup section at the end of each file removes the fixtures that were
+inserted outside one. The validator fails the run if a single row was left behind.
+
+**Both suites also refuse to start against a database that holds real observations.** Each one
+checks that every row in `price_observations` is a labelled `test_fixture` and raises an
+exception otherwise, so a synthetic price can never be created beside a real one.
+
+**Run them against a scratch database restored from a dump, not against production.** The
+published record is the one thing that must never carry a test row, and the guard above is a
+second line of defence rather than a licence to be careless.

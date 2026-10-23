@@ -16,11 +16,13 @@ publication** workflow that produces fresh, traceable prices.
 
 | Area | State |
 | --- | --- |
-| Migrations | 9 files, apply cleanly to PostgreSQL 18.4 — 39 tables, all with RLS, 74 policies, 2 views |
-| Tests | 148 Vitest assertions + 49 Row Level Security assertions against a real database |
-| Build | Next.js 16.4.2 — 35 route entries (39 pages including the four article pages), production build clean |
+| Migrations | **15 files**, apply cleanly to PostgreSQL 18.4 — **51 tables, all with RLS, 97 policies, 2 views** |
+| Tests | **296 Vitest tests** + **169 RLS statements** + **221 workflow statements**, all against a real database |
+| Build | Next.js 16.4.2 — **62 route entries** (51 pages, 11 API routes), production build clean |
+| Interfaces | One central login · a **Super Admin Control Centre** (16 modules) · a **phone-first Market Agent App** (7 screens) |
 | Data | 28 migrated legacy observations (the live site's entire public price history) + a live collection path |
-| Not built yet | Reports, alert delivery, evidence upload, billing, forecasting — see `docs/KNOWN_LIMITATIONS.md` |
+| Operations | 5 scheduled jobs, 12 reports with audited CSV exports, notifications, the quality engine, the audit trail |
+| Not built yet | Evidence upload, external notification delivery, billing, forecasting, a geographic map — see `docs/KNOWN_LIMITATIONS.md` |
 
 ---
 
@@ -40,7 +42,7 @@ With Supabase configured:
 
 ```bash
 npx supabase link --project-ref <ref>
-npx supabase db push              # applies supabase/migrations/0001..0009
+npx supabase db push              # applies supabase/migrations/0001..0015
 ```
 
 ### Scripts
@@ -50,9 +52,9 @@ npx supabase db push              # applies supabase/migrations/0001..0009
 | `npm run dev` | Development server |
 | `npm run build` / `npm start` | Production build / server |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm test` | Vitest: 148 assertions across pricing, observation validation, data integrity and the API |
+| `npm test` | Vitest: 296 tests across pricing, observations, data integrity, the API, analytics, quality rules, auth routing, navigation, reports, credentials and the user-experience suite |
 | `npm run test:watch` | Vitest in watch mode |
-| `bash scripts/validate_migrations.sh` | Applies every migration to a throwaway PostgreSQL 18.4, runs the seed smoke test and the 49 RLS assertions |
+| `bash scripts/validate_migrations.sh` | Applies every migration to a throwaway PostgreSQL 18.4, runs the seed smoke test, the 169 RLS statements, the 221 workflow statements, and checks that the suites left nothing behind |
 
 ---
 
@@ -92,32 +94,45 @@ pluck-live/
 │   │   ├── ui/                   #   design system: SectionHeading, EmptyState, PriceFigure, …
 │   │   ├── site/                 #   SiteHeader, SiteFooter, SignOutButton
 │   │   ├── data/                 #   PriceTable, PriceChart, Cards, DataCoverageNotice, …
-│   │   ├── forms/                #   AuthForms, ContactForm
-│   │   ├── agent/                #   AgentConsole
-│   │   └── admin/                #   VerificationQueue
+│   │   ├── forms/                #   CentralSignInForm, ContactForm
+│   │   ├── ops/                  #   the console primitives: DataTable, KpiCard, Charts, Primitives
+│   │   ├── agent/                #   AgentShell, CollectionFlow, TaskControls
+│   │   └── admin/                #   AdminShell, VerificationActions, AgentManagement, …
 │   ├── lib/
 │   │   ├── api/                  #   request envelope, auth, rate limiting
-│   │   ├── auth/                 #   session helpers, server actions, route guards
+│   │   ├── analytics/            #   the metric registry, the snapshot, the computation, the comparison
+│   │   ├── auth/                 #   session helpers, server actions, route guards, throttling
 │   │   ├── content/              #   the migrated articles
 │   │   ├── data/                 #   the DataSource interface: supabase | fixture
 │   │   ├── forms/                #   server actions for the contact form
-│   │   ├── observations/         #   collection validation and submission
+│   │   ├── jobs/                 #   the scheduled job runner and its definitions
+│   │   ├── notifications/        #   the notification service and the external channel adapters
+│   │   ├── operations/           #   the agent and admin read models, the server actions, the navigation
+│   │   ├── quality/              #   the versioned quality rule engine
+│   │   ├── reports/              #   the report registry, the role scoping, the CSV writer
 │   │   ├── supabase/             #   browser / server / admin clients
-│   │   ├── verification/         #   publish, reject, correct
 │   │   ├── money.ts              #   NGN formatting
 │   │   └── pricing.ts            #   aggregation, comparability, freshness
 │   ├── data/
 │   │   ├── legacy/               #   the reconstructed legacy observations
 │   │   └── seed/                 #   the reference-data catalogue
 │   └── types/domain.ts           #   the domain types
-├── supabase/migrations/          # 0001 … 0009, applied in order
+├── supabase/migrations/          # 0001 … 0015, applied in order
 ├── tests/
 │   ├── pricing.test.ts           #   aggregation and comparability rules
 │   ├── observations-validation.test.ts
 │   ├── data-integrity.test.ts    #   the migration against the raw capture
 │   ├── api-auth.test.ts
 │   ├── api-routes.test.ts
-│   └── rls/permission-tests.sql  #   49 assertions against a real PostgreSQL instance
+│   ├── analytics/                #   the metric computation, the comparison, the day boundaries
+│   ├── quality/rules.test.ts     #   every quality rule and its severity
+│   ├── auth/routing.test.ts      #   role routing and the redirect allowlist
+│   ├── operations/navigation.test.ts
+│   ├── reports/reports.test.ts   #   the report builders and the CSV writer
+│   ├── security/client-bundle.test.ts
+│   ├── ux/experience.test.tsx    #   the field app under a dropped connection, the a11y of the controls
+│   ├── rls/permission-tests.sql  #   169 statements against a real PostgreSQL instance
+│   └── operations/workflow-tests.sql  #   221 statements: the whole operating chain
 ├── .env.example
 └── next.config.ts                # security headers + the legacy URL redirects
 ```
@@ -197,14 +212,52 @@ Three layers, and the database is the authority:
 | `/api-docs` | The API reference, with examples taken from live responses |
 | `/login` · `/register` · `/forgot-password` · `/reset-password` | Authentication |
 | `/dashboard` | Customer workspace (saved items, alerts, subscription, API keys) |
-| `/agent` | Field-collection console |
-| `/admin` | Verification queue and operations console |
 | `/sitemap.xml` · `/robots.txt` | Real machine-readable files |
+
+### Super Admin Control Centre
+
+One login serves every role. The console shows only the modules that are implemented and that the
+signed-in role may open.
+
+| Route | Purpose |
+| --- | --- |
+| `/admin/overview` | Twelve KPIs with definitions and a prior-period comparison, the operations feed, the collection trend, market coverage and the priority action queue |
+| `/admin/verification` | Approve, request a correction, reject and publish — four separate, audited acts |
+| `/admin/observations` | The observation directory: server-side filtering, sorting and pagination |
+| `/admin/quality` | Quality flags with the rule and the rule version that raised them |
+| `/admin/tasks` | Collection tasks, by status and overdue |
+| `/admin/agents` | Provision an agent, set the account status, assign markets |
+| `/admin/markets` | The market directory, coverage and last collection |
+| `/admin/schedule` | The collection plan and the task generator |
+| `/admin/analytics` | The analytics centre: productivity, coverage, commodity and data quality |
+| `/admin/reports` | Twelve reports, each exported as an audited, expiring CSV |
+| `/admin/notifications` | The reader's own inbox |
+| `/admin/audit` | The append-only audit trail |
+| `/admin/settings` | Business, collection, verification, security and integration settings |
+| `/admin/system` | The job definitions, the run history, and run-now |
+| `/admin/search` | Agents, markets, commodities and observations from one box |
+
+### Market Agent App
+
+Phone-first, low bandwidth, minimal typing. The bottom navigation has four items.
+
+| Route | Purpose |
+| --- | --- |
+| `/agent/home` | Today's tasks, assigned markets, corrections waiting |
+| `/agent/collect` | The six-step guided collection: market → commodity → price type and unit → amount → when and note → check and send. Batch repeat collection, drafts, and an offline queue that retries with the same idempotency key |
+| `/agent/tasks` | Start, complete, or cancel with a reason |
+| `/agent/submissions` | Every price with its review state and the reviewer's feedback |
+| `/agent/notifications` | The agent's private inbox |
+| `/agent/profile` | Account, markets, channel status, sign out |
 
 ### API
 
 `GET /api/v1/commodities` · `/markets` · `/prices/latest` · `/prices/history` ·
 `/prices/compare` · `/insights`
+
+The operational endpoints are server-side only: `POST /api/agent/submit` (idempotent),
+`POST /api/notifications/read`, `POST /api/auth/signout`, and `POST /api/jobs/run`, which
+requires the `JOB_RUNNER_SECRET` and refuses every other caller.
 
 Uniform envelope, Zod-validated parameters, `X-RateLimit-*` headers, SHA-256 hashed keys:
 
@@ -238,3 +291,4 @@ curl 'https://<host>/api/v1/prices/latest?commodity=paddy-rice' \
 | [`docs/RLS_AUTHORIZATION.md`](docs/RLS_AUTHORIZATION.md) | Who may see and change what, and why |
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | How to deploy, back up, restore and roll back |
 | [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) | What this build cannot do yet |
+| [`docs/BUILD_REPORT.md`](docs/BUILD_REPORT.md) | The phase-by-phase build report: what was implemented, which tests passed, what remains and the evidence |
