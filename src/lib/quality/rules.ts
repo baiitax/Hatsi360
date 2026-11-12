@@ -1,5 +1,5 @@
 /**
- * Pluck Live — data quality rule engine.
+ * GonaPulse — data quality rule engine.
  *
  * Rules are pure functions. They take an observation, the context it was
  * collected in, and a configuration object; they return findings. Nothing here

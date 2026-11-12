@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { getSession } from '@/lib/auth';
 import { landingPathForRole, safeRedirectPath } from '@/lib/auth/routing';
 import { CentralSignInForm } from '@/components/forms/CentralSignInForm';
+import { BrandMark } from '@/components/brand/Logo';
+import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Sign in — Pluck Live',
-  description: 'Sign in to the Pluck Live market operations portal.',
+  title: 'Sign in',
+  description: `Sign in to the ${BRAND.surfaces.portal}.`,
   robots: { index: false, follow: false },
 };
 
@@ -17,8 +19,7 @@ export const dynamic = 'force-dynamic';
 const ERROR_MESSAGES: Record<string, string> = {
   suspended:
     'This account is suspended. Contact your supervisor to restore access to the field app.',
-  deactivated:
-    'This account is no longer active. Contact your supervisor if you believe this is a mistake.',
+  deactivated: 'This account is no longer active. Contact your supervisor if you believe this is a mistake.',
   forbidden: 'Your role does not have access to that area of the portal.',
   expired: 'Your session has expired. Please sign in again.',
 };
@@ -51,26 +52,21 @@ export default async function LoginPage({
           className="pointer-events-none absolute -bottom-32 -left-16 size-[28rem] rounded-full bg-brand-700/40 blur-3xl"
         />
 
-        <div className="relative">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="grid size-11 place-items-center rounded-xl bg-brand-500 font-black text-brand-950"
-            >
-              PL
+        <div className="relative flex items-center gap-3">
+          <BrandMark size={44} />
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-xl font-bold tracking-tight text-white">
+              {BRAND.name}
             </span>
-            <span className="text-xl font-bold tracking-tight">
-              Pluck Live
-              <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-brand-200">
-                Pluck Agro
-              </span>
+            <span className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-brand-200">
+              {BRAND.endorsement}
             </span>
-          </Link>
+          </span>
         </div>
 
         <div className="relative max-w-lg">
-          <h1 className="text-4xl font-bold leading-tight tracking-tight">
-            The market operations portal for Nigeria&rsquo;s agricultural price network.
+          <h1 className="font-display text-4xl font-bold leading-tight tracking-tight">
+            {BRAND.surfaces.portal}
           </h1>
           <p className="mt-4 text-base leading-relaxed text-brand-100">
             One sign-in for market agents collecting prices in the field and for the staff who
@@ -114,26 +110,22 @@ export default async function LoginPage({
         </div>
 
         <p className="relative text-xs text-brand-300">
-          &copy; {new Date().getFullYear()} Pluck Agro. Prices are published only after verification.
+          &copy; {new Date().getFullYear()} {BRAND.name}. {BRAND.endorsement}. Prices are published
+          only after verification.
         </p>
       </section>
 
       {/* The form panel. */}
       <section className="flex items-center justify-center bg-white px-6 py-12 sm:px-10">
         <div className="w-full max-w-md">
-          <Link href="/" className="mb-8 inline-flex items-center gap-2 lg:hidden">
-            <span
-              aria-hidden="true"
-              className="grid size-9 place-items-center rounded-lg bg-brand-700 text-sm font-black text-white"
-            >
-              PL
-            </span>
-            <span className="text-sm font-bold text-brand-900">Pluck Live</span>
-          </Link>
+          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+            <BrandMark size={36} />
+            <span className="font-display text-base font-bold text-brand-900">{BRAND.name}</span>
+          </div>
 
-          <h2 className="text-2xl font-bold tracking-tight text-ink-950">Sign in</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-ink-950">Sign in</h2>
           <p className="mt-1 text-sm text-ink-600">
-            Use the work email address your Pluck Live account was created with.
+            Use the work email address your {BRAND.name} account was created with.
           </p>
 
           {errorMessage ? (

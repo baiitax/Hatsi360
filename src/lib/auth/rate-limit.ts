@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 /**
- * Pluck Live — sign-in throttling.
+ * GonaPulse — sign-in throttling.
  *
  * The attempt counter lives in the database (`auth_login_attempts`) so it
  * survives a restart and is shared by every instance of the application. The

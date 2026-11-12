@@ -40,7 +40,7 @@ export default async function SettingsPage() {
             settingKey="business.name"
             label="Operation name"
             description="Shown in the field app and on the public price pages."
-            value={readSetting(settings, 'business.name', 'Pluck Live')}
+            value={readSetting(settings, 'business.name', 'GonaPulse')}
           />
           <SettingsEditor
             settingKey="business.currency"

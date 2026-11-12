@@ -6,7 +6,7 @@ import { canRoleVisitPath, landingPathForRole } from './routing';
 import type { UserRole } from '@/types/domain';
 
 /**
- * Pluck Live — server-side route guards.
+ * GonaPulse — server-side route guards.
  *
  * These guards run on the server before a page renders. They are a
  * convenience and a defence in depth; the authority is still Row Level

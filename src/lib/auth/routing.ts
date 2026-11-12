@@ -1,7 +1,7 @@
 import type { UserRole } from '@/types/domain';
 
 /**
- * Pluck Live — where a signed-in person belongs.
+ * GonaPulse — where a signed-in person belongs.
  *
  * The routing table is the single place that decides which workspace a role
  * lands in. The server guards enforce the same table, so the redirect after

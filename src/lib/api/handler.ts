@@ -3,6 +3,7 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import type { ZodType } from 'zod';
 import { authenticateApiKey, checkRateLimit, logApiUsage, type ApiApplication } from './auth';
+import { hasEntitlement, type EntitlementKey } from '@/lib/entitlements';
 
 export interface HandlerContext {
   request: Request;
@@ -17,6 +18,12 @@ export interface HandlerOptions<TQuery extends object, TData> {
   scope?: string;
   /** Free-tier rate limit used when no API key is supplied. */
   anonymousRateLimit?: number;
+  /**
+   * The entitlement a caller must hold to use this endpoint.
+   *
+   * The check happens on the server. The interface is never the control.
+   */
+  entitlement?: EntitlementKey;
   handler: (
     context: HandlerContext & TQuery & { application: ApiApplication | null },
   ) => Promise<TData | NextResponse>;
@@ -55,6 +62,21 @@ export function createApiHandler<TQuery extends object, TData>(
           return errorResponse('forbidden', 'This API key has been deactivated.', 403);
         default:
           return errorResponse('unauthorized', 'The API key supplied is not valid.', 401);
+      }
+    }
+
+    // Entitlement gating. A premium endpoint is refused to a caller without
+    // the entitlement, whatever their key's scopes say.
+    if (options.entitlement) {
+      const entitled = auth.application
+        ? hasEntitlement(auth.application.entitlementSet, options.entitlement)
+        : false;
+      if (!entitled) {
+        return errorResponse(
+          'forbidden',
+          `This endpoint requires the "${options.entitlement}" entitlement. Public price data is available without it at /api/v1/prices/latest.`,
+          403,
+        );
       }
     }
 

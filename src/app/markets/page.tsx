@@ -4,11 +4,12 @@ import type { Metadata } from 'next';
 import { MarketCard } from '@/components/data/Cards';
 import { Breadcrumbs, EmptyState, Pagination } from '@/components/ui';
 import { getDataSource } from '@/lib/data';
+import { BreadcrumbJsonLd, DatasetJsonLd } from '@/components/marketing/StructuredData';
 
 export const metadata: Metadata = {
   title: 'Market Directory',
   description:
-    'Markets across Nigeria where Pluck Live collects agricultural commodity prices — Dawanau, Mile 12, Gujungu and more.',
+    'Markets across Nigeria where GonaPulse collects agricultural commodity prices — Dawanau, Mile 12, Gujungu and more.',
   alternates: { canonical: '/markets' },
 };
 
@@ -58,6 +59,18 @@ export default async function MarketsPage({
   return (
     <div className="section">
       <div className="container-page">
+        <BreadcrumbJsonLd items={[{ name: 'Markets' }]} />
+        <DatasetJsonLd
+          name="GonaPulse market coverage directory"
+          description={`The ${markets.length} markets across ${states.length} states where GonaPulse collects agricultural commodity prices, with the commodities reported at each one.`}
+          url="/markets"
+          keywords={[
+            'Nigerian commodity markets',
+            'Dawanau market',
+            'market coverage Nigeria',
+            'agricultural market directory',
+          ]}
+        />
         <Breadcrumbs items={[{ label: 'Markets' }]} />
 
         <header className="max-w-3xl">

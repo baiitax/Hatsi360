@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 /**
- * Pluck Live — the admin console's read model.
+ * GonaPulse — the admin console's read model.
  *
  * One module, one data source, server-side pagination and filtering for every
  * directory. The queries run as the signed-in administrator, so Row Level

@@ -9,7 +9,7 @@ import { formatDate, formatMoney } from '@/lib/money';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
-  description: 'Your Pluck Live workspace: watchlists, alerts, reports and API keys.',
+  description: 'Your GonaPulse workspace: watchlists, alerts, reports and API keys.',
   robots: { index: false, follow: false },
 };
 
@@ -22,7 +22,7 @@ export default async function DashboardPage() {
       <>
         <PageHero
           eyebrow="Workspace"
-          title="Sign in to your Pluck Live workspace"
+          title="Sign in to your GonaPulse workspace"
           lede="Save the commodities and markets you follow, set price alerts, and manage your API keys."
           breadcrumbs={[{ label: 'Dashboard' }]}
         />

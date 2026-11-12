@@ -6,7 +6,7 @@ import { operationalToday } from '@/lib/analytics/format';
 import { deliverPending } from '@/lib/notifications';
 
 /**
- * Pluck Live — scheduled job runner.
+ * GonaPulse — scheduled job runner.
  *
  * The jobs are ordinary server-side functions. They are invoked by an
  * authenticated scheduler (see `src/app/api/jobs/run/route.ts`), never by a

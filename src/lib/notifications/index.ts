@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 
 /**
- * Pluck Live — notification service.
+ * GonaPulse — notification service.
  *
  * In-app delivery is the only channel that is switched on. Email, SMS and
  * WhatsApp are implemented as *adapters with a documented boundary*: they

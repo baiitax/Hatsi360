@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" width="320" height="64" role="img" aria-label="GonaPulse — Agricultural Market Intelligence">
+  <title>GonaPulse — Agricultural Market Intelligence</title>
+  <defs>
+    <linearGradient id="gpDeepH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17512f"/>
+      <stop offset="1" stop-color="#0d2c1b"/>
+    </linearGradient>
+    <linearGradient id="gpLeafH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fc98c"/>
+      <stop offset="1" stop-color="#2a8a4e"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#gpDeepH)"/>
+  <path d="M32 11c11 9.5 12.5 23 0 42C19.5 34 21 20.5 32 11Z" fill="url(#gpLeafH)"/>
+  <path d="M11 34h9.5l3-11 4.5 19 4-8H53" fill="none" stroke="#e8a33d" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="78" y="34" font-family="'Sora','Inter',ui-sans-serif,system-ui,sans-serif" font-size="27" font-weight="700" letter-spacing="-0.6" fill="#0d2c1b">GonaPulse</text>
+  <text x="79" y="50" font-family="'Inter',ui-sans-serif,system-ui,sans-serif" font-size="11" font-weight="600" letter-spacing="1.4" fill="#5d6b61">AGRICULTURAL MARKET INTELLIGENCE</text>
+</svg>

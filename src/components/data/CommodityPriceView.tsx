@@ -8,10 +8,18 @@ import { formatDate, formatMoney } from '@/lib/money';
 import { PRICE_TYPE_META } from '@/types/domain';
 import type { Commodity, PriceObservation } from '@/types/domain';
 
+/**
+ * The history periods a reader can choose.
+ *
+ * The set is fixed — seven days, thirty days, ninety days, one year and the
+ * whole record — so every commodity page offers the same windows and the
+ * comparison stays honest.
+ */
 export const PRICE_RANGES = [
+  { key: '7', label: '7 days', days: 7 },
   { key: '30', label: '30 days', days: 30 },
   { key: '90', label: '90 days', days: 90 },
-  { key: '365', label: '12 months', days: 365 },
+  { key: '365', label: '1 year', days: 365 },
   { key: 'all', label: 'All time', days: null },
 ] as const;
 
@@ -315,7 +323,7 @@ export function CommodityPriceView({
                   </ul>
                   {units.some((u) => !u.specific) ? (
                     <p className="mt-4 border-t border-ink-100 pt-3 text-xs text-ink-500">
-                      Pluck Live never converts a price between units unless the conversion is
+                      GonaPulse never converts a price between units unless the conversion is
                       verified. Where the unit is missing, the original figure is shown as reported.
                     </p>
                   ) : null}

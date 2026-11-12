@@ -1,32 +1,46 @@
 import type { Metadata } from 'next';
 import { PageHero } from '@/components/ui/PageHero';
+import { BRAND, CONTACT } from '@/lib/brand';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description:
-    'How Pluck Live collects, uses and protects personal data — account details, price observations, evidence files and API usage.',
+    'How GonaPulse collects, uses and protects personal data — account details, price observations, evidence files and API usage.',
   alternates: { canonical: '/privacy' },
 };
 
+/**
+ * DRAFT — requires review by authorised company personnel before publication.
+ */
 export default function PrivacyPage() {
   return (
     <>
       <PageHero
         eyebrow="Legal"
         title="Privacy policy"
-        lede="Pluck Agro operates Pluck Live. This policy explains what personal data we hold, why we hold it, and the choices you have."
+        lede={`${BRAND.ownershipStatement} This policy explains what personal data we hold, why we hold it, and the choices you have.`}
         breadcrumbs={[{ label: 'Privacy' }]}
       />
 
       <div className="section">
         <div className="container-page max-w-3xl">
-          <div className="prose-pluck">
+          <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <p className="text-sm font-semibold text-amber-950">Draft for legal review</p>
+            <p className="mt-1 text-sm leading-relaxed text-amber-900">
+              Clauses marked <em>[confirm]</em> depend on a corporate fact, a registered entity
+              name, or a third-party processor arrangement that has not yet been confirmed, and must
+              be settled by authorised personnel before publication.
+            </p>
+          </div>
+
+          <div className="prose-gona">
             <h2>Who is responsible for your data</h2>
             <p>
-              Pluck Agro is the data controller for personal data processed through Pluck Live.
-              Contact us at{' '}
-              <a href="mailto:info@agripricelive.com" className="font-semibold text-brand-700 underline">
-                info@agripricelive.com
+              <span className="font-semibold">[confirm]</span> The entity that operates{' '}
+              {BRAND.name} is the data controller for personal data processed through the
+              platform. Contact us at{' '}
+              <a href={CONTACT.emailHref} className="font-semibold text-brand-700 underline">
+                {CONTACT.email}
               </a>{' '}
               with any question about this policy.
             </p>
@@ -67,16 +81,23 @@ export default function PrivacyPage() {
             <p>
               Published price observations, commodity and market reference data and published
               articles are public. Your account, your saved items, your alerts, your reports and your
-              API credentials are private, and are readable only by you and by authorised Pluck Live
-              staff. Access to these is enforced in the database itself, not only in the interface.
+              API credentials are private, and are readable only by you and by authorised{' '}
+              {BRAND.name} staff. Access to these is enforced in the database itself, not only in the
+              interface.
             </p>
 
             <h2>Who we share it with</h2>
             <p>
               We do not sell personal data. We share it only with service providers that host the
-              platform and deliver emails, and where a market agent assignment requires it, with
-              the supervisor who assigned them. We will disclose data where we are legally
-              required to do so.
+              platform and deliver emails{' '}
+              <span className="font-semibold">[confirm — list the processors actually in use]</span>,
+              and where a market agent assignment requires it, with the supervisor who assigned
+              them. We will disclose data where we are legally required to do so.
+            </p>
+            <p>
+              <span className="font-semibold">[confirm]</span> Where we process personal data
+              outside Nigeria, the transfer basis and safeguards must be stated here before
+              publication.
             </p>
 
             <h2>How long we keep it</h2>
@@ -100,6 +121,7 @@ export default function PrivacyPage() {
               Access to data is enforced with database-level permissions. Staff see only what their
               role requires. Sensitive operations — approving, rejecting, correcting or unpublishing
               a price — are recorded in an audit log with the person, the time and the reason.
+              Service-role credentials are never exposed to the browser.
             </p>
 
             <h2>Changes to this policy</h2>
@@ -107,7 +129,9 @@ export default function PrivacyPage() {
               We will update this policy when our practices change, and revise the date shown below.
             </p>
 
-            <p className="mt-8 text-sm text-ink-500">Last updated: 22 October 2026</p>
+            <p className="mt-8 text-sm text-ink-500">
+              Draft last revised: 22 October 2026. Effective date to be confirmed at publication.
+            </p>
           </div>
         </div>
       </div>

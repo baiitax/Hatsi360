@@ -1,67 +1,70 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { BRAND, CONTACT, LEGAL_NAV } from '@/lib/brand';
+import { BrandLogo } from '@/components/brand/Logo';
 
 const COLUMNS = [
   {
-    title: 'Prices',
+    title: 'Market data',
     links: [
       { href: '/prices', label: 'Price directory' },
       { href: '/compare', label: 'Compare markets' },
       { href: '/commodities', label: 'Commodity catalogue' },
       { href: '/markets', label: 'Market directory' },
+      { href: '/coverage', label: 'Collection coverage' },
     ],
   },
   {
     title: 'Intelligence',
     links: [
       { href: '/insights', label: 'Market insights' },
-      { href: '/pricing', label: 'Premium plans' },
-      { href: '/dashboard', label: 'Customer workspace' },
+      { href: '/reports', label: 'Published reports' },
+      { href: '/methodology', label: 'Price methodology' },
+      { href: '/pricing', label: 'Intelligence plans' },
       { href: '/api-docs', label: 'Developer API' },
     ],
   },
   {
-    title: 'Company',
+    title: 'Platform',
     links: [
-      { href: '/about', label: 'About Pluck Live' },
-      { href: '/contact', label: 'Contact us' },
+      { href: '/about', label: 'About GonaPulse' },
+      { href: '/dashboard', label: 'Customer workspace' },
+      { href: '/contact', label: 'Business enquiries' },
       { href: '/faq', label: 'FAQs' },
-    ],
-  },
-  {
-    title: 'Legal',
-    links: [
-      { href: '/privacy', label: 'Privacy policy' },
-      { href: '/terms', label: 'Terms of service' },
-      { href: '/disclaimer', label: 'Price data disclaimer' },
     ],
   },
 ];
 
+/**
+ * The GonaPulse footer.
+ *
+ * The corporate endorsement appears here, subordinate to the product brand,
+ * exactly as the brand architecture requires. Social links are omitted
+ * deliberately: no social account has been verified, and an unverified link is
+ * a broken promise.
+ */
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-ink-200 bg-white">
       <div className="container-page grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-6">
         <div className="lg:col-span-2">
-          <Image
-            src="/img/logo.png"
-            alt="Pluck Agro"
-            width={160}
-            height={60}
-            className="h-11 w-auto"
-          />
+          <BrandLogo size={44} showDescriptor />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-600">
-            Pluck Live is Pluck Agro&rsquo;s agricultural commodity price system. We collect
-            price observations from markets across Nigeria, verify them, and publish them
-            with their provenance attached.
+            {BRAND.name} collects, verifies and publishes agricultural commodity prices from
+            the markets of {BRAND.operatingMarket}. Every published figure carries the market,
+            the unit, the collection time and the verification behind it.
           </p>
           <div className="mt-5 flex flex-col gap-2 text-sm text-ink-600">
-            <a href="tel:+2348012345678" className="hover:text-brand-700">
-              +234 801 234 5678
+            <a href={CONTACT.phoneHref} className="hover:text-brand-700">
+              {CONTACT.phone}
             </a>
-            <a href="mailto:info@agripricelive.com" className="hover:text-brand-700">
-              info@agripricelive.com
+            <a href={CONTACT.emailHref} className="hover:text-brand-700">
+              {CONTACT.email}
             </a>
+            <p className="text-ink-500">
+              {CONTACT.address.line1}
+              <br />
+              {CONTACT.address.city}, {CONTACT.address.country}
+            </p>
           </div>
         </div>
 
@@ -89,16 +92,29 @@ export function SiteFooter() {
       <div className="border-t border-ink-200">
         <div className="container-page flex flex-col gap-3 py-6 text-sm text-ink-500 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            &copy; {new Date().getFullYear()} Pluck Live System. All rights reserved. Designed by
-            the Pluck Agro team.
+            &copy; {new Date().getFullYear()} {BRAND.name}. {BRAND.endorsement}. All rights
+            reserved.
           </p>
-          <p className="text-ink-400">
-            Prices are observations, not guarantees. Read our{' '}
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-4 gap-y-1">
+            {LEGAL_NAV.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-ink-500 transition-colors hover:text-brand-700"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <div className="border-t border-ink-100">
+          <div className="container-page py-4 text-xs text-ink-400">
+            {BRAND.ownershipStatement} Prices are observations, not guarantees — read our{' '}
             <Link href="/disclaimer" className="underline hover:text-brand-700">
               price data disclaimer
             </Link>
             .
-          </p>
+          </div>
         </div>
       </div>
     </footer>

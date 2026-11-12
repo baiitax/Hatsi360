@@ -5,7 +5,7 @@ import { ForgotPasswordForm } from '@/components/forms/AuthForms';
 
 export const metadata: Metadata = {
   title: 'Reset your password',
-  description: 'Request a password reset link for your Pluck Live account.',
+  description: 'Request a password reset link for your GonaPulse account.',
   robots: { index: false, follow: false },
 };
 

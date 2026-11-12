@@ -3,6 +3,11 @@ import 'server-only';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createAdminClient } from '@/lib/supabase/admin';
+import {
+  getApplicationEntitlements,
+  type EntitlementSet,
+  type EntitlementKey,
+} from '@/lib/entitlements';
 
 export interface ApiApplication {
   id: string;
@@ -13,7 +18,10 @@ export interface ApiApplication {
   rateLimitPerMinute: number;
   expiresAt: string | null;
   isActive: boolean;
+  /** The entitlement keys the key's owner holds. */
   entitlements: Record<string, boolean>;
+  /** The resolved entitlement set, for server-side gating. */
+  entitlementSet: EntitlementSet;
 }
 
 export type ApiAuthResult =
@@ -84,6 +92,13 @@ export async function authenticateApiKey(
     return { ok: false, reason: 'invalid' };
   }
 
+  // The key inherits its owner's entitlements. Revoking a subscription
+  // therefore revokes every key issued under it, without an operator having
+  // to hunt down individual applications.
+  const entitlementSet = await getApplicationEntitlements(data.user_id as string);
+  const entitlementRecord: Record<string, boolean> = {};
+  for (const key of entitlementSet.keys) entitlementRecord[key] = true;
+
   const application: ApiApplication = {
     id: data.id as string,
     userId: data.user_id as string,
@@ -93,7 +108,8 @@ export async function authenticateApiKey(
     rateLimitPerMinute: (data.rate_limit_per_minute as number) ?? 60,
     expiresAt: (data.expires_at as string | null) ?? null,
     isActive: data.is_active as boolean,
-    entitlements: {},
+    entitlements: entitlementRecord,
+    entitlementSet,
   };
 
   // Constant-time comparison of the stored hash with the recomputed one, so a
@@ -105,6 +121,20 @@ export async function authenticateApiKey(
   }
 
   return { ok: true, application, anonymous: false };
+}
+
+/**
+ * Does the caller hold an entitlement?
+ *
+ * A key holder is entitled when the key's owner holds the entitlement. An
+ * anonymous caller is entitled only for the capabilities that are public.
+ */
+export function callerHasEntitlement(
+  application: ApiApplication | null,
+  key: EntitlementKey,
+): boolean {
+  if (application) return application.entitlementSet.keys.has(key);
+  return false;
 }
 
 /**

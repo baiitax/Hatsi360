@@ -6,7 +6,7 @@ import { ContactForm } from '@/components/forms/ContactForm';
 export const metadata: Metadata = {
   title: 'Contact',
   description:
-    'Talk to the Pluck Agro team about market partnerships, API access, custom reports or a price you think looks wrong.',
+    'Talk to the GonaPulse team about market partnerships, API access, custom reports or a published price you think looks wrong.',
   alternates: { canonical: '/contact' },
 };
 
@@ -15,8 +15,8 @@ export default function ContactPage() {
     <>
       <PageHero
         eyebrow="Contact"
-        title="Talk to the Pluck Agro team"
-        lede="Whether you want to bring a market into the network, need API access, want a custom report, or believe a published price is wrong — we want to hear it."
+        title="Talk to the GonaPulse team"
+        lede="Whether you want to bring a market into the collection network, need API access, want a custom report, or believe a published price is wrong — we want to hear it."
         breadcrumbs={[{ label: 'Contact' }]}
       />
 
@@ -49,7 +49,7 @@ export default function ContactPage() {
               <ul className="mt-3 space-y-2 text-sm">
                 <li>
                   <Link href="/pricing" className="font-medium text-ink-800 hover:text-brand-700">
-                    Premium plans and entitlements
+                    Intelligence plans and entitlements
                   </Link>
                 </li>
                 <li>

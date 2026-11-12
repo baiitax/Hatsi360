@@ -1,5 +1,5 @@
 /**
- * Pluck Live — analytics formatting helpers.
+ * GonaPulse — analytics formatting helpers.
  *
  * Pure functions. No database, no React. These are the rules that keep a
  * dashboard honest:

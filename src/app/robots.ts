@@ -9,9 +9,20 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: '/',
         // Private and internal workspaces are not for search engines.
-        disallow: ['/api/', '/admin', '/agent', '/dashboard', '/login', '/register', '/reset-password'],
+        disallow: [
+          '/api/',
+          '/admin',
+          '/agent',
+          '/dashboard',
+          '/login',
+          '/register',
+          '/forgot-password',
+          '/reset-password',
+          '/auth/',
+        ],
       },
     ],
     sitemap: `${base}/sitemap.xml`,
+    host: base,
   };
 }

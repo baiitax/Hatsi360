@@ -16,7 +16,7 @@ import type {
 } from './types';
 
 /**
- * Pluck Live — metric computation.
+ * GonaPulse — metric computation.
  *
  * Pure functions over a snapshot. No database, no React. Every number the
  * admin console shows is produced here, and every one of them is defined in

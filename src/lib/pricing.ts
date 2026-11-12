@@ -1,5 +1,5 @@
 /**
- * Pluck Live pricing rules.
+ * GonaPulse pricing rules.
  *
  * Every rule that decides *what number the public sees* lives here, so it can be
  * unit-tested in isolation and referenced from the UI, the API and the database

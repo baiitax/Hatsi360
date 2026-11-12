@@ -84,7 +84,7 @@ export default function InsightsPage() {
           <p className="mt-10 rounded-xl border border-ink-200 bg-white p-5 text-sm leading-relaxed text-ink-600">
             <span className="font-semibold text-ink-900">A note on forecasts.</span> The previous
             Pluck Live site displayed a &ldquo;Price Forecast&rdquo; figure on every commodity page
-            without explaining how it was produced. We have removed it. Pluck Live publishes
+            without explaining how it was produced. We have removed it. GonaPulse publishes
             observations and analysis; it does not publish predictions dressed up as data. See the{' '}
             <Link href="/disclaimer" className="font-semibold text-brand-700 underline">
               price data disclaimer

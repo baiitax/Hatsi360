@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Pluck Live — session proxy.
+ * GonaPulse — session proxy.
  *
  * The proxy refreshes the Supabase session cookie when it is close to
  * expiring, so a signed-in agent or administrator is not signed out in the

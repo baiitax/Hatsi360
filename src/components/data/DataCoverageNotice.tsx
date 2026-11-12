@@ -55,7 +55,8 @@ export async function DataCoverageNotice({
             <>
               <p className="mt-2 text-sm leading-relaxed text-amber-900">
                 Every figure currently published on this site was migrated from the previous
-                Pluck Live system on <strong>{formatDate(provenance.collectedAt)}</strong>. Those
+                Pluck Live system — this platform&rsquo;s earlier name — on{' '}
+                <strong>{formatDate(provenance.collectedAt)}</strong>. Those
                 records carry no verification trail, no measurement unit and no collection time of
                 day, so they are labelled{' '}
                 <em>Legacy record — unverified</em> and must not be treated as a current market

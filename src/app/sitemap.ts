@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { getSiteUrl } from '@/lib/supabase/config';
 import { getDataSource } from '@/lib/data';
 import { insights } from '@/lib/content/insights';
+import { REPORTS } from '@/lib/content/reports';
 
 export const revalidate = 3600;
 
@@ -20,6 +21,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/markets`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/compare`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/insights`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${base}/reports`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${base}/coverage`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${base}/methodology`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/pricing`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/api-docs`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/about`, changeFrequency: 'monthly', priority: 0.5 },
@@ -28,6 +32,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/disclaimer`, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${base}/api-policy`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${base}/cookies`, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
   const marketRoutes: MetadataRoute.Sitemap = markets.map((market) => ({
@@ -58,5 +64,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticRoutes, ...priceRoutes, ...commodityRoutes, ...marketRoutes, ...insightRoutes];
+  const reportRoutes: MetadataRoute.Sitemap = REPORTS.map((report) => ({
+    url: `${base}/reports/${report.slug}`,
+    changeFrequency: 'weekly',
+    priority: 0.6,
+  }));
+
+  return [
+    ...staticRoutes,
+    ...priceRoutes,
+    ...commodityRoutes,
+    ...marketRoutes,
+    ...insightRoutes,
+    ...reportRoutes,
+  ];
 }

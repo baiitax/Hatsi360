@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import { BrandMark } from '@/components/brand/Logo';
+import { BRAND } from '@/lib/brand';
 
 /**
- * Pluck Live — the admin console shell.
+ * GonaPulse — the admin console shell.
  *
  * A collapsible sidebar, a top bar with search and the notification count,
  * and the page body. The navigation is passed in from the server, already
@@ -112,7 +114,9 @@ export function AdminShell({
           />
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-ink-200 px-4 py-3">
-              <span className="text-sm font-bold text-brand-900">Pluck Live Control Centre</span>
+              <span className="text-sm font-bold text-brand-900">
+                {BRAND.name} Control Centre
+              </span>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
@@ -134,16 +138,15 @@ export function AdminShell({
         }`}
       >
         <div className="flex h-16 items-center gap-2 border-b border-ink-200 px-4">
-          <Link href="/admin/overview" className="flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-700 text-sm font-black text-white"
-            >
-              PL
-            </span>
+          <Link
+            href="/admin/overview"
+            className="flex items-center gap-2"
+            aria-label={`${BRAND.name} ${BRAND.surfaces.controlCentre}`}
+          >
+            <BrandMark size={36} />
             {!collapsed ? (
               <span className="text-sm font-bold leading-tight text-brand-900">
-                Pluck Live
+                {BRAND.name}
                 <span className="block text-[11px] font-semibold uppercase tracking-wide text-ink-400">
                   Control Centre
                 </span>

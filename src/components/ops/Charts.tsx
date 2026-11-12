@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 
 /**
- * Pluck Live — the operational charts.
+ * GonaPulse — the operational charts.
  *
  * The charts are thin wrappers over Recharts. They are given data that has
  * already been computed on the server from the database, and they show an

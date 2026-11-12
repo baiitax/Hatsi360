@@ -80,7 +80,7 @@ export function SignInForm() {
       </button>
 
       <p className="text-center text-sm text-ink-600">
-        New to Pluck Live?{' '}
+        New to GonaPulse?{' '}
         <Link href="/register" className="font-semibold text-brand-700 hover:text-brand-800">
           Create an account
         </Link>

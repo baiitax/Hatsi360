@@ -5,7 +5,7 @@ import { unreadCount } from '@/lib/notifications';
 import { AgentShell } from '@/components/agent/AgentShell';
 
 export const metadata: Metadata = {
-  title: 'Field collection — Pluck Live',
+  title: 'Field collection — GonaPulse',
   robots: { index: false, follow: false },
 };
 

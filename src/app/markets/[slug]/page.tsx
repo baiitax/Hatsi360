@@ -8,6 +8,7 @@ import { Breadcrumbs, EmptyState } from '@/components/ui';
 import { getDataSource } from '@/lib/data';
 import { buildSeries } from '@/lib/pricing';
 import { formatDate, formatMoney } from '@/lib/money';
+import { BreadcrumbJsonLd, DatasetJsonLd } from '@/components/marketing/StructuredData';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -62,9 +63,36 @@ export default async function MarketDetailPage({ params }: Params) {
 
   const sorted = [...observations].sort((a, b) => b.collectedAt.localeCompare(a.collectedAt));
 
+  const oldest = observations.reduce<string | null>(
+    (earliest, observation) =>
+      !earliest || observation.collectedAt < earliest ? observation.collectedAt : earliest,
+    null,
+  );
+
   return (
     <div className="section">
       <div className="container-page">
+        <BreadcrumbJsonLd
+          items={[{ name: 'Markets', url: '/markets' }, { name: market.name }]}
+        />
+        <DatasetJsonLd
+          name={`${market.name} price observations`}
+          description={`Agricultural commodity prices collected at ${market.name}${
+            market.stateName ? `, ${market.stateName}` : ''
+          }, with unit, price type and collection time for each published observation.`}
+          url={`/markets/${market.slug}`}
+          keywords={[
+            market.name,
+            market.stateName ?? undefined,
+            'market prices',
+            'agricultural prices Nigeria',
+          ].filter((value): value is string => Boolean(value))}
+          temporalCoverage={
+            oldest && latestCollectedAt
+              ? `${oldest.slice(0, 10)}/${latestCollectedAt.slice(0, 10)}`
+              : undefined
+          }
+        />
         <Breadcrumbs items={[{ href: '/markets', label: 'Markets' }, { label: market.name }]} />
 
         <header className="max-w-3xl">

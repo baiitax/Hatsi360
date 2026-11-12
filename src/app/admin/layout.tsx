@@ -12,7 +12,7 @@ import { unreadCount } from '@/lib/notifications';
 import { AdminShell } from '@/components/admin/AdminShell';
 
 export const metadata: Metadata = {
-  title: 'Control Centre — Pluck Live',
+  title: 'Control Centre — GonaPulse',
   robots: { index: false, follow: false },
 };
 

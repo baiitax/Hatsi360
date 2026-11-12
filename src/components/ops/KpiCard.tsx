@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * Pluck Live — the KPI card.
+ * GonaPulse — the KPI card.
  *
  * Every number shown in the admin console comes from the database. The card
  * always carries:

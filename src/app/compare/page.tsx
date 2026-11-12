@@ -7,6 +7,7 @@ import { getDataSource } from '@/lib/data';
 import { summariseByMarket } from '@/lib/pricing';
 import { formatDate, formatMoney } from '@/lib/money';
 import { PRICE_TYPE_META, type PriceType } from '@/types/domain';
+import { BreadcrumbJsonLd } from '@/components/marketing/StructuredData';
 
 export const metadata: Metadata = {
   title: 'Compare prices across markets',
@@ -82,6 +83,7 @@ export default async function ComparePage({ searchParams }: Params) {
   return (
     <div className="section">
       <div className="container-page">
+        <BreadcrumbJsonLd items={[{ name: 'Compare' }]} />
         <Breadcrumbs items={[{ label: 'Compare' }]} />
 
         <SectionHeading

@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { Breadcrumbs } from '@/components/ui';
 import { getInsight, insights } from '@/lib/content/insights';
 import { formatDate } from '@/lib/money';
+import { BreadcrumbJsonLd } from '@/components/marketing/StructuredData';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -43,6 +44,9 @@ export default async function InsightDetailPage({ params }: Params) {
   return (
     <div className="section">
       <div className="container-page">
+        <BreadcrumbJsonLd
+          items={[{ name: 'Insights', url: '/insights' }, { name: article.title }]}
+        />
         <Breadcrumbs items={[{ href: '/insights', label: 'Insights' }, { label: article.title }]} />
 
         <article className="mx-auto max-w-3xl">
@@ -79,7 +83,7 @@ export default async function InsightDetailPage({ params }: Params) {
             />
           </div>
 
-          <div className="prose-pluck mt-8">
+          <div className="prose-gona mt-8">
             {article.body.map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
             ))}
@@ -88,7 +92,7 @@ export default async function InsightDetailPage({ params }: Params) {
           <div className="mt-10 rounded-2xl border border-brand-200 bg-brand-50 p-6">
             <h2 className="text-base font-bold text-brand-950">See the prices behind the story</h2>
             <p className="mt-2 text-sm leading-relaxed text-brand-900">
-              Every Pluck Live price shows the market it came from, the unit, the price type and the
+              Every GonaPulse price shows the market it came from, the unit, the price type and the
               time it was collected.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">

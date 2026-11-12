@@ -1,5 +1,5 @@
 /**
- * Reference data for Pluck Live.
+ * Reference data for GonaPulse.
  *
  * Provenance:
  *  - Countries, states, markets, categories and commodities are transcribed from
@@ -215,7 +215,7 @@ export const markets: Market[] = [
 
 /**
  * The legacy site used five category labels. This rebuild keeps those five as
- * the *source* taxonomy and adds the wider Pluck Live taxonomy underneath, so
+ * the *source* taxonomy and adds the wider GonaPulse taxonomy underneath, so
  * historical records keep their original classification and new commodities can
  * be filed consistently.
  */
@@ -320,7 +320,7 @@ export const commodityCategories: CommodityCategory[] = [
   },
 ];
 
-/** Legacy category label -> Pluck Live category id. */
+/** Legacy category label -> GonaPulse category id. */
 export const legacyCategoryMap: Record<string, number> = {
   Grains: 1,
   Legumes: 2,

@@ -29,10 +29,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${commodity.name} prices`,
     description:
       commodity.description ??
-      `Published prices, price history and market-by-market comparison for ${commodity.name} on Pluck Live.`,
+      `Published prices, price history and market-by-market comparison for ${commodity.name} on GonaPulse.`,
     alternates: { canonical: `/prices/${commodity.slug}` },
     openGraph: {
-      title: `${commodity.name} prices — Pluck Live`,
+      title: `${commodity.name} prices — GonaPulse`,
       description: commodity.description ?? `Published prices for ${commodity.name}.`,
       url: `/prices/${commodity.slug}`,
     },

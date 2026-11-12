@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Breadcrumbs } from './index';
+import { BreadcrumbJsonLd } from '@/components/marketing/StructuredData';
 
 /**
  * A page header used across the public site.
@@ -22,6 +23,17 @@ export function PageHero({
 }) {
   return (
     <section className="border-b border-ink-200 bg-white">
+      {breadcrumbs && breadcrumbs.length > 0 ? (
+        <BreadcrumbJsonLd
+          items={breadcrumbs.map((crumb) => ({
+            name: crumb.label,
+            // The last crumb is the current page and has no href; the
+            // structured-data form omits its URL, as schema.org expects.
+            url: crumb.href,
+          }))}
+        />
+      ) : null}
+
       <div className="container-page py-10 sm:py-14">
         {breadcrumbs ? <Breadcrumbs items={breadcrumbs} /> : null}
         <div className="max-w-3xl">

@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { BrandMark } from '@/components/brand/Logo';
+import { BRAND } from '@/lib/brand';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 
 /**
- * Pluck Live — the market agent shell.
+ * GonaPulse — the market agent shell.
  *
  * Deliberately different from the admin console: a single column, large
  * touch targets, a bottom navigation bar that stays within thumb reach, and
@@ -55,17 +57,16 @@ export function AgentShell({
     <div className="flex min-h-screen flex-col bg-ink-50">
       <header className="sticky top-0 z-20 border-b border-ink-200 bg-white">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link href="/agent/home" className="flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              className="grid size-9 place-items-center rounded-lg bg-brand-700 text-sm font-black text-white"
-            >
-              PL
-            </span>
+          <Link
+            href="/agent/home"
+            className="flex items-center gap-2"
+            aria-label={`${BRAND.name} ${BRAND.surfaces.fieldApp}`}
+          >
+            <BrandMark size={36} />
             <span className="text-sm font-bold leading-tight text-brand-900">
-              Pluck Live
+              {BRAND.name}
               <span className="block text-[11px] font-medium uppercase tracking-wide text-ink-400">
-                Field collection
+                Field App
               </span>
             </span>
           </Link>

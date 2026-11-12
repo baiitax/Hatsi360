@@ -5,7 +5,7 @@ import { PageHero } from '@/components/ui/PageHero';
 export const metadata: Metadata = {
   title: 'Frequently Asked Questions',
   description:
-    'Answers about how Pluck Live collects, verifies and publishes agricultural commodity prices in Nigeria.',
+    'Answers about how GonaPulse collects, verifies and publishes agricultural commodity prices in Nigeria.',
   alternates: { canonical: '/faq' },
 };
 
@@ -23,7 +23,7 @@ const GROUPS = [
       },
       {
         q: 'Why do some prices show “Legacy record — unverified”?',
-        a: 'Those records were migrated from the previous version of the Pluck Live system. They carry no verification trail, no measurement unit and no collection time of day, so we publish them clearly labelled rather than presenting them as verified current quotes.',
+        a: 'Those records were migrated from the previous version of the Pluck Live system, the platform&rsquo;s earlier name. They carry no verification trail, no measurement unit and no collection time of day, so we publish them clearly labelled rather than presenting them as verified current quotes.',
       },
       {
         q: 'Why is there no price for some commodities?',
@@ -40,11 +40,11 @@ const GROUPS = [
     ],
   },
   {
-    title: 'Using Pluck Live',
+    title: 'Using GonaPulse',
     faqs: [
       {
         q: 'Is the service free to use?',
-        a: 'Yes. Browsing live and historical prices on our website is completely free. We offer premium services such as API access, scheduled exports, market reports and custom research for businesses at a fee.',
+        a: 'Yes. Browsing current and historical prices on the website is completely free, and it always will be. Professional and enterprise intelligence — extended history, exports, alerts, API access and custom coverage — is proposed and will be sold on agreement. No payment can be taken on this site yet, and we will not take one until the commercial terms are settled.',
       },
       {
         q: 'Can I compare prices across markets?',
@@ -56,11 +56,11 @@ const GROUPS = [
       },
       {
         q: 'Do you have a mobile app?',
-        a: 'A dedicated mobile app is in development. The website is fully responsive, and market agents use a dedicated mobile-first collection interface built for low-bandwidth conditions.',
+        a: 'Market agents use the GonaPulse Field App, a mobile-first collection interface built for low-bandwidth conditions with offline capture and background sync. A consumer-facing mobile app is not yet released, and we would rather say that than ship something that does not work offline.',
       },
       {
         q: 'Can I get the data as a spreadsheet?',
-        a: 'CSV and spreadsheet exports are part of the premium workspace. The public price directory is always free to browse and filter.',
+        a: 'CSV and spreadsheet exports are part of the proposed professional workspace and are gated by a server-side entitlement. The public price directory is always free to browse and filter, and every figure in it carries the same provenance detail.',
       },
     ],
   },

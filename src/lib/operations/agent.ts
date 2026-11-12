@@ -5,7 +5,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { operationalToday, endOfOperationalDay, startOfOperationalDay } from '@/lib/analytics/format';
 
 /**
- * Pluck Live — the agent's own operational data.
+ * GonaPulse — the agent's own operational data.
  *
  * Every query here is scoped to the signed-in agent by the database as well as
  * by the query: the agent's session is used, so Row Level Security applies.

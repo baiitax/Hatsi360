@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { CommodityPriceView, PRICE_RANGES } from '@/components/data/CommodityPriceView';
 import { getDataSource } from '@/lib/data';
+import { DatasetJsonLd } from '@/components/marketing/StructuredData';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -18,10 +19,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${commodity.name} prices`,
     description:
       commodity.description ??
-      `Price history, market comparison and observation details for ${commodity.name} on Pluck Live.`,
+      `Price history, market comparison and observation details for ${commodity.name} on GonaPulse.`,
     alternates: { canonical: `/commodities/${commodity.slug}` },
     openGraph: {
-      title: `${commodity.name} prices — Pluck Live`,
+      title: `${commodity.name} prices — GonaPulse`,
       description: commodity.description ?? `Price history for ${commodity.name}.`,
       url: `/commodities/${commodity.slug}`,
     },
@@ -41,16 +42,43 @@ export default async function CommodityDetailPage({ params, searchParams }: Para
 
   const observations = await source.listObservationsForAnalysis({ commodityId: commodity.id });
 
+  const oldest = observations.reduce<string | null>(
+    (earliest, observation) =>
+      !earliest || observation.collectedAt < earliest ? observation.collectedAt : earliest,
+    null,
+  );
+  const newest = observations.reduce<string | null>(
+    (latest, observation) =>
+      !latest || observation.collectedAt > latest ? observation.collectedAt : latest,
+    null,
+  );
+
   return (
-    <CommodityPriceView
-      commodity={commodity}
-      observations={observations}
-      range={range}
-      basePath={`/commodities/${commodity.slug}`}
-      breadcrumbs={[
-        { href: '/commodities', label: 'Commodities' },
-        { label: commodity.name },
-      ]}
-    />
+    <>
+      <DatasetJsonLd
+        name={`${commodity.name} price observations`}
+        description={
+          commodity.description ??
+          `Published price observations for ${commodity.name}, by market, with unit, price type and collection time.`
+        }
+        url={`/commodities/${commodity.slug}`}
+        keywords={[commodity.name, commodity.categoryName ?? undefined, 'agricultural prices'].filter(
+          (value): value is string => Boolean(value),
+        )}
+        temporalCoverage={
+          oldest && newest ? `${oldest.slice(0, 10)}/${newest.slice(0, 10)}` : undefined
+        }
+      />
+      <CommodityPriceView
+        commodity={commodity}
+        observations={observations}
+        range={range}
+        basePath={`/commodities/${commodity.slug}`}
+        breadcrumbs={[
+          { href: '/commodities', label: 'Commodities' },
+          { label: commodity.name },
+        ]}
+      />
+    </>
   );
 }

@@ -1,100 +1,87 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PageHero } from '@/components/ui/PageHero';
+import { INTELLIGENCE_TIERS } from '@/lib/brand';
+import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Pricing',
+  title: 'Intelligence Plans',
   description:
-    'Pluck Live is free for price discovery. Premium plans add API access, exports, alerts and custom research for businesses.',
+    'Public price discovery stays free. Professional and enterprise intelligence add extended history, exports, alerts, API access and custom coverage.',
   alternates: { canonical: '/pricing' },
 };
-
-const PLANS = [
-  {
-    name: 'Free',
-    price: '₦0',
-    cadence: 'forever',
-    summary: 'Everything a farmer, trader or consumer needs to check a price.',
-    features: [
-      'All published price observations, with timestamps and provenance',
-      'Search and filter by commodity, category, state, market and price type',
-      'Market comparison with unit and price-type compatibility enforced',
-      'Historical charts with observation counts per day',
-      'Price directory, commodity catalogue and market directory',
-      'Market insights and methodology documentation',
-    ],
-    cta: { label: 'Start browsing', href: '/prices' },
-    highlight: false,
-  },
-  {
-    name: 'Professional',
-    price: 'Contact us',
-    cadence: 'per business',
-    summary: 'For traders, processors and exporters who need to act on the data.',
-    features: [
-      'Everything in Free',
-      'Extended historical data and market spreads',
-      'CSV and spreadsheet exports',
-      'Price alerts on commodities and markets you follow',
-      'Watchlists and business dashboards',
-      'Scheduled reports by email',
-    ],
-    cta: { label: 'Talk to sales', href: '/contact' },
-    highlight: true,
-  },
-  {
-    name: 'API & Enterprise',
-    price: 'Contact us',
-    cadence: 'per application',
-    summary: 'For platforms, researchers and supply-chain teams building on the data.',
-    features: [
-      'Everything in Professional',
-      'REST API access with your own key and rate limit',
-      'Custom market reports and research',
-      'Higher rate limits and priority support',
-      'Trade-opportunity and supplier intelligence',
-      'Bespoke collection coverage in additional markets',
-    ],
-    cta: { label: 'Request API access', href: '/contact' },
-    highlight: false,
-  },
-];
 
 export default function PricingPage() {
   return (
     <>
       <PageHero
-        eyebrow="Pricing"
+        eyebrow="Plans"
         title="Free price discovery. Paid intelligence."
-        lede="Reading a price should never cost anything. What costs money is the work of turning prices into decisions — exports, alerts, reports and API access."
-        breadcrumbs={[{ label: 'Pricing' }]}
+        lede="Reading a price should never cost anything. What costs money is the work of turning prices into decisions — exports, alerts, API access and custom coverage."
+        breadcrumbs={[{ label: 'Plans' }]}
       />
 
       <div className="section">
         <div className="container-page">
+          {/* The tiers are a proposal, and the page says so. */}
+          <div className="mb-10 rounded-2xl border border-amber-200 bg-amber-50 p-6">
+            <p className="text-sm font-bold uppercase tracking-wide text-amber-950">
+              Commercial status
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-amber-900">
+              Public access is live today and always will be. The two paid tiers below are{' '}
+              <strong>proposed</strong>: the entitlement model, the feature gating and the access
+              controls are built, but no payment provider is configured and no subscription can be
+              purchased on this site yet. Access to a paid tier is granted by agreement, and we
+              will not take a payment until the commercial terms are settled.
+            </p>
+          </div>
+
           <div className="grid gap-6 lg:grid-cols-3">
-            {PLANS.map((plan) => (
+            {INTELLIGENCE_TIERS.map((tier) => (
               <article
-                key={plan.name}
+                key={tier.id}
                 className={`card flex flex-col p-6 ${
-                  plan.highlight ? 'border-brand-500 ring-2 ring-brand-500/30' : ''
+                  tier.id === 'professional' ? 'border-brand-500 ring-2 ring-brand-500/25' : ''
                 }`}
               >
-                {plan.highlight ? (
-                  <p className="mb-3 inline-flex w-fit rounded-full bg-brand-700 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
-                    Most popular
-                  </p>
-                ) : null}
-                <h2 className="text-xl font-bold">{plan.name}</h2>
-                <p className="mt-2 text-sm leading-relaxed text-ink-600">{plan.summary}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="font-display text-xl font-bold text-ink-950">{tier.name}</h2>
+                  {tier.available ? (
+                    <span className="rounded-full bg-leaf-100 px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-leaf-700">
+                      Available now
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-ink-100 px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-ink-500">
+                      Proposed
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-3 text-sm leading-relaxed text-ink-600">{tier.summary}</p>
 
                 <p className="mt-5">
-                  <span className="text-3xl font-black tracking-tight text-ink-950">{plan.price}</span>
-                  <span className="ml-2 text-sm text-ink-500">{plan.cadence}</span>
+                  {tier.available ? (
+                    <>
+                      <span className="font-display text-3xl font-bold tracking-tight text-ink-950">
+                        Free
+                      </span>
+                      <span className="ml-2 text-sm text-ink-500">no registration needed</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-display text-3xl font-bold tracking-tight text-ink-950">
+                        On agreement
+                      </span>
+                      <span className="ml-2 text-sm text-ink-500">
+                        pricing to be confirmed
+                      </span>
+                    </>
+                  )}
                 </p>
 
                 <ul className="mt-6 flex-1 space-y-2.5">
-                  {plan.features.map((feature) => (
+                  {tier.features.map((feature) => (
                     <li key={feature} className="flex gap-2.5 text-sm text-ink-700">
                       <span aria-hidden="true" className="mt-0.5 text-brand-600">
                         ✓
@@ -105,14 +92,14 @@ export default function PricingPage() {
                 </ul>
 
                 <Link
-                  href={plan.cta.href}
+                  href={tier.available ? '/prices' : '/contact'}
                   className={`mt-7 rounded-full px-5 py-2.5 text-center text-sm font-semibold transition-colors ${
-                    plan.highlight
+                    tier.id === 'professional'
                       ? 'bg-brand-700 text-white hover:bg-brand-800'
                       : 'border border-ink-300 text-ink-700 hover:border-brand-400 hover:text-brand-800'
                   }`}
                 >
-                  {plan.cta.label}
+                  {tier.available ? 'Start browsing' : 'Talk to the team'}
                 </Link>
               </article>
             ))}
@@ -120,7 +107,9 @@ export default function PricingPage() {
 
           <div className="mt-14 grid gap-8 lg:grid-cols-2">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">What stays free, always</h2>
+              <h2 className="font-display text-2xl font-bold tracking-tight text-ink-950">
+                What stays free, always
+              </h2>
               <p className="mt-3 leading-relaxed text-ink-600">
                 The public price experience is not a trial. Every published observation, every
                 market and commodity page, the comparison tool and the historical charts remain
@@ -133,7 +122,9 @@ export default function PricingPage() {
             </div>
 
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">What premium adds</h2>
+              <h2 className="font-display text-2xl font-bold tracking-tight text-ink-950">
+                What paid intelligence adds
+              </h2>
               <ul className="mt-4 space-y-3 text-sm leading-relaxed text-ink-600">
                 <li className="flex gap-2.5">
                   <span aria-hidden="true" className="mt-0.5 text-brand-600">
@@ -167,8 +158,8 @@ export default function PricingPage() {
                     ✓
                   </span>
                   <span>
-                    <strong className="text-ink-900">Research.</strong> Custom reports and bespoke
-                    collection coverage where our own network does not reach.
+                    <strong className="text-ink-900">Custom coverage.</strong> Bespoke collection in
+                    markets our own network does not yet reach.
                   </span>
                 </li>
               </ul>
@@ -183,6 +174,21 @@ export default function PricingPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="mt-12 rounded-2xl border border-ink-200 bg-ink-50 p-6">
+            <h2 className="font-display text-base font-bold text-ink-900">
+              How entitlements are enforced
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-600">
+              A tier is not a front-end switch. Each paid capability maps to an entitlement key
+              that is checked on the server and again by a database policy, so a request that
+              bypasses the interface still fails. The keys behind the proposed tiers are{' '}
+              <code className="rounded bg-ink-200 px-1.5 py-0.5 text-xs">reports</code> and{' '}
+              <code className="rounded bg-ink-200 px-1.5 py-0.5 text-xs">api</code>; neither is
+              granted to any account until a commercial agreement exists.
+            </p>
+            <p className="mt-2 text-sm text-ink-500">{BRAND.endorsement}.</p>
           </div>
         </div>
       </div>

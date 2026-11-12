@@ -5,6 +5,7 @@ import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
 import { Breadcrumbs, EmptyState, Pagination } from '@/components/ui';
 import { getDataSource } from '@/lib/data';
 import { PRICE_TYPE_META, type ObservationQuery, type PriceType } from '@/types/domain';
+import { BreadcrumbJsonLd, DatasetJsonLd } from '@/components/marketing/StructuredData';
 
 export const metadata: Metadata = {
   title: 'Price Directory',
@@ -83,6 +84,13 @@ export default async function PricesPage({
     ? all.reduce<string | null>((acc, o) => (acc == null || o.collectedAt > acc ? o.collectedAt : acc), null)
     : null;
 
+  const oldest = all.length
+    ? all.reduce<string | null>(
+        (acc, o) => (acc == null || o.collectedAt < acc ? o.collectedAt : acc),
+        null,
+      )
+    : null;
+
   const buildHref = (nextPage: number) => {
     const search = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -102,6 +110,24 @@ export default async function PricesPage({
   return (
     <div className="section">
       <div className="container-page">
+        <BreadcrumbJsonLd items={[{ name: 'Price directory' }]} />
+        <DatasetJsonLd
+          name="Published agricultural commodity price observations"
+          description="Every published price observation in Northern Nigeria, with the market, unit, price type, collection time and verification status of each figure."
+          url="/prices"
+          keywords={[
+            'agricultural prices Nigeria',
+            'commodity prices',
+            'market prices',
+            'grain prices',
+            'Northern Nigeria',
+          ]}
+          temporalCoverage={
+            oldest && latestCollectedAt
+              ? `${oldest.slice(0, 10)}/${latestCollectedAt.slice(0, 10)}`
+              : undefined
+          }
+        />
         <Breadcrumbs items={[{ label: 'Prices' }]} />
 
         <header className="max-w-3xl">

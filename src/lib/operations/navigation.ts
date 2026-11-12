@@ -1,7 +1,7 @@
 import type { UserRole } from '@/types/domain';
 
 /**
- * Pluck Live — the admin console navigation.
+ * GonaPulse — the admin console navigation.
  *
  * Two rules decide what appears here:
  *

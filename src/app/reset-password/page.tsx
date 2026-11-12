@@ -4,7 +4,7 @@ import { PageHero } from '@/components/ui/PageHero';
 
 export const metadata: Metadata = {
   title: 'Choose a new password',
-  description: 'Set a new password for your Pluck Live account.',
+  description: 'Set a new password for your GonaPulse account.',
   robots: { index: false, follow: false },
 };
 

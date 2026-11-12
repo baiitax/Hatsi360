@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="GonaPulse">
+  <title>GonaPulse</title>
+  <defs>
+    <linearGradient id="gpDeep" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17512f"/>
+      <stop offset="1" stop-color="#0d2c1b"/>
+    </linearGradient>
+    <linearGradient id="gpLeaf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fc98c"/>
+      <stop offset="1" stop-color="#2a8a4e"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#gpDeep)"/>
+  <path d="M32 11c11 9.5 12.5 23 0 42C19.5 34 21 20.5 32 11Z" fill="url(#gpLeaf)"/>
+  <path d="M11 34h9.5l3-11 4.5 19 4-8H53" fill="none" stroke="#e8a33d" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

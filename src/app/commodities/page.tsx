@@ -4,11 +4,12 @@ import type { Metadata } from 'next';
 import { CommodityCard } from '@/components/data/Cards';
 import { Breadcrumbs, EmptyState, Pagination } from '@/components/ui';
 import { getDataSource } from '@/lib/data';
+import { BreadcrumbJsonLd, DatasetJsonLd } from '@/components/marketing/StructuredData';
 
 export const metadata: Metadata = {
   title: 'Commodity Catalogue',
   description:
-    'The agricultural commodities Pluck Live tracks — grains, pulses, oilseeds, tubers, spices, tree crops and more — with the markets reporting each one.',
+    'The agricultural commodities GonaPulse tracks — grains, pulses, oilseeds, tubers, spices, tree crops and more — with the markets reporting each one.',
   alternates: { canonical: '/commodities' },
 };
 
@@ -57,6 +58,20 @@ export default async function CommoditiesPage({
   return (
     <div className="section">
       <div className="container-page">
+        <BreadcrumbJsonLd items={[{ name: 'Commodities' }]} />
+        <DatasetJsonLd
+          name="GonaPulse agricultural commodity catalogue"
+          description={`The catalogue of ${commodities.length} agricultural commodities tracked by GonaPulse across ${categories.length} categories, with the markets reporting each one.`}
+          url="/commodities"
+          keywords={[
+            'agricultural commodity catalogue Nigeria',
+            'grains',
+            'pulses',
+            'oilseeds',
+            'tubers',
+            'cash crops',
+          ]}
+        />
         <Breadcrumbs items={[{ label: 'Commodities' }]} />
 
         <header className="max-w-3xl">

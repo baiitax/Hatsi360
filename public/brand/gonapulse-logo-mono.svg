@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" width="320" height="64" role="img" aria-label="GonaPulse">
+  <title>GonaPulse</title>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="none" stroke="currentColor" stroke-width="3"/>
+  <path d="M32 11c11 9.5 12.5 23 0 42C19.5 34 21 20.5 32 11Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M11 34h9.5l3-11 4.5 19 4-8H53" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="78" y="38" font-family="'Sora','Inter',ui-sans-serif,system-ui,sans-serif" font-size="30" font-weight="700" letter-spacing="-0.6" fill="currentColor">GonaPulse</text>
+</svg>

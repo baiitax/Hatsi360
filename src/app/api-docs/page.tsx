@@ -6,7 +6,7 @@ import { getSiteUrl } from '@/lib/supabase/config';
 export const metadata: Metadata = {
   title: 'Developer API',
   description:
-    'Documentation for the Pluck Live REST API: commodities, markets, latest prices, price history, comparison and insights.',
+    'Documentation for the GonaPulse REST API: commodities, markets, latest prices, price history, comparison and insights.',
   alternates: { canonical: '/api-docs' },
 };
 

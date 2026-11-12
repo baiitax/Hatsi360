@@ -1,5 +1,5 @@
 /**
- * Pluck Live domain types.
+ * GonaPulse domain types.
  *
  * These mirror the Supabase schema in `supabase/migrations/`. They are the single
  * source of truth for shapes that cross the server/client boundary.
@@ -280,7 +280,7 @@ export const VERIFICATION_STATUS_META: Record<VerificationStatus, VerificationSt
     code: 'legacy_unverified',
     label: 'Legacy record — unverified',
     description:
-      'Migrated from the previous Pluck Live system. It carries no verification trail, so it is published with an explicit unverified label rather than being retroactively marked verified.',
+      'Migrated from the previous GonaPulse system. It carries no verification trail, so it is published with an explicit unverified label rather than being retroactively marked verified.',
     publiclyReadable: true,
     tone: 'warning',
   },

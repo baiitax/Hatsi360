@@ -7,7 +7,7 @@ import { getSession } from '@/lib/auth';
 
 export const metadata: Metadata = {
   title: 'Create an account',
-  description: 'Create a Pluck Live account to save commodities, set price alerts and request API access.',
+  description: 'Create a GonaPulse account to save commodities, set price alerts and request API access.',
   robots: { index: false, follow: false },
 };
 
@@ -19,7 +19,7 @@ export default async function RegisterPage() {
     <>
       <PageHero
         eyebrow="Get started"
-        title="Create your Pluck Live account"
+        title="Create your GonaPulse account"
         lede="The price directory is free to browse without an account. An account lets you save commodities and markets, set price alerts and request API access."
         breadcrumbs={[{ label: 'Register' }]}
       />

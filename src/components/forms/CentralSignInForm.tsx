@@ -97,7 +97,7 @@ export function CentralSignInForm({ next }: { next?: string }) {
       </button>
 
       <p className="text-center text-xs leading-relaxed text-ink-500">
-        Market agent and staff accounts are created by the Pluck Live control centre. If you
+        Market agent and staff accounts are created by the GonaPulse control centre. If you
         need an account, contact your supervisor.
       </p>
     </form>

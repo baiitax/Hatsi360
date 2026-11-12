@@ -5,9 +5,9 @@ import { getDataSource } from '@/lib/data';
 import { formatDate } from '@/lib/money';
 
 export const metadata: Metadata = {
-  title: 'About Pluck Live',
+  title: 'About GonaPulse',
   description:
-    'How Pluck Live collects, verifies and publishes agricultural commodity prices across Nigeria — our methodology, our data coverage and what we do not know.',
+    'How GonaPulse collects, verifies and publishes agricultural commodity prices across Nigeria — our methodology, our data coverage and what we do not know.',
   alternates: { canonical: '/about' },
 };
 
@@ -51,7 +51,7 @@ export default async function AboutPage() {
       <PageHero
         eyebrow="About"
         title="Prices you can trace back to a person and a moment"
-        lede="Pluck Live is Pluck Agro’s agricultural commodity price system. We collect prices in Nigerian markets, verify them, and publish them with the information you need to judge them: the commodity, the market, the unit, the price type, and when it was collected and verified."
+        lede="GonaPulse is an independent agricultural market intelligence platform powered by Pluck Agro. We collect prices in Nigerian markets, verify them, and publish them with the information you need to judge them: the commodity, the market, the unit, the price type, and when it was collected and verified."
         breadcrumbs={[{ label: 'About' }]}
       />
 
@@ -118,7 +118,8 @@ export default async function AboutPage() {
                 </h3>
                 <p className="mt-3 text-sm leading-relaxed text-amber-900">
                   The price records currently published were migrated from the previous Pluck Live
-                  system on {formatDate(provenance.collectedAt)}. They were reconstructed from the
+                  system — this platform&rsquo;s earlier name — on{' '}
+                  {formatDate(provenance.collectedAt)}. They were reconstructed from the
                   daily summaries that system published, and every reconstruction was checked
                   against the latest prices that system displayed — all{' '}
                   {provenance.validation.publishedLatestValuesChecked} checks matched.

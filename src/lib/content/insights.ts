@@ -1,8 +1,10 @@
 /**
  * Published market insights.
  *
- * The three articles below were published on the previous Pluck Live site and
- * are reproduced here with their original titles, excerpts and body text.
+ * The articles below were first published on the previous Pluck Live site — this
+ * platform's earlier name — and are reproduced here with their original titles,
+ * excerpts and body text. Product references inside the body have been updated
+ * to the current name; everything else is unchanged.
  *
  * The live site did not display a publication date for them, so `publishedAt`
  * is `null` and the UI says so rather than inventing one. The fuel-price piece
@@ -35,11 +37,11 @@ export const insights: Insight[] = [
     body: [
       'Sustainable agriculture is more than just a buzzword; it’s a necessity for the future of food security in Nigeria. This post explores innovative techniques being adopted by local farmers, from advanced crop rotation to water conservation methods. We delve into how these practices not only yield healthier soil, but also contribute to long-term economic resilience for farming households.',
       'Join us as we visit a model farm in Oyo State that has successfully integrated these methods, increasing their yield by over 40% while reducing their carbon footprint.',
-      'For the producers we work with, the practical question is always the same: does the change pay? A practice that raises yields but doubles labour cost is not accessible to most smallholders, and a practice that saves water but halves the marketable grade is worse than no change at all. Pluck Live tracks prices precisely so that these decisions can be made against evidence rather than assumption.',
+      'For the producers we work with, the practical question is always the same: does the change pay? A practice that raises yields but doubles labour cost is not accessible to most smallholders, and a practice that saves water but halves the marketable grade is worse than no change at all. GonaPulse tracks prices precisely so that these decisions can be made against evidence rather than assumption.',
     ],
     publishedAt: null,
     readingMinutes: 4,
-    author: 'Pluck Agro',
+    author: 'GonaPulse Research',
     coverImage: '/img/blog-1.jpg',
   },
   {
@@ -58,7 +60,7 @@ export const insights: Insight[] = [
     ],
     publishedAt: null,
     readingMinutes: 5,
-    author: 'Pluck Agro',
+    author: 'GonaPulse Research',
     coverImage: '/img/about-5.jpg',
   },
   {
@@ -74,7 +76,7 @@ export const insights: Insight[] = [
     ],
     publishedAt: null,
     readingMinutes: 4,
-    author: 'Pluck Agro',
+    author: 'GonaPulse Research',
     coverImage: '/img/service-3.jpg',
   },
   {
@@ -91,7 +93,7 @@ export const insights: Insight[] = [
     ],
     publishedAt: '2025-10-09',
     readingMinutes: 5,
-    author: 'Pluck Agro',
+    author: 'GonaPulse Research',
     coverImage: '/img/service-1.jpg',
   },
 ];
