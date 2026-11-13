@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { runReportExport } from '@/lib/operations/actions';
+import { HatsiSpinner } from '@/components/loading/HatsiActionLoader';
 
 /**
  * Run a report and download it.
@@ -50,9 +51,17 @@ export function ReportRunner({
         type="button"
         onClick={run}
         disabled={pending}
-        className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 disabled:opacity-60"
+        aria-busy={pending}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100 disabled:opacity-60"
       >
-        {pending ? 'Building…' : 'Export CSV'}
+        {pending ? (
+          <>
+            <HatsiSpinner />
+            Building…
+          </>
+        ) : (
+          'Export CSV'
+        )}
       </button>
       {message ? <span className="text-[11px] text-ink-500">{message}</span> : null}
     </span>

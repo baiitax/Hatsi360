@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { HatsiSpinner } from '@/components/loading/HatsiActionLoader';
 
 /**
  * The guided collection flow.
@@ -133,11 +134,14 @@ export function CollectionFlow({
   commodities,
   units,
   tasks,
+  initialMarketId = null,
 }: {
   markets: AgentMarketOption[];
   commodities: AgentCommodityOption[];
   units: AgentUnitOption[];
   tasks: CollectionTaskOption[];
+  /** Pre-selects a market the agent was assigned to. */
+  initialMarketId?: number | null;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -154,15 +158,33 @@ export function CollectionFlow({
       const raw = window.localStorage.getItem(DRAFT_KEY);
       if (raw) {
         const draft = JSON.parse(raw) as CollectionState;
-        setState({ ...draft, idempotencyKey: draft.idempotencyKey || newKey() });
+        const restored: CollectionState = {
+          ...draft,
+          idempotencyKey: draft.idempotencyKey || newKey(),
+        };
+        // A market pre-selected by the caller only fills an empty draft.
+        if (!restored.marketId && initialMarketId) restored.marketId = initialMarketId;
+        setState(restored);
         setRestored(true);
       } else {
-        setState((current) => ({ ...current, idempotencyKey: newKey(), collectedAt: nowLocalInput() }));
+        setState((current) => ({
+          ...current,
+          marketId: current.marketId ?? initialMarketId,
+          idempotencyKey: newKey(),
+          collectedAt: nowLocalInput(),
+        }));
+        if (initialMarketId) setStep(2);
       }
     } catch {
-      setState((current) => ({ ...current, idempotencyKey: newKey(), collectedAt: nowLocalInput() }));
+      setState((current) => ({
+        ...current,
+        marketId: current.marketId ?? initialMarketId,
+        idempotencyKey: newKey(),
+        collectedAt: nowLocalInput(),
+      }));
+      if (initialMarketId) setStep(2);
     }
-  }, []);
+  }, [initialMarketId]);
 
   // Keep the draft on the device as the agent types.
   useEffect(() => {
@@ -375,9 +397,17 @@ export function CollectionFlow({
             type="button"
             onClick={retryQueue}
             disabled={submitting}
-            className="mt-2 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+            aria-busy={submitting}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
           >
-            {submitting ? 'Sending…' : 'Try sending again'}
+            {submitting ? (
+              <>
+                <HatsiSpinner />
+                Sending…
+              </>
+            ) : (
+              'Try sending again'
+            )}
           </button>
         </div>
       ) : null}
@@ -700,9 +730,17 @@ export function CollectionFlow({
                 type="button"
                 onClick={submit}
                 disabled={submitting}
-                className="w-full rounded-xl bg-brand-700 px-5 py-4 text-base font-bold text-white disabled:opacity-60"
+                aria-busy={submitting}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-5 py-4 text-base font-bold text-white disabled:opacity-60"
               >
-                {submitting ? 'Sending…' : 'Send for verification'}
+                {submitting ? (
+                  <>
+                    <HatsiSpinner />
+                    Sending…
+                  </>
+                ) : (
+                  'Send for verification'
+                )}
               </button>
               <button
                 type="button"

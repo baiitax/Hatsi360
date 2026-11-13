@@ -16,7 +16,7 @@ import type {
 } from './types';
 
 /**
- * GonaPulse — metric computation.
+ * Hatsi360 — metric computation.
  *
  * Pure functions over a snapshot. No database, no React. Every number the
  * admin console shows is produced here, and every one of them is defined in

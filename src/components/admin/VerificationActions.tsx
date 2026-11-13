@@ -9,6 +9,7 @@ import {
   requestCorrection,
   type OperationState,
 } from '@/lib/operations/actions';
+import { HatsiSpinner } from '@/components/loading/HatsiActionLoader';
 
 /**
  * The verification decision panel.
@@ -67,9 +68,11 @@ export function VerificationActions({
           <button
             type="button"
             disabled={pending}
+            aria-busy={pending}
             onClick={() => run(() => approvePrice(observationId))}
-            className="rounded-lg bg-brand-700 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-800 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-800 disabled:opacity-60"
           >
+            {pending ? <HatsiSpinner /> : null}
             Approve
           </button>
         ) : null}
@@ -78,9 +81,11 @@ export function VerificationActions({
           <button
             type="button"
             disabled={pending}
+            aria-busy={pending}
             onClick={() => run(() => publishPrice(observationId))}
-            className="rounded-lg bg-brand-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-900 px-3 py-2 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
           >
+            {pending ? <HatsiSpinner /> : null}
             Publish to the public site
           </button>
         ) : null}

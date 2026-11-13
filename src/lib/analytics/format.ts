@@ -1,5 +1,5 @@
 /**
- * GonaPulse — analytics formatting helpers.
+ * Hatsi360 — analytics formatting helpers.
  *
  * Pure functions. No database, no React. These are the rules that keep a
  * dashboard honest:

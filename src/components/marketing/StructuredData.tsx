@@ -37,9 +37,10 @@ export function OrganizationJsonLd() {
         logo: {
           '@type': 'ImageObject',
           url: `${siteUrl}${ORGANISATION.logo}`,
-          width: 512,
-          height: 512,
+          width: 2016,
+          height: 724,
         },
+        image: `${siteUrl}${ORGANISATION.mark}`,
         description: `${ORGANISATION.descriptor}. ${ORGANISATION.ownershipStatement}`,
         slogan: BRAND.tagline,
         email: ORGANISATION.email,

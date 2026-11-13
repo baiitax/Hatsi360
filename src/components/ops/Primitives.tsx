@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 /**
- * GonaPulse — small shared pieces used by both consoles.
+ * Hatsi360 — small shared pieces used by both consoles.
  */
 
 export type PillTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand';

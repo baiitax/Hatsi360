@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Validate the Pluck Live Supabase migrations against a real PostgreSQL server.
+ * Validate the Hatsi360 Supabase migrations against a real PostgreSQL server.
  *
  * A throwaway PostgreSQL instance is started, a minimal stub of the Supabase
  * `auth` schema is created (auth.users + auth.uid()), and every migration file
@@ -166,6 +166,70 @@ async function main() {
     create or replace function auth.uid() returns uuid
       language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema auth to public;
+
+    -- A minimal stub of the Supabase Storage schema. Migrations that create
+    -- buckets, storage policies or signed URLs need the objects and buckets
+    -- tables and the foldername helper to exist, exactly as they do on a
+    -- real Supabase project.
+    create schema if not exists storage;
+    create table if not exists storage.buckets (
+      id text primary key,
+      name text not null,
+      owner uuid,
+      public boolean default false,
+      file_size_limit bigint,
+      allowed_mime_types text[],
+      created_at timestamptz default now(),
+      updated_at timestamptz default now()
+    );
+    create table if not exists storage.objects (
+      id uuid primary key default gen_random_uuid(),
+      bucket_id text references storage.buckets (id),
+      name text not null,
+      owner uuid,
+      metadata jsonb,
+      created_at timestamptz default now(),
+      updated_at timestamptz default now()
+    );
+    -- The real Supabase helper returns the folder segments and drops the
+    -- file name. The stub has to behave the same way, or a storage policy
+    -- that is correct on a real project would pass here and fail there.
+    create or replace function storage.foldername(name text) returns text[]
+      language sql immutable as $$
+        select coalesce(
+          (string_to_array(coalesce(name, ''), '/'))[
+            1:greatest(array_length(string_to_array(coalesce(name, ''), '/'), 1) - 1, 0)
+          ],
+          '{}'::text[]
+        )
+      $$;
+    create or replace function storage.create_signed_url(
+      bucket_id text, path text, expires_in integer, options jsonb default '{}'::jsonb)
+    returns text
+      language sql stable as $$
+        select 'https://storage.stub.invalid/object/sign/'
+          || bucket_id || '/' || path
+          || '?token=' || substr(md5(bucket_id || '/' || path), 1, 24)
+          || '&expires=' || expires_in::text
+      $$;
+    -- The platform enables row-level security on the storage tables. The
+    -- stub has to do the same, or a storage policy would be ignored here
+    -- and enforced there.
+    alter table storage.objects enable row level security;
+    alter table storage.buckets enable row level security;
+
+    grant usage on schema storage to public;
+
+    -- The same grants the platform gives. Storage access is governed by
+    -- row-level security on storage.objects, not by table privileges, so
+    -- the stub has to grant the table and let the policies decide.
+    grant select on storage.buckets to anon, authenticated, service_role;
+
+    -- The platform lets a signed-in client see the bucket list.
+    create policy storage_buckets_read on storage.buckets
+      for select to anon, authenticated
+      using (true);
+    grant select, insert, update, delete on storage.objects to anon, authenticated, service_role;
   `);
 
   console.log('==> applying migrations');

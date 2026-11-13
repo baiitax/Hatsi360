@@ -2,9 +2,10 @@ import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
+import { authEmailsFor } from '@/lib/auth/emails';
 
 /**
- * GonaPulse — the admin console's read model.
+ * Hatsi360 — the admin console's read model.
  *
  * One module, one data source, server-side pagination and filtering for every
  * directory. The queries run as the signed-in administrator, so Row Level
@@ -756,4 +757,286 @@ export async function listExportJobs(limit = 50) {
     .order('created_at', { ascending: false })
     .limit(limit);
   return data ?? [];
+}
+
+/* ------------------------------------------------------- the agent record -- */
+
+export interface AgentObservationRow {
+  id: string;
+  commodityName: string;
+  marketName: string;
+  amount: number | null;
+  unitName: string | null;
+  priceType: string;
+  gradeName: string | null;
+  currencyCode: string;
+  collectedAt: string;
+  submittedAt: string | null;
+  verificationStatus: string;
+  evidenceCount: number;
+}
+
+export interface AgentSessionRow {
+  id: number;
+  reference: string;
+  marketName: string;
+  startedAt: string;
+  completedAt: string | null;
+  observationCount: number;
+}
+
+export interface AgentTaskRow {
+  id: number;
+  marketName: string;
+  dueOn: string;
+  status: string;
+  expectedCount: number;
+  commodityNames: string[];
+}
+
+export interface AgentRecord {
+  id: string;
+  fullName: string | null;
+  email: string | null;
+  role: string;
+  accountStatus: string;
+  employeeCode: string | null;
+  region: string | null;
+  joinedOn: string | null;
+  alternatePhone: string | null;
+  supervisorNotes: string | null;
+  employmentStatus: string;
+  createdAt: string | null;
+  assignedMarkets: { id: number; name: string; status: string }[];
+  /** Counts by verification outcome. Null until the query has run. */
+  submitted: number;
+  verified: number;
+  rejected: number;
+  correctionRequested: number;
+  published: number;
+  draft: number;
+  observations: AgentObservationRow[];
+  sessions: AgentSessionRow[];
+  tasks: AgentTaskRow[];
+}
+
+/**
+ * One agent, in full.
+ *
+ * Everything here runs as the signed-in administrator, so RLS decides what
+ * they may see. The counts are computed from the same rows the tables below
+ * are built from — there is no separate aggregate query that could disagree
+ * with the list beside it.
+ *
+ * The screen shows what the agent has actually done. No performance score is
+ * invented and no volume is rewarded over accuracy: an agent with many
+ * rejections and an agent with few submissions are both shown as they are.
+ */
+export async function getAgentRecord(userId: string): Promise<AgentRecord | null> {
+  if (!isSupabaseConfigured()) return null;
+  const supabase = await createClient();
+
+  const profileResult = await supabase
+    .from('profiles')
+    .select('id, full_name, role, account_status, created_at')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (!profileResult.data) return null;
+  const profile = profileResult.data;
+
+  // The address is not a column of `profiles` — it belongs to `auth.users`.
+  // Reading it here is what keeps the detail screen from reporting an agent
+  // that exists as missing.
+  const emails = await authEmailsFor([userId]);
+
+  const [agentProfileResult, assignmentsResult, observationsResult, sessionsResult, tasksResult] =
+    await Promise.all([
+      supabase
+        .from('agent_profiles')
+        .select('employee_code, region, joined_on, alternate_phone, supervisor_notes, employment_status')
+        .eq('profile_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('market_agent_assignments')
+        .select('market_id, status')
+        .eq('user_id', userId),
+      supabase
+        .from('price_observations')
+        .select(
+          'id, commodity_id, market_id, reported_amount, reported_unit_id, price_type, grade_id, currency_code, collected_at, submitted_at, verification_status, collection_batch_id',
+        )
+        .eq('agent_user_id', userId)
+        .order('collected_at', { ascending: false })
+        .limit(200),
+      supabase
+        .from('collection_batches')
+        .select('id, reference, market_id, started_at, completed_at')
+        .eq('agent_user_id', userId)
+        .order('started_at', { ascending: false })
+        .limit(25),
+      supabase
+        .from('collection_tasks')
+        .select('id, market_id, due_on, status, commodity_id')
+        .eq('assigned_to', userId)
+        .order('due_on', { ascending: false })
+        .limit(50),
+    ]);
+
+  const observations = observationsResult.data ?? [];
+  const sessions = sessionsResult.data ?? [];
+  const tasks = tasksResult.data ?? [];
+  const assignments = assignmentsResult.data ?? [];
+
+  // Resolve the names these rows refer to, in one pass each.
+  const marketIds = [
+    ...new Set([
+      ...assignments.map((a) => a.market_id as number),
+      ...observations.map((o) => o.market_id as number),
+      ...sessions.map((s) => s.market_id as number),
+      ...tasks.map((t) => t.market_id as number),
+    ]),
+  ];
+  const commodityIds = [
+    ...new Set([
+      ...observations.map((o) => o.commodity_id as number),
+      ...tasks.map((t) => t.commodity_id as number | null).filter(Boolean) as number[],
+    ]),
+  ];
+  const gradeIds = [
+    ...new Set(observations.map((o) => o.grade_id as number | null).filter(Boolean) as number[]),
+  ];
+
+  const [marketsResult, commoditiesResult, gradesResult, unitsResult, evidenceResult] =
+    await Promise.all([
+      marketIds.length
+        ? supabase.from('markets').select('id, name').in('id', marketIds)
+        : Promise.resolve(emptyRows<{ id: number; name: string }>()),
+      commodityIds.length
+        ? supabase.from('commodities').select('id, name').in('id', commodityIds)
+        : Promise.resolve(emptyRows<{ id: number; name: string }>()),
+      gradeIds.length
+        ? supabase.from('commodity_grades').select('id, name').in('id', gradeIds)
+        : Promise.resolve(emptyRows<{ id: number; name: string }>()),
+      supabase.from('measurement_units').select('id, name').limit(1000),
+      observations.length
+        ? supabase
+            .from('price_observation_evidence')
+            .select('observation_id')
+            .in(
+              'observation_id',
+              observations.map((o) => o.id as string),
+            )
+        : Promise.resolve(emptyRows<{ observation_id: string }>()),
+    ]);
+
+  const marketNames = new Map((marketsResult.data ?? []).map((m) => [m.id as number, m.name as string]));
+  const commodityNames = new Map(
+    (commoditiesResult.data ?? []).map((c) => [c.id as number, c.name as string]),
+  );
+  const gradeNames = new Map((gradesResult.data ?? []).map((g) => [g.id as number, g.name as string]));
+
+  // The unit each observation was reported in. The observation stores the unit
+  // id on the row; the directory above resolves it.
+  const unitNames = new Map((unitsResult.data ?? []).map((u) => [u.id as number, u.name as string]));
+
+  const evidenceCounts = new Map<string, number>();
+  for (const row of evidenceResult.data ?? []) {
+    const key = row.observation_id as string;
+    evidenceCounts.set(key, (evidenceCounts.get(key) ?? 0) + 1);
+  }
+
+  const observationRows: AgentObservationRow[] = observations.map((row) => ({
+    id: row.id as string,
+    commodityName: commodityNames.get(row.commodity_id as number) ?? 'Unknown commodity',
+    marketName: marketNames.get(row.market_id as number) ?? 'Unknown market',
+    amount: (row.reported_amount as number | null) ?? null,
+    unitName: row.reported_unit_id
+      ? unitNames.get(row.reported_unit_id as number) ?? null
+      : null,
+    priceType: row.price_type as string,
+    gradeName: row.grade_id ? gradeNames.get(row.grade_id as number) ?? null : null,
+    currencyCode: (row.currency_code as string | null) ?? 'NGN',
+    collectedAt: row.collected_at as string,
+    submittedAt: (row.submitted_at as string | null) ?? null,
+    verificationStatus: row.verification_status as string,
+    evidenceCount: evidenceCounts.get(row.id as string) ?? 0,
+  }));
+
+  // Count the observations that point at each session. A session with no
+  // observations is a real state — an agent who opened a session and recorded
+  // nothing — and is shown as zero rather than hidden.
+  const observationsByBatch = new Map<number, number>();
+  for (const observation of observations) {
+    const batchId = observation.collection_batch_id as number | null;
+    if (batchId == null) continue;
+    observationsByBatch.set(batchId, (observationsByBatch.get(batchId) ?? 0) + 1);
+  }
+
+  const sessionRows: AgentSessionRow[] = sessions.map((row) => ({
+    id: row.id as number,
+    reference: row.reference as string,
+    marketName: marketNames.get(row.market_id as number) ?? 'Unknown market',
+    startedAt: row.started_at as string,
+    completedAt: (row.completed_at as string | null) ?? null,
+    observationCount: observationsByBatch.get(row.id as number) ?? 0,
+  }));
+
+  // A task's expected commodities. The schema links a task to one commodity,
+  // so a multi-commodity task is represented by its own row per commodity in
+  // the collection plan; the names are grouped here for display.
+  const taskCommodityNames = new Map<number, string[]>();
+  for (const task of tasks) {
+    if (task.commodity_id) {
+      const name = commodityNames.get(task.commodity_id as number);
+      if (name) {
+        const list = taskCommodityNames.get(task.id as number) ?? [];
+        list.push(name);
+        taskCommodityNames.set(task.id as number, list);
+      }
+    }
+  }
+
+  const taskRows: AgentTaskRow[] = tasks.map((row) => ({
+    id: row.id as number,
+    marketName: marketNames.get(row.market_id as number) ?? 'Unknown market',
+    dueOn: row.due_on as string,
+    status: row.status as string,
+    expectedCount: (taskCommodityNames.get(row.id as number) ?? []).length,
+    commodityNames: taskCommodityNames.get(row.id as number) ?? [],
+  }));
+
+  const byStatus = (status: string) =>
+    observations.filter((o) => o.verification_status === status).length;
+
+  const agentProfile = agentProfileResult.data;
+
+  return {
+    id: profile.id as string,
+    fullName: (profile.full_name as string | null) ?? null,
+    email: emails.get(userId) ?? null,
+    role: profile.role as string,
+    accountStatus: (profile.account_status as string | null) ?? 'unknown',
+    employeeCode: (agentProfile?.employee_code as string | null) ?? null,
+    region: (agentProfile?.region as string | null) ?? null,
+    joinedOn: (agentProfile?.joined_on as string | null) ?? null,
+    alternatePhone: (agentProfile?.alternate_phone as string | null) ?? null,
+    supervisorNotes: (agentProfile?.supervisor_notes as string | null) ?? null,
+    employmentStatus: (agentProfile?.employment_status as string | null) ?? 'active',
+    createdAt: (profile.created_at as string | null) ?? null,
+    assignedMarkets: assignments.map((a) => ({
+      id: a.market_id as number,
+      name: marketNames.get(a.market_id as number) ?? 'Unknown market',
+      status: a.status as string,
+    })),
+    submitted: observations.length,
+    verified: byStatus('verified'),
+    rejected: byStatus('rejected'),
+    correctionRequested: byStatus('correction_requested'),
+    published: byStatus('published'),
+    draft: byStatus('draft'),
+    observations: observationRows,
+    sessions: sessionRows,
+    tasks: taskRows,
+  };
 }

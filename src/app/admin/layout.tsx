@@ -12,7 +12,7 @@ import { unreadCount } from '@/lib/notifications';
 import { AdminShell } from '@/components/admin/AdminShell';
 
 export const metadata: Metadata = {
-  title: 'Control Centre — GonaPulse',
+  title: 'Control Centre — Hatsi360',
   robots: { index: false, follow: false },
 };
 

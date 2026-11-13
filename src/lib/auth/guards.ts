@@ -6,7 +6,7 @@ import { canRoleVisitPath, landingPathForRole } from './routing';
 import type { UserRole } from '@/types/domain';
 
 /**
- * GonaPulse — server-side route guards.
+ * Hatsi360 — server-side route guards.
  *
  * These guards run on the server before a page renders. They are a
  * convenience and a defence in depth; the authority is still Row Level

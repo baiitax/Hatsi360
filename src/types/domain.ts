@@ -1,5 +1,5 @@
 /**
- * GonaPulse domain types.
+ * Hatsi360 domain types.
  *
  * These mirror the Supabase schema in `supabase/migrations/`. They are the single
  * source of truth for shapes that cross the server/client boundary.
@@ -76,6 +76,8 @@ export interface Commodity {
   categoryName?: string | null;
   categorySlug?: string | null;
   synonyms?: string[];
+  /** How long an observation of this commodity stays fresh. */
+  freshnessWindowHours?: number;
   /** Markets that have at least one published observation. */
   marketCount?: number;
   latestObservationAt?: string | null;
@@ -280,7 +282,7 @@ export const VERIFICATION_STATUS_META: Record<VerificationStatus, VerificationSt
     code: 'legacy_unverified',
     label: 'Legacy record — unverified',
     description:
-      'Migrated from the previous GonaPulse system. It carries no verification trail, so it is published with an explicit unverified label rather than being retroactively marked verified.',
+      'Migrated from the previous Pluck Live system. It carries no verification trail, so it is published with an explicit unverified label rather than being retroactively marked verified.',
     publiclyReadable: true,
     tone: 'warning',
   },

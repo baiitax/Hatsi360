@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Validate the Pluck Live Supabase migrations against a real PostgreSQL server.
+# Validate the Hatsi360 Supabase migrations against a real PostgreSQL server.
 #
 # A local PostgreSQL instance is started, a minimal stub of the Supabase `auth`
 # schema is created (auth.users + auth.uid()), and every migration file is
@@ -20,8 +20,27 @@ LOG="$PGDATA/server.log"
 
 export PATH="$PGHOME/bin:$PATH"
 
+# The throwaway PostgreSQL is a local tool, not part of the repository, so it
+# is routinely absent — after a fresh clone, or after the workspace is cleaned.
+# Fetch it rather than failing, so the suite is one command from a cold start.
+#
+# PGHOME is `<prefix>/node_modules/@embedded-postgres/linux-x64/native`, so the
+# npm prefix is PGHOME with that suffix stripped.
 if [ ! -x "$PGHOME/bin/initdb" ]; then
-  echo "PostgreSQL binaries not found at $PGHOME" >&2
+  PGPREFIX="${PGHOME%/node_modules/@embedded-postgres/linux-x64/native}"
+  echo "==> installing the throwaway PostgreSQL into $PGPREFIX"
+  mkdir -p "$PGPREFIX"
+  npm install --prefix "$PGPREFIX" \
+    @embedded-postgres/linux-x64 --no-audit --no-fund --silent >/dev/null 2>&1 || {
+      echo "PostgreSQL binaries not found at $PGHOME and could not be installed." >&2
+      echo "Install them with: npm install --prefix $PGPREFIX @embedded-postgres/linux-x64" >&2
+      exit 1
+    }
+fi
+
+if [ ! -x "$PGHOME/bin/initdb" ]; then
+  echo "PostgreSQL binaries still not found at $PGHOME" >&2
+  echo "Install them with: npm install --prefix ${PGHOME%/node_modules/@embedded-postgres/linux-x64/native} @embedded-postgres/linux-x64" >&2
   exit 1
 fi
 

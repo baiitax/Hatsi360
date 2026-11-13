@@ -1,7 +1,7 @@
 import type { UserRole } from '@/types/domain';
 
 /**
- * GonaPulse — where a signed-in person belongs.
+ * Hatsi360 — where a signed-in person belongs.
  *
  * The routing table is the single place that decides which workspace a role
  * lands in. The server guards enforce the same table, so the redirect after
@@ -54,36 +54,51 @@ const ROLE_PATHS: Record<UserRole, string[]> = {
   market_supervisor: [
     '/agent',
     '/admin/overview',
+    '/admin/operations',
     '/admin/search',
     '/admin/verification',
     '/admin/observations',
     '/admin/quality',
     '/admin/tasks',
     '/admin/agents',
+    '/admin/assignments',
     '/admin/markets',
+    '/admin/zones',
+    '/admin/commodities',
+    '/admin/categories',
     '/admin/schedule',
     '/admin/reports',
     '/admin/notifications',
+    '/admin/profile',
   ],
   verification_officer: [
     '/admin/overview',
+    '/admin/operations',
     '/admin/search',
     '/admin/verification',
     '/admin/observations',
     '/admin/quality',
     '/admin/reports',
     '/admin/notifications',
+    '/admin/profile',
   ],
   analyst: [
     '/admin/overview',
+    '/admin/operations',
     '/admin/search',
     '/admin/analytics',
     '/admin/observations',
     '/admin/quality',
     '/admin/tasks',
     '/admin/markets',
+    '/admin/assignments',
+    '/admin/commodities',
+    '/admin/categories',
+    '/admin/grades',
+    '/admin/units',
     '/admin/reports',
     '/admin/notifications',
+    '/admin/profile',
   ],
   admin: ['/admin'],
   super_admin: ['/admin'],

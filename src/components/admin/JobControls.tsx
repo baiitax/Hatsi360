@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { runJobNow, type OperationState } from '@/lib/operations/actions';
+import { HatsiSpinner } from '@/components/loading/HatsiActionLoader';
 
 /**
  * Run one scheduled job on demand.
@@ -27,9 +28,17 @@ export function RunJobButton({ jobName }: { jobName: string }) {
             if (outcome.ok) router.refresh();
           })
         }
-        className="rounded-md border border-ink-200 bg-white px-2 py-1 text-[11px] font-semibold text-ink-700 hover:bg-ink-100 disabled:opacity-60"
+        aria-busy={pending}
+        className="inline-flex items-center gap-1.5 rounded-md border border-ink-200 bg-white px-2 py-1 text-[11px] font-semibold text-ink-700 hover:bg-ink-100 disabled:opacity-60"
       >
-        {pending ? 'Running…' : 'Run now'}
+        {pending ? (
+          <>
+            <HatsiSpinner />
+            Running…
+          </>
+        ) : (
+          'Run now'
+        )}
       </button>
       {result ? <span className="max-w-[16rem] text-[11px] text-ink-500">{result.message}</span> : null}
     </span>

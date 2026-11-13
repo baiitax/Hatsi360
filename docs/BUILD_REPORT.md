@@ -62,14 +62,14 @@ Nothing was implemented in this phase. It produced the evidence base.
 
 | Finding | Classification | Evidence |
 | --- | --- | --- |
-| The production site is plain PHP + Bootstrap 5 + jQuery with 11 genuinely distinct pages; every other route resolves to the homepage through a catch-all. | `VERIFIED_IN_UI` | 46 raw HTML captures in `audit/legacy-pages/`, extracted JSON in `audit/source/` |
+| The production site is plain PHP + Bootstrap 5 + jQuery with 11 genuinely distinct pages; every other route resolves to the homepage through a catch-all. | `VERIFIED_IN_UI` | extracted JSON in `audit/source/`; the 46 raw HTML captures were removed on 2026-11-12 |
 | 11 markets, 22 commodities (including a duplicate "Paddy Rice" with ids 19 and 1), 28 price entries and 15 daily groups, spanning 2023-07-20 → 2025-07-14. | `VERIFIED_IN_UI` | `audit/source/production_dataset.json`, `price_history.json`, `pairs.json` |
 | The newest visible observation is **2025-07-14** — roughly fifteen months before this build. | `VERIFIED_IN_DATABASE` | `scripts/build_legacy_dataset.py`, 0 unreconstructable, 0 mismatches |
 | The legacy FAQ claims prices are "updated daily" and "real-time". | `VERIFIED_IN_UI` | Corrected by the coverage banner and the disclaimer rather than repeated |
 | No unit, price type, collection-versus-verification timestamp, source attribution, currency column or trend data existed in the legacy records. | `VERIFIED_IN_CODE` | Field-level review of the recovered dataset |
 | The legacy price directory page (`prices.php`) is truncated server-side and returns 6,962 bytes. | `VERIFIED_IN_UI` | `FAILED_TEST` — recorded, not replicated |
 | The legacy PDF report (`generate-market-report.php`) returns HTTP 500. | `VERIFIED_IN_UI` | `FAILED_TEST` — recorded, not replicated |
-| A Google Maps key (`AIzaSyCmL18misQw9KdwqGaw3zHkitj8vG6QF2Y`) and token `87652` were exposed in a market detail page. | `VERIFIED_IN_UI` | Not carried into the new build |
+| A Google Maps key (`AIzaSy…[redacted]`) and a map token were exposed in a market detail page. | `VERIFIED_IN_UI` | Not carried into the new build |
 | The API access page publishes a placeholder key (`SECRET_API_KEY_HERE_12345`) and a `localhost` base URL. | `VERIFIED_IN_UI` | Not carried into the new build |
 | The legacy "Price Forecast" widget is uncritically replicated on the commodity detail page. | `VERIFIED_IN_UI` | Not replicated — no forecast is published |
 | The old repository contained no auth system, no roles, no agent model and no audit trail. | `VERIFIED_IN_CODE` | Full tree review |
@@ -528,4 +528,5 @@ PostgreSQL 18.4 with the migrations applied.
 | The RLS suite | `tests/rls/permission-tests.sql` |
 | The workflow suite | `tests/operations/workflow-tests.sql` |
 | The validator | `scripts/validate_migrations.sh` |
-| The legacy captures | `audit/legacy-pages/` (46 files) |
+| The legacy structured capture | `audit/source/` |
+| The legacy raw HTML captures | **Removed 2026-11-12** |

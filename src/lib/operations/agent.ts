@@ -5,7 +5,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { operationalToday, endOfOperationalDay, startOfOperationalDay } from '@/lib/analytics/format';
 
 /**
- * GonaPulse — the agent's own operational data.
+ * Hatsi360 — the agent's own operational data.
  *
  * Every query here is scoped to the signed-in agent by the database as well as
  * by the query: the agent's session is used, so Row Level Security applies.
@@ -274,6 +274,117 @@ export async function getAgentHome(userId: string): Promise<AgentHome> {
   home.lastSyncedAt = submissions[0]?.submitted_at ?? null;
 
   return home;
+}
+
+/**
+ * The markets an agent is assigned to, with the scope they cover.
+ *
+ * The Field App only ever offers a market that appears here. The list is read
+ * from the same assignment rows the Control Centre manages, so the agent and
+ * the supervisor always see the same coverage.
+ */
+export interface AgentMarketDetail extends AgentMarket {
+  commodityNames: string[];
+  lastCollectionAt: string | null;
+  collectedToday: number;
+  openTaskCount: number;
+}
+
+export async function getAgentMarkets(userId: string): Promise<AgentMarketDetail[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = await createClient();
+  const today = operationalToday();
+
+  const [assignmentsResult, statesResult, commoditiesResult, observationsResult, tasksResult] =
+    await Promise.all([
+      supabase
+        .from('market_agent_assignments')
+        .select('market_id, status')
+        .eq('user_id', userId)
+        .eq('status', 'active'),
+      supabase.from('states').select('id, name'),
+      supabase.from('commodities').select('id, name').limit(500),
+      supabase
+        .from('price_observations')
+        .select('id, market_id, commodity_id, collected_at')
+        .eq('agent_user_id', userId)
+        .order('collected_at', { ascending: false })
+        .limit(500),
+      supabase
+        .from('collection_tasks')
+        .select('id, market_id, status, due_on')
+        .eq('assigned_to', userId)
+        .gte('due_on', today)
+        .lte('due_on', today),
+    ]);
+
+  const marketIds = (assignmentsResult.data ?? []).map((a) => a.market_id as number);
+  if (marketIds.length === 0) return [];
+
+  const [marketsResult, schedulesResult, scopeResult] = await Promise.all([
+    supabase
+      .from('markets')
+      .select('id, name, address, state_id, is_active')
+      .in('id', marketIds),
+    supabase
+      .from('market_collection_schedules')
+      .select('market_id, deadline_time, is_active')
+      .in('market_id', marketIds)
+      .eq('is_active', true),
+    supabase
+      .from('market_commodity_scope')
+      .select('market_id, commodity_id')
+      .in('market_id', marketIds),
+  ]);
+
+  const stateNames = new Map(
+    (statesResult.data ?? []).map((s) => [s.id as number, s.name as string]),
+  );
+  const commodityNames = new Map(
+    (commoditiesResult.data ?? []).map((c) => [c.id as number, c.name as string]),
+  );
+  const observations = (observationsResult.data ?? []) as {
+    market_id: number;
+    commodity_id: number;
+    collected_at: string;
+  }[];
+  const tasks = (tasksResult.data ?? []) as { market_id: number; status: string }[];
+
+  return ((marketsResult.data ?? []) as {
+    id: number;
+    name: string;
+    address: string | null;
+    state_id: number;
+    is_active: boolean;
+  }[]).map((market) => {
+    const scope = (scopeResult.data as { market_id: number; commodity_id: number }[]).filter(
+      (entry) => entry.market_id === market.id,
+    );
+    const marketObservations = observations.filter((o) => o.market_id === market.id);
+    return {
+      id: market.id,
+      name: market.name,
+      address: market.address,
+      stateName: stateNames.get(market.state_id) ?? null,
+      isActive: market.is_active,
+      commodityCount: scope.length,
+      commodityNames: scope.map(
+        (entry) => commodityNames.get(entry.commodity_id) ?? `Commodity #${entry.commodity_id}`,
+      ),
+      scheduled: (schedulesResult.data as { market_id: number }[]).some(
+        (entry) => entry.market_id === market.id,
+      ),
+      deadlineTime:
+        (schedulesResult.data as { market_id: number; deadline_time: string | null }[]).find(
+          (entry) => entry.market_id === market.id,
+        )?.deadline_time ?? null,
+      lastCollectionAt: marketObservations[0]?.collected_at ?? null,
+      collectedToday: marketObservations.filter((o) => o.collected_at.slice(0, 10) === today).length,
+      openTaskCount: tasks.filter(
+        (task) => task.market_id === market.id && !['completed', 'cancelled'].includes(task.status),
+      ).length,
+    };
+  });
 }
 
 /** Every task assigned to the agent, past and future. */

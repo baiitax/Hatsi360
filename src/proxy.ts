@@ -1,15 +1,29 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { canonicalRedirectTarget } from '@/lib/domains';
 
 /**
- * GonaPulse — session proxy.
+ * Hatsi360 — session and canonical-host proxy.
  *
- * The proxy refreshes the Supabase session cookie when it is close to
- * expiring, so a signed-in agent or administrator is not signed out in the
- * middle of a task. It does not authorise anything: access is decided by the
- * server guards and by the database policies.
+ * Two jobs, in order:
+ *
+ *  1. **Canonical host.** A request that arrives on a legacy host is
+ *     redirected to the canonical origin with a 308, so the method and body
+ *     survive and a link keeps its equity. Only hosts named in
+ *     `NEXT_PUBLIC_LEGACY_HOSTS` are redirected; nothing else is touched.
+ *
+ *  2. **Session refresh.** The Supabase session cookie is refreshed when it
+ *     is close to expiring, so a signed-in agent or administrator is not
+ *     signed out in the middle of a task. It does not authorise anything:
+ *     access is decided by the server guards and by the database policies.
  */
 export async function proxy(request: NextRequest) {
+  // 1. Canonical host.
+  const target = canonicalRedirectTarget(request);
+  if (target) {
+    return NextResponse.redirect(target, 308);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

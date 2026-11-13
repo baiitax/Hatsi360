@@ -1,9 +1,10 @@
 import Link from 'next/link';
+import { BareFrame } from '@/components/site/BareFrame';
 
 export default function NotFound() {
   return (
-    <div className="section">
-      <div className="container-page max-w-2xl text-center">
+    <BareFrame>
+      <div className="mx-auto max-w-2xl text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-brand-700">404</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
           We could not find that page
@@ -27,6 +28,6 @@ export default function NotFound() {
           </Link>
         </div>
       </div>
-    </div>
+    </BareFrame>
   );
 }

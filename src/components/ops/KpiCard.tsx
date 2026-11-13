@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * GonaPulse — the KPI card.
+ * Hatsi360 — the KPI card.
  *
  * Every number shown in the admin console comes from the database. The card
  * always carries:

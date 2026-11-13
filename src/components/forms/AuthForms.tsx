@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState } from 'react';
 import { signIn, signUp, requestPasswordReset, type AuthActionState } from '@/lib/auth/actions';
+import { HatsiSpinner } from '@/components/loading/HatsiActionLoader';
 
 const fieldClass =
   'w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none';
@@ -74,13 +75,21 @@ export function SignInForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
+        aria-busy={pending}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
       >
-        {pending ? 'Signing in…' : 'Sign in'}
+        {pending ? (
+          <>
+            <HatsiSpinner />
+            Signing in…
+          </>
+        ) : (
+          'Sign in'
+        )}
       </button>
 
       <p className="text-center text-sm text-ink-600">
-        New to GonaPulse?{' '}
+        New to Hatsi360?{' '}
         <Link href="/register" className="font-semibold text-brand-700 hover:text-brand-800">
           Create an account
         </Link>
@@ -154,9 +163,17 @@ export function SignUpForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
+        aria-busy={pending}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
       >
-        {pending ? 'Creating account…' : 'Create account'}
+        {pending ? (
+          <>
+            <HatsiSpinner />
+            Creating account…
+          </>
+        ) : (
+          'Create account'
+        )}
       </button>
 
       <p className="text-center text-sm text-ink-600">
@@ -196,9 +213,17 @@ export function ForgotPasswordForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
+        aria-busy={pending}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
       >
-        {pending ? 'Sending…' : 'Send reset link'}
+        {pending ? (
+          <>
+            <HatsiSpinner />
+            Sending…
+          </>
+        ) : (
+          'Send reset link'
+        )}
       </button>
 
       <p className="text-center text-sm text-ink-600">

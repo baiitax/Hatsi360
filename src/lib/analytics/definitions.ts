@@ -1,5 +1,5 @@
 /**
- * GonaPulse — operational metric definitions.
+ * Hatsi360 — operational metric definitions.
  *
  * Every number that appears in the admin console is defined here: what it
  * counts, the formula, the table it is read from, and the caveats a reader

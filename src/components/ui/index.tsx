@@ -348,3 +348,31 @@ export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; column
     </div>
   );
 }
+
+
+/* -------------------------------------------------- design-system catalogue */
+
+/**
+ * The catalogue names required by the design system.
+ *
+ * Every component below is defined once — here or in the module it comes from
+ * — and reused across the public site, the customer workspace, the Field App
+ * and the Control Centre.
+ */
+export {
+  PriceMovementIndicator,
+  DataFreshnessIndicator,
+  VerificationBadge,
+  SourceAttribution,
+  IntelligenceMetricCard,
+  PriceCard,
+  ErrorState,
+  FilterPanel,
+  FilterSelect,
+  DateRangeSelector,
+} from './data-display';
+
+export { PageHero, PageHero as PageHeader } from './PageHero';
+export { HistoricalPriceChart, ObservationCountChart } from '@/components/data/PriceChart';
+/** The catalogue name for the loading placeholder. */
+export const LoadingSkeleton = Skeleton;

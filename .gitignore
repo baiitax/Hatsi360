@@ -25,7 +25,9 @@ dist/
 !.env.example
 
 # --- test / tooling caches --------------------------------------------------
-coverage/
+# Anchored to the repository root. An unanchored `coverage/` would also match
+# `src/app/coverage/`, which is a real route and not a coverage report.
+/coverage/
 .nyc_output/
 .vitest/
 .playwright-cli/

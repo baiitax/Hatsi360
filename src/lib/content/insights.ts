@@ -24,7 +24,6 @@ export interface Insight {
   publishedAt: string | null;
   readingMinutes: number;
   author: string;
-  coverImage: string;
 }
 
 export const insights: Insight[] = [
@@ -37,12 +36,11 @@ export const insights: Insight[] = [
     body: [
       'Sustainable agriculture is more than just a buzzword; it’s a necessity for the future of food security in Nigeria. This post explores innovative techniques being adopted by local farmers, from advanced crop rotation to water conservation methods. We delve into how these practices not only yield healthier soil, but also contribute to long-term economic resilience for farming households.',
       'Join us as we visit a model farm in Oyo State that has successfully integrated these methods, increasing their yield by over 40% while reducing their carbon footprint.',
-      'For the producers we work with, the practical question is always the same: does the change pay? A practice that raises yields but doubles labour cost is not accessible to most smallholders, and a practice that saves water but halves the marketable grade is worse than no change at all. GonaPulse tracks prices precisely so that these decisions can be made against evidence rather than assumption.',
+      'For the producers we work with, the practical question is always the same: does the change pay? A practice that raises yields but doubles labour cost is not accessible to most smallholders, and a practice that saves water but halves the marketable grade is worse than no change at all. Hatsi360 tracks prices precisely so that these decisions can be made against evidence rather than assumption.',
     ],
     publishedAt: null,
     readingMinutes: 4,
-    author: 'GonaPulse Research',
-    coverImage: '/img/blog-1.jpg',
+    author: 'Hatsi360 Research',
   },
   {
     slug: 'guide-to-yam-cultivation-for-maximum-yield',
@@ -60,8 +58,7 @@ export const insights: Insight[] = [
     ],
     publishedAt: null,
     readingMinutes: 5,
-    author: 'GonaPulse Research',
-    coverImage: '/img/about-5.jpg',
+    author: 'Hatsi360 Research',
   },
   {
     slug: 'understanding-market-price-fluctuations-for-cassava',
@@ -76,8 +73,7 @@ export const insights: Insight[] = [
     ],
     publishedAt: null,
     readingMinutes: 4,
-    author: 'GonaPulse Research',
-    coverImage: '/img/service-3.jpg',
+    author: 'Hatsi360 Research',
   },
   {
     slug: 'impact-of-fuel-prices-on-food-transportation',
@@ -93,8 +89,7 @@ export const insights: Insight[] = [
     ],
     publishedAt: '2025-10-09',
     readingMinutes: 5,
-    author: 'GonaPulse Research',
-    coverImage: '/img/service-1.jpg',
+    author: 'Hatsi360 Research',
   },
 ];
 

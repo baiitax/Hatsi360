@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { BrandMark } from '@/components/brand/Logo';
 import { BRAND } from '@/lib/brand';
+import { NotificationCenter } from '@/components/site/navigation';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 
 /**
- * GonaPulse — the market agent shell.
+ * Hatsi360 — the market agent shell.
  *
  * Deliberately different from the admin console: a single column, large
  * touch targets, a bottom navigation bar that stays within thumb reach, and
@@ -25,7 +26,8 @@ export interface AgentShellProps {
   items: AgentNavItem[];
   userName: string;
   unreadCount: number;
-  pendingCount: number;
+  /** Tasks that are due today. The label says so, rather than implying a sync. */
+  dueCount: number;
   children: ReactNode;
 }
 
@@ -33,7 +35,7 @@ export function AgentShell({
   items,
   userName,
   unreadCount,
-  pendingCount,
+  dueCount,
   children,
 }: AgentShellProps) {
   const pathname = usePathname();
@@ -65,8 +67,8 @@ export function AgentShell({
             <BrandMark size={36} />
             <span className="text-sm font-bold leading-tight text-brand-900">
               {BRAND.name}
-              <span className="block text-[11px] font-medium uppercase tracking-wide text-ink-400">
-                Field App
+              <span className="block text-[11px] font-medium uppercase tracking-wide text-brand-600">
+                Field
               </span>
             </span>
           </Link>
@@ -77,18 +79,12 @@ export function AgentShell({
                 Offline
               </span>
             ) : null}
-            <Link
+            <NotificationCenter
               href="/agent/notifications"
-              aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
-              className="relative rounded-lg border border-ink-200 bg-white p-2 text-ink-700"
-            >
-              <span aria-hidden="true">🔔</span>
-              {unreadCount > 0 ? (
-                <span className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              ) : null}
-            </Link>
+              unreadCount={unreadCount}
+              label="Alerts"
+              className="border border-ink-200 bg-white"
+            />
           </div>
         </div>
       </header>
@@ -99,7 +95,7 @@ export function AgentShell({
         aria-label="Agent sections"
         className="fixed inset-x-0 bottom-0 z-20 border-t border-ink-200 bg-white/98 backdrop-blur"
       >
-        <ul className="mx-auto grid max-w-lg grid-cols-4">
+        <ul className="mx-auto grid max-w-lg grid-cols-5">
           {items.map((item) => {
             const active = isActive(item.href);
             return (
@@ -124,9 +120,9 @@ export function AgentShell({
 
       <footer className="mx-auto w-full max-w-lg px-4 pb-6 text-center text-[11px] text-ink-400">
         Signed in as {userName}
-        {pendingCount > 0 ? (
+        {dueCount > 0 ? (
           <span className="ml-1 font-semibold text-amber-700">
-            · {pendingCount} price(s) waiting to sync
+            · {dueCount} task(s) due today
           </span>
         ) : null}
       </footer>

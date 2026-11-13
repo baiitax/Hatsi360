@@ -2,21 +2,31 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { requireAgent } from '@/lib/auth/guards';
 import { unreadCount } from '@/lib/notifications';
-import { AgentShell } from '@/components/agent/AgentShell';
+import { AgentShell, type AgentNavItem } from '@/components/agent/AgentShell';
+import { getFieldHome } from '@/lib/operations/field';
 
 export const metadata: Metadata = {
-  title: 'Field collection — GonaPulse',
+  title: 'Field collection — Hatsi360 Field',
   robots: { index: false, follow: false },
 };
 
 // The field app reads the session on every request, so it is never cached.
 export const dynamic = 'force-dynamic';
 
-const NAV = [
+/**
+ * The five primary destinations.
+ *
+ * The brief asks for Home, Assignments, Collect, History and Profile. Markets,
+ * tasks, prices, corrections and notifications are reached from the home
+ * screen and from the header, so they never need a sixth bottom-navigation
+ * slot that a thumb would have to find.
+ */
+const NAV: AgentNavItem[] = [
   { href: '/agent/home', label: 'Home', icon: '⌂' },
-  { href: '/agent/collect', label: 'Collect', icon: '＋' },
-  { href: '/agent/tasks', label: 'Tasks', icon: '☑' },
-  { href: '/agent/submissions', label: 'Prices', icon: '≡' },
+  { href: '/agent/assignments', label: 'Assignments', icon: '☑' },
+  { href: '/agent/collection/new', label: 'Collect', icon: '＋' },
+  { href: '/agent/history', label: 'History', icon: '≡' },
+  { href: '/agent/profile', label: 'Profile', icon: '☺' },
 ];
 
 /**
@@ -33,10 +43,15 @@ export default async function AgentLayout({ children }: { children: React.ReactN
     redirect('/dashboard?error=forbidden');
   }
 
-  const unread = await unreadCount(profile.id);
+  const [unread, home] = await Promise.all([unreadCount(profile.id), getFieldHome(profile.id)]);
 
   return (
-    <AgentShell items={NAV} userName={profile.fullName ?? profile.email} unreadCount={unread} pendingCount={0}>
+    <AgentShell
+      items={NAV}
+      userName={profile.fullName ?? profile.email}
+      unreadCount={unread}
+      dueCount={home.pendingTasks}
+    >
       {children}
     </AgentShell>
   );

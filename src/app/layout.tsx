@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Sora } from 'next/font/google';
-import { SiteHeader } from '@/components/site/SiteHeader';
-import { SiteFooter } from '@/components/site/SiteFooter';
+import { Inter, Manrope } from 'next/font/google';
 import { BRAND, CONTACT } from '@/lib/brand';
 import { getSiteUrl } from '@/lib/supabase/config';
+import { PLATFORM_DESCRIPTION } from '@/lib/metadata';
+import { HatsiGlobalPreloader } from '@/components/loading/HatsiGlobalPreloader';
+import { HatsiBootSignal } from '@/components/loading/HatsiBootSignal';
+import { HatsiLoadingIndicator } from '@/components/loading/HatsiLoadingIndicator';
+import { HatsiLoadingProvider } from '@/components/loading/HatsiLoadingProvider';
 import './globals.css';
 
 /**
@@ -12,8 +15,8 @@ import './globals.css';
  *
  *  - Inter carries the interface and the numbers. Its tabular figures keep
  *    price columns aligned.
- *  - Sora carries the display voice: a geometric, confident face that reads
- *    as an intelligence product rather than a trading desk.
+ *  - Manrope carries the editorial voice: a humanist sans with wide apertures
+ *    that reads as an intelligence publication rather than a trading desk.
  */
 const inter = Inter({
   subsets: ['latin'],
@@ -21,10 +24,10 @@ const inter = Inter({
   display: 'swap',
 });
 
-const sora = Sora({
+const manrope = Manrope({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-sora',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-manrope',
   display: 'swap',
 });
 
@@ -38,8 +41,7 @@ export const metadata: Metadata = {
     default: `${defaultTitle} in ${BRAND.operatingMarket}`,
     template: `%s | ${BRAND.name}`,
   },
-  description:
-    'Verified agricultural commodity prices collected in the field across Northern Nigeria. Search prices for grains, pulses, tubers and cash crops, compare markets, and see the collection, verification and publication time behind every figure.',
+  description: PLATFORM_DESCRIPTION,
   applicationName: BRAND.name,
   keywords: [
     'agricultural commodity prices Nigeria',
@@ -54,27 +56,34 @@ export const metadata: Metadata = {
     'Nigeria commodity market reports',
     'farmer price information',
     'agricultural market intelligence',
+    'Hatsi360',
   ],
   authors: [{ name: 'Pluck Agro' }],
   creator: 'Pluck Agro',
   publisher: 'Pluck Agro',
-  category: 'Agricultural Market Intelligence',
+  category: BRAND.category,
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
     siteName: BRAND.name,
     locale: BRAND.locale,
     url: siteUrl,
-    title: `${defaultTitle} in ${BRAND.operatingMarket}`,
-    description:
-      'Verified agricultural commodity prices collected in the field across Northern Nigeria, with the provenance behind every figure.',
-    images: [{ url: '/brand/gonapulse-icon-512.png', width: 512, height: 512, alt: BRAND.name }],
+    title: `${BRAND.name} | Agricultural Commodity Prices & Market Intelligence`,
+    description: PLATFORM_DESCRIPTION,
+    images: [
+      {
+        url: '/brand/hatsi360-social-1200x630.png',
+        width: 1200,
+        height: 630,
+        alt: `${BRAND.name} — ${BRAND.descriptor}`,
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${defaultTitle} in ${BRAND.operatingMarket}`,
-    description:
-      'Verified agricultural commodity prices collected in the field across Northern Nigeria.',
+    title: `${BRAND.name} | Agricultural Commodity Prices & Market Intelligence`,
+    description: PLATFORM_DESCRIPTION,
+    images: ['/brand/hatsi360-social-1200x630.png'],
   },
   robots: {
     index: true,
@@ -84,33 +93,58 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
   icons: {
     icon: [
-      { url: '/brand/gonapulse-favicon-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/brand/hatsi360-favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/brand/hatsi360-favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/brand/hatsi360-icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
-    apple: [{ url: '/brand/gonapulse-apple-touch-icon.png', sizes: '180x180' }],
+    apple: [{ url: '/brand/hatsi360-apple-touch-icon.png', sizes: '180x180' }],
   },
+  manifest: '/manifest.webmanifest',
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0d2c1b',
+  themeColor: '#123B2A',
   colorScheme: 'light',
 };
 
+/**
+ * The root layout.
+ *
+ * It carries only what every surface shares: the document, the fonts, the
+ * skip link, the metadata and the loading shell. The chrome belongs to the
+ * surface — the public platform has the site header and footer, the access
+ * portal has its own frame, and the Control Centre and the Field App have
+ * their own shells.
+ *
+ * It stays a **server component**. The preloader is server-rendered markup
+ * with one small inline script; the only client components are the readiness
+ * signal and the route progress indicator, and both are leaves — turning the
+ * layout itself into a client component would send the whole document to the
+ * browser for no reason.
+ */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={BRAND.locale} className={`${inter.variable} ${sora.variable}`}>
+    <html lang={BRAND.locale} className={`${inter.variable} ${manrope.variable}`}>
       <body className="flex min-h-screen flex-col antialiased">
         <a href="#main" className="skip-link">
           Skip to main content
         </a>
-        <SiteHeader />
-        <main id="main" className="flex-1">
+
+        {/* The application-level preloader for the first startup. */}
+        <HatsiGlobalPreloader />
+        {/* Tells the preloader the application has hydrated and painted. */}
+        <HatsiBootSignal />
+        {/* The route-level progress indicator. */}
+        <HatsiLoadingProvider>
+          <HatsiLoadingIndicator />
           {children}
-        </main>
-        <SiteFooter />
+        </HatsiLoadingProvider>
       </body>
     </html>
   );
 }
+
+/** Exported for the contact page and the footer. */
+export const CONTACT_DETAILS = CONTACT;

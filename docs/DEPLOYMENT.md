@@ -188,7 +188,8 @@ result.
 | Audit logs | Minimum 7 years. |
 | API usage logs | 13 months (or as long as an application is subscribed). |
 | Contact enquiries | 24 months, then deleted. |
-| Legacy raw capture (`audit/legacy-pages`) | Kept in Git forever; it is the proof of what was migrated. |
+| Legacy structured capture (`audit/source/`) | Kept in Git; asserted by `tests/data-integrity.test.ts`. |
+| Legacy raw HTML captures | **Removed 2026-11-12.** No longer retained. |
 
 ## 6. Rollback
 

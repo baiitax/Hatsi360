@@ -134,8 +134,9 @@ from the live host into `public/img/` and re-used, so the successor looks like t
 
 The recovered dataset lives in three places, each with a different job:
 
-1. `audit/source/*.json` + `audit/legacy-pages/*.html` — the **raw capture**, committed, and the
-   independent truth that `tests/data-integrity.test.ts` compares against.
+1. `audit/source/*.json` — the **structured capture**, committed, and the independent truth that
+   `tests/data-integrity.test.ts` compares against. (The raw HTML pages it was transcribed from were
+   removed on 2026-11-12.)
 2. `scripts/build_legacy_dataset.py` — the deterministic reconstruction
    (28 observations, 0 unreconstructable, 0 mismatches against the capture).
 3. `src/data/legacy/production-observations.json` — the reconstructed dataset the application

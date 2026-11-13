@@ -11,6 +11,7 @@ import { runJob } from '@/lib/jobs';
 import { loadOperationalSnapshot } from '@/lib/analytics/snapshot';
 import { reportById, reportToCsv } from '@/lib/reports';
 import { operationalToday } from '@/lib/analytics/format';
+import { evaluateAndRecord, summariseForAgent } from '@/lib/quality/evaluate';
 
 export interface OperationState {
   ok: boolean;
@@ -74,7 +75,7 @@ export async function submitPrice(
     return fail('Submissions are unavailable because no Supabase project is configured.');
   }
 
-  const profile = await requireAgent('/agent/collect');
+  const profile = await requireAgent('/agent/collection/new');
 
   const raw = Object.fromEntries(formData.entries());
   const parsed = submitSchema.safeParse({
@@ -133,12 +134,42 @@ export async function submitPrice(
     return fail(error.message);
   }
 
+  // Run the quality rules against the new observation and record the
+  // findings. This never blocks the submission — the price is already stored
+  // — but it tells the agent immediately when something looks off, and it
+  // gives the verification queue the findings before a human opens the
+  // record.
+  let note: string | null = null;
+  try {
+    const evaluation = await evaluateAndRecord({
+      observationId: String(observationId),
+      marketId: data.marketId,
+      commodityId: data.commodityId,
+      priceType: data.priceType,
+      reportedAmount: data.amount,
+      reportedUnitId: data.unitId,
+      collectedAt: new Date(data.collectedAt).toISOString(),
+      agentUserId: profile.id,
+      notes: data.notes ?? null,
+    });
+    note = summariseForAgent(evaluation.findings);
+  } catch {
+    // An evaluation failure must never lose a collected price.
+    note = null;
+  }
+
   revalidatePath('/agent/home');
   revalidatePath('/agent/tasks');
   revalidatePath('/agent/submissions');
   revalidatePath('/admin/verification');
+  revalidatePath('/admin/quality');
 
-  return succeed(`Price submitted for review. Reference ${String(observationId).slice(0, 8)}.`);
+  const reference = String(observationId).slice(0, 8);
+  return succeed(
+    note
+      ? `Price submitted for review. Reference ${reference}. ${note}`
+      : `Price submitted for review. Reference ${reference}.`,
+  );
 }
 
 /** Move one of the agent's own tasks forward. */
@@ -166,7 +197,7 @@ export async function transitionOwnTask(
 
 /** Save a draft price locally on the device. Never leaves the phone. */
 export async function saveDraft(_prev: OperationState, formData: FormData): Promise<OperationState> {
-  await requireAgent('/agent/collect');
+  await requireAgent('/agent/collection/new');
   const payload = Object.fromEntries(formData.entries());
   const key = String(payload.draftKey ?? 'draft');
   const body = JSON.stringify(payload);

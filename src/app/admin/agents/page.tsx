@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { requireAdmin } from '@/lib/auth/guards';
 import { listAgents, listMarkets } from '@/lib/operations/admin';
 import { DataTable, type Column } from '@/components/ops/DataTable';
@@ -48,7 +49,12 @@ export default async function AgentsPage({
       header: 'Agent',
       cell: (row) => (
         <div>
-          <p className="font-medium text-ink-900">{row.fullName ?? 'Unnamed agent'}</p>
+          <Link
+            href={`/admin/agents/${row.id}`}
+            className="font-medium text-ink-900 hover:text-brand-700 hover:underline"
+          >
+            {row.fullName ?? 'Unnamed agent'}
+          </Link>
           <p className="text-xs text-ink-500">
             {row.employeeCode ?? 'No employee code'}
             {row.region ? ` · ${row.region}` : ''}

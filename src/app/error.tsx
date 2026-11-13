@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { BareFrame } from '@/components/site/BareFrame';
 
 export default function GlobalError({
   error,
@@ -17,8 +18,8 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="section">
-      <div className="container-page max-w-2xl text-center">
+    <BareFrame>
+      <div className="mx-auto max-w-2xl text-center">
         <p className="text-sm font-semibold uppercase tracking-widest text-brand-700">Error</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
           Something went wrong on our side
@@ -47,6 +48,6 @@ export default function GlobalError({
           </Link>
         </div>
       </div>
-    </div>
+    </BareFrame>
   );
 }

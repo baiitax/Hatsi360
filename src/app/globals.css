@@ -1,20 +1,22 @@
 @import 'tailwindcss';
 
 /* ==========================================================================
-   GonaPulse design system
+   Hatsi360 design system
 
    An independent agricultural market intelligence platform powered by
    Pluck Agro. The palette is defined once, here, and mirrored in
    `src/lib/brand.ts` so the documentation and the code cannot drift.
 
-     deep field  #0d2c1b  — primary brand, headers, the mark
-     harvest     #17512f  — primary actions, links, focus rings
-     leaf        #2a8a4e  — supporting accent, verified states
-     fresh leaf  #34b877  — secondary accent, positive movement
-     harvest gold#c4841e  — secondary accent, alerts and highlights
-     earth       #8a6a4f  — muted data-visualisation series
-     canvas      #faf9f6  — page background, a warm off-white
-     charcoal    #1e2420  — body typography
+     deep harvest green #123B2A  — primary brand surface, the mark
+     forest green       #174D35  — primary actions, links, focus rings
+     agricultural green  #26734B  — accent text and chart series
+     fresh growth green #5B9A57  — positive movement, highlights
+     grain gold         #D5A441  — secondary accent, the mark
+     harvest amber      #E5B95F  — signal colour on dark surfaces
+     wheat beige        #E9D8B5  — light grain tone on dark surfaces
+     natural sand       #F4EFE4  — warm editorial panels
+     charcoal           #202923  — body typography
+     soft background    #F7F8F5  — page background
 
    Every text colour clears WCAG AA on the canvas and on white. The measured
    ratios are recorded in `src/lib/brand.ts` and asserted by
@@ -22,65 +24,95 @@
    ========================================================================== */
 
 @theme {
-  --color-brand-50: #f2f8f3;
-  --color-brand-100: #dcf0e3;
-  --color-brand-200: #b9e0c6;
-  --color-brand-300: #86c9a0;
-  --color-brand-400: #4aa877;
-  --color-brand-500: #2a8a4e;
-  --color-brand-600: #1d6b3c;
-  --color-brand-700: #17512f;
-  --color-brand-800: #123d26;
-  --color-brand-900: #0d2c1b;
-  --color-brand-950: #071a10;
+  /* The card and surface colour, named so charts can reference it. */
+  --color-white: #ffffff;
 
-  /* Fresh leaf — the supporting accent. */
-  --color-leaf-100: #dcf5e7;
-  --color-leaf-200: #b6e9cd;
-  --color-leaf-300: #7fd9ab;
-  --color-leaf-400: #4fc98c;
-  --color-leaf-500: #34b877;
-  --color-leaf-600: #239a5f;
-  --color-leaf-700: #1a7a4a;
+  --color-brand-50: #f1f7f0;
+  --color-brand-100: #e1efe0;
+  --color-brand-200: #c2dec1;
+  --color-brand-300: #9bc798;
+  --color-brand-400: #7cb277;
+  --color-brand-500: #2f8257;
+  --color-brand-600: #26734b;
+  --color-brand-700: #174d35;
+  --color-brand-800: #123b2a;
+  --color-brand-900: #0e2c1f;
+  --color-brand-950: #071a12;
 
-  /* Harvest gold — the secondary accent. */
-  --color-harvest-100: #fbefd6;
-  --color-harvest-200: #f6dda6;
-  --color-harvest-300: #efc46e;
-  --color-harvest-400: #e8a33d;
-  --color-harvest-500: #c4841e;
-  --color-harvest-600: #a26c15;
-  --color-harvest-700: #8f6216;
+  /* Fresh growth green — the supporting accent and positive movement. */
+  --color-leaf-100: #e6f1e4;
+  --color-leaf-200: #c9e2c5;
+  --color-leaf-300: #9bc798;
+  --color-leaf-400: #7cb277;
+  --color-leaf-500: #5b9a57;
+  --color-leaf-600: #467c43;
+  --color-leaf-700: #376136;
+
+  /* Grain gold — the secondary accent. */
+  --color-harvest-100: #faf1dc;
+  --color-harvest-200: #f3dfb2;
+  --color-harvest-300: #e9c97e;
+  --color-harvest-400: #e5b95f;
+  --color-harvest-500: #d5a441;
+  --color-harvest-600: #b98b2e;
+  --color-harvest-700: #96702a;
+
+  /* Wheat beige and natural sand — warm editorial surfaces. */
+  --color-sand-50: #fbf8f1;
+  --color-sand-100: #f4efe4;
+  --color-sand-200: #e9d8b5;
+  --color-sand-300: #dcc79a;
+  --color-sand-400: #cbb078;
+  --color-sand-500: #b0945f;
+  --color-sand-600: #8b7548;
+  --color-sand-700: #6b5a36;
 
   /* Earth — the muted series used in charts. */
-  --color-earth-100: #efe6dc;
-  --color-earth-200: #ddcdbc;
-  --color-earth-300: #c9b29c;
-  --color-earth-400: #a98a6e;
-  --color-earth-500: #8a6a4f;
-  --color-earth-600: #6b5039;
-  --color-earth-700: #4f3b2a;
+  --color-earth-100: #ede7de;
+  --color-earth-200: #d9cdbc;
+  --color-earth-300: #bfaf9a;
+  --color-earth-400: #a28f78;
+  --color-earth-500: #85735c;
+  --color-earth-600: #675844;
+  --color-earth-700: #4c4132;
 
-  /* Ink — warm charcoal typography and neutral surfaces. */
-  --color-ink-50: #faf9f6;
-  --color-ink-100: #f1f0ec;
-  --color-ink-200: #e2e0da;
-  --color-ink-300: #c6c3ba;
-  --color-ink-400: #9a968c;
-  --color-ink-500: #6f6d64;
-  --color-ink-600: #56564e;
-  --color-ink-700: #42423b;
-  --color-ink-800: #30302b;
-  --color-ink-900: #1e2420;
-  --color-ink-950: #121714;
+  /* Ink — charcoal typography and neutral surfaces. */
+  --color-ink-50: #f7f8f5;
+  --color-ink-100: #eff2ee;
+  --color-ink-200: #e3e9e2;
+  --color-ink-300: #cbd5cd;
+  --color-ink-400: #68756e;
+  --color-ink-450: #718078;
+  --color-ink-500: #5a6760;
+  --color-ink-600: #465149;
+  --color-ink-700: #3a443d;
+  --color-ink-800: #34423a;
+  --color-ink-900: #202923;
+  --color-ink-950: #121815;
 
-  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  /* Status — verified, pending, rejected and informational states. */
+  --color-success-500: #228b55;
+  --color-success-700: #1c6e45;
+  --color-warning-50: #fdf6e6;
+  --color-warning-200: #efd9a2;
+  --color-warning-500: #d69e2e;
+  --color-warning-700: #8a6520;
+  --color-error-50: #fdf0ef;
+  --color-error-200: #f0c6c3;
+  --color-error-500: #c84b45;
+  --color-error-700: #a63e39;
+  --color-info-50: #eef4fb;
+  --color-info-200: #bcd6f0;
+  --color-info-500: #3478b8;
+  --color-info-700: #2c628f;
+
+  --font-display: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   --radius-card: 0.875rem;
 
-  --shadow-soft: 0 1px 2px rgb(13 44 27 / 0.04), 0 8px 24px -12px rgb(13 44 27 / 0.14);
-  --shadow-lift: 0 2px 4px rgb(13 44 27 / 0.06), 0 18px 40px -20px rgb(13 44 27 / 0.24);
+  --shadow-soft: 0 1px 2px rgb(18 59 42 / 0.04), 0 8px 24px -12px rgb(18 59 42 / 0.14);
+  --shadow-lift: 0 2px 4px rgb(18 59 42 / 0.06), 0 18px 40px -20px rgb(18 59 42 / 0.24);
 }
 
 @layer base {
@@ -95,12 +127,20 @@
 
   body {
     background-color: var(--color-ink-50);
-    color: var(--color-ink-900);
+    color: var(--color-ink-950);
     font-family: var(--font-sans);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'tnum';
     -webkit-font-smoothing: antialiased;
   }
 
+  /*
+   * Headings take their colour from the surface they sit on.
+   *
+   * A heading that hard-codes the ink colour is unreadable on a deep green
+   * panel, because the panel's own light text never reaches it. Inheriting
+   * means a heading is white on a dark panel and ink on a light one without
+   * either having to say so.
+   */
   h1,
   h2,
   h3,
@@ -109,7 +149,7 @@
   h6 {
     font-family: var(--font-display);
     letter-spacing: -0.015em;
-    color: var(--color-ink-950);
+    color: inherit;
   }
 
   /* A single, visible focus treatment across the whole application. */
@@ -122,11 +162,6 @@
   ::selection {
     background: var(--color-brand-200);
     color: var(--color-brand-950);
-  }
-
-  /* The page sits on a warm off-white, not on a cold grey. */
-  body {
-    background-color: var(--color-ink-50);
   }
 }
 
@@ -188,34 +223,34 @@
     letter-spacing: -0.02em;
   }
 
-  .prose-gona {
+  .prose-hatsi {
     color: var(--color-ink-700);
     line-height: 1.75;
   }
 
-  .prose-gona h2 {
+  .prose-hatsi h2 {
     margin-top: 2.25rem;
     margin-bottom: 0.75rem;
     font-size: 1.375rem;
   }
 
-  .prose-gona h3 {
+  .prose-hatsi h3 {
     margin-top: 1.75rem;
     margin-bottom: 0.5rem;
     font-size: 1.125rem;
   }
 
-  .prose-gona p {
+  .prose-hatsi p {
     margin-bottom: 1rem;
   }
 
-  .prose-gona ul {
+  .prose-hatsi ul {
     margin-bottom: 1rem;
     padding-left: 1.25rem;
     list-style-type: disc;
   }
 
-  .prose-gona li {
+  .prose-hatsi li {
     margin-bottom: 0.375rem;
   }
 }
@@ -232,7 +267,7 @@
     left: 0.5rem;
     top: 0.5rem;
     padding: 0.5rem 1rem;
-    background: var(--color-brand-900);
+    background: var(--color-brand-800);
     color: white;
     border-radius: 0.5rem;
   }
@@ -268,6 +303,353 @@
       animation-duration: 0.001ms !important;
       transition-duration: 0.001ms !important;
       scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   The Hatsi360 loading system
+
+   Four levels of loading feedback, each with its own component and its own
+   visual language:
+
+     the boot curtain   a full-screen preloader for the very first startup
+     the progress bar   a quiet route-level indicator during navigation
+     the skeletons      placeholders that hold the shape of incoming content
+     the action loader  in-place feedback for a submission, upload or export
+
+   The palette is the brand palette: deep harvest green, grain gold, and the
+   official mark. Nothing bounces, nothing flashes, and nothing animates for
+   longer than the wait it represents.
+   ========================================================================== */
+
+@layer components {
+  /* ------------------------------------------------------- the boot curtain */
+
+  .hatsi-boot {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-brand-800);
+    background-image: radial-gradient(
+      120% 90% at 50% 0%,
+      rgba(38, 115, 75, 0.45) 0%,
+      rgba(18, 59, 42, 0) 62%
+    );
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 220ms ease,
+      visibility 0s linear 220ms;
+  }
+
+  .hatsi-boot[data-state='visible'] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+      opacity 220ms ease,
+      visibility 0s linear 0s;
+  }
+
+  .hatsi-boot[data-state='leaving'] {
+    opacity: 0;
+    visibility: visible;
+    pointer-events: none;
+    transition:
+      opacity 260ms ease,
+      visibility 0s linear 260ms;
+  }
+
+  .hatsi-boot__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .hatsi-boot__mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 5.5rem;
+    height: 5.5rem;
+  }
+
+  .hatsi-boot__logo {
+    width: 3.5rem;
+    height: auto;
+    opacity: 0.96;
+  }
+
+  /*
+   * The ring. A single gold arc travels around a faint track — a slow 360
+   * sweep, the way a dial reads a level. It never spins quickly and it never
+   * bounces.
+   */
+  .hatsi-boot__ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hatsi-boot__arc {
+    transform-origin: 60px 60px;
+    animation: hatsi-boot-sweep 1.9s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  }
+
+  @keyframes hatsi-boot-sweep {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .hatsi-boot__title {
+    margin-top: 0.25rem;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+  }
+
+  .hatsi-boot__message {
+    font-size: 0.8125rem;
+    color: var(--color-brand-200);
+  }
+
+  .hatsi-boot__bar {
+    width: 11rem;
+    height: 3px;
+    margin-top: 0.25rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.14);
+  }
+
+  .hatsi-boot__bar-fill {
+    display: block;
+    width: 38%;
+    height: 100%;
+    border-radius: 999px;
+    background-color: var(--color-harvest-500);
+    animation: hatsi-boot-bar 1.8s ease-in-out infinite;
+  }
+
+  @keyframes hatsi-boot-bar {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(300%);
+    }
+  }
+
+  .hatsi-boot__recovery {
+    margin-top: 0.5rem;
+    max-width: 22rem;
+    border: 1px solid rgba(213, 164, 65, 0.35);
+    border-radius: 0.75rem;
+    padding: 0.875rem 1rem;
+    background-color: rgba(7, 26, 18, 0.55);
+    text-align: left;
+  }
+
+  .hatsi-boot__recovery-text {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--color-brand-100);
+  }
+
+  .hatsi-boot__recovery-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .hatsi-boot__button {
+    border-radius: 999px;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-brand-100);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+
+  .hatsi-boot__button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .hatsi-boot__button--primary {
+    background-color: var(--color-harvest-500);
+    border-color: var(--color-harvest-500);
+    color: var(--color-brand-900);
+  }
+
+  .hatsi-boot__button--primary:hover {
+    background-color: var(--color-harvest-400);
+  }
+
+  /* --------------------------------------------------- the progress indicator */
+
+  .hatsi-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 90;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+
+  .hatsi-progress[data-state='active'] {
+    opacity: 1;
+  }
+
+  .hatsi-progress__bar {
+    display: block;
+    height: 100%;
+    width: 35%;
+    background-color: var(--color-harvest-500);
+    animation: hatsi-progress-slide 1.15s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  }
+
+  @keyframes hatsi-progress-slide {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(340%);
+    }
+  }
+
+  /* ---------------------------------------------------------- the skeletons */
+
+  .hatsi-skeleton {
+    display: block;
+    border-radius: 0.5rem;
+    background: linear-gradient(
+      90deg,
+      var(--color-ink-100) 25%,
+      var(--color-ink-200) 37%,
+      var(--color-ink-100) 63%
+    );
+    background-size: 400% 100%;
+    animation: skeleton-sweep 1.4s ease infinite;
+  }
+
+  .hatsi-skeleton--eyebrow {
+    width: 7rem;
+    height: 0.75rem;
+  }
+
+  .hatsi-skeleton--title {
+    width: min(26rem, 100%);
+    height: 2.25rem;
+    margin-top: 1rem;
+  }
+
+  .hatsi-skeleton--line {
+    height: 0.875rem;
+    margin-top: 0.75rem;
+  }
+
+  .hatsi-skeleton--line-short {
+    width: 60%;
+  }
+
+  .hatsi-skeleton--line-wide {
+    width: 100%;
+  }
+
+  .hatsi-skeleton--thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 0.625rem;
+  }
+
+  .hatsi-skeleton--card-media {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    border-radius: 0.625rem;
+  }
+
+  .hatsi-skeleton--figure {
+    width: 4.5rem;
+    height: 1.75rem;
+  }
+
+  .hatsi-skeleton--mt {
+    margin-top: 0.875rem;
+  }
+
+  /* ------------------------------------------------------- the action loader */
+
+  .hatsi-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    animation: hatsi-spin 900ms linear infinite;
+  }
+
+  @keyframes hatsi-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /*
+   * Reduced motion.
+   *
+   * The curtain keeps its mark and its message; the ring becomes a still arc
+   * and the bar becomes a static, partially filled track. The progress bar
+   * stops travelling. The indicator is still present and still honest — it
+   * simply does not move.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .hatsi-boot__arc,
+    .hatsi-boot__bar-fill,
+    .hatsi-progress__bar,
+    .hatsi-spinner,
+    .hatsi-skeleton {
+      animation: none !important;
+    }
+
+    .hatsi-boot__bar-fill {
+      width: 38%;
+      transform: none;
+    }
+
+    .hatsi-progress__bar {
+      width: 38%;
+      transform: none;
+    }
+
+    .hatsi-spinner {
+      transform: none;
+      opacity: 0.7;
+    }
+
+    .hatsi-boot,
+    .hatsi-progress {
+      transition: none;
     }
   }
 }

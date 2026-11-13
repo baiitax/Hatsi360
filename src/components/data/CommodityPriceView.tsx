@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PriceChart, ObservationCountChart } from '@/components/data/PriceChart';
+import { CHART_COLOURS } from '@/lib/chart-colours';
 import { MarketComparisonTable } from '@/components/data/PriceTable';
 import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
 import { Breadcrumbs, EmptyState, SectionHeading } from '@/components/ui';
@@ -7,6 +8,8 @@ import { buildSeries, summariseByMarket } from '@/lib/pricing';
 import { formatDate, formatMoney } from '@/lib/money';
 import { PRICE_TYPE_META } from '@/types/domain';
 import type { Commodity, PriceObservation } from '@/types/domain';
+import { getCommodityImage } from '@/lib/images/registry';
+import { HatsiImage } from '@/components/media/HatsiImage';
 
 /**
  * The history periods a reader can choose.
@@ -81,12 +84,33 @@ export function CommodityPriceView({
 
   const hasData = observations.length > 0;
 
+  /**
+   * The commodity's own photograph, matched by its canonical slug through the
+   * registry. It shows the commodity itself, so the reader can recognise what
+   * the page is about before reading a single figure.
+   */
+  const image = getCommodityImage(commodity.slug);
+
   return (
     <div className="section">
       <div className="container-page">
         <Breadcrumbs items={breadcrumbs} />
 
-        <header className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        {/*
+          The commodity hero. It is a photographic band above the analytical
+          header, not a replacement for it: every figure, comparison and
+          freshness statement stays in the dominant position below.
+        */}
+        <div className="overflow-hidden rounded-2xl">
+          <HatsiImage
+            asset={image}
+            sizes="(min-width: 1280px) 80rem, 100vw"
+            ratio="wide"
+            priority
+          />
+        </div>
+
+        <header className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-widest text-brand-700">
               {eyebrow ?? commodity.categoryName}
@@ -212,7 +236,7 @@ export function CommodityPriceView({
                       key: 'commodity',
                       label: commodity.name,
                       points: series,
-                      color: '#0C8430',
+                      color: CHART_COLOURS.primary,
                     },
                   ]}
                 />
@@ -228,7 +252,7 @@ export function CommodityPriceView({
                           key: 'commodity',
                           label: commodity.name,
                           points: series,
-                          color: '#00D084',
+                          color: CHART_COLOURS.positive,
                         },
                       ]}
                     />
@@ -323,7 +347,7 @@ export function CommodityPriceView({
                   </ul>
                   {units.some((u) => !u.specific) ? (
                     <p className="mt-4 border-t border-ink-100 pt-3 text-xs text-ink-500">
-                      GonaPulse never converts a price between units unless the conversion is
+                      Hatsi360 never converts a price between units unless the conversion is
                       verified. Where the unit is missing, the original figure is shown as reported.
                     </p>
                   ) : null}

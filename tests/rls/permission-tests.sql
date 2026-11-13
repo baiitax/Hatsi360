@@ -778,6 +778,232 @@ begin;
 rollback;
 
 -- =============================================================================
+-- 8b. The trade intelligence layer (migrations 0024, 0029, 0030)
+-- =============================================================================
+-- These four tables hold analytical judgement rather than market fact. The
+-- cold-start validator already asserts RLS is enabled on every table, which is
+-- how the original omission was caught. These assertions prove the policies
+-- actually say the right thing: readable by anyone, writable only by staff.
+--
+-- A fabricated specification or fundamental is presented to the public as
+-- sourced intelligence, which is exactly what brief §12 prohibits.
+
+begin;
+  set local role anon;
+  set local request.jwt.claim.sub = '';
+
+  select rls_test.assert_true(
+    (select count(*) from public.commodity_specifications) >= 0,
+    'anon should be able to read commodity specifications'
+  );
+  select rls_test.assert_true(
+    (select count(*) from public.commodity_seasonality) >= 0,
+    'anon should be able to read commodity seasonality'
+  );
+  select rls_test.assert_true(
+    (select count(*) from public.commodity_fundamentals) >= 0,
+    'anon should be able to read commodity fundamentals'
+  );
+  select rls_test.assert_true(
+    (select count(*) from public.price_source_registry) >= 0,
+    'anon should be able to read the price source registry'
+  );
+
+  select rls_test.assert_raises(
+    'anon must not be able to insert a commodity specification',
+    $q$insert into public.commodity_specifications (commodity_id, parameter, requirement)
+       values ((select min(id) from public.commodities), 'rls_test_parameter', 'test')$q$
+  );
+
+  select rls_test.assert_no_rows_affected(
+    'anon must not be able to rewrite the price source registry',
+    $q$update public.price_source_registry set eligible_for_publication = true
+       where source_system = 'legacy_import'$q$
+  );
+
+  set local role authenticated;
+  set local request.jwt.claim.sub = '55555555-5555-5555-5555-555555555555';
+
+  select rls_test.assert_raises(
+    'a non-staff user must not be able to insert a fundamental',
+    $q$insert into public.commodity_fundamentals (commodity_id, report_period, sourced_facts)
+       values ((select min(id) from public.commodities), now()::date, 'rls_test')$q$
+  );
+
+  select rls_test.assert_no_rows_affected(
+    'a non-staff user must not be able to edit seasonality',
+    $q$update public.commodity_seasonality set price_effect = 'rls_test'$q$
+  );
+
+  -- Staff must be able to write. Without this the read-only policies would look
+  -- correct while making the tables useless to the admin screens that fill them.
+  --
+  -- Note the mechanism: `is_staff()` reads `public.current_role()`, which reads
+  -- the profile row for `auth.uid()`. So staff is expressed by the JWT subject
+  -- and the profile's role column, not by switching the PostgreSQL role.
+  set local role authenticated;
+  set local request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+  insert into public.commodity_specifications (commodity_id, parameter, requirement, basis)
+  values ((select min(id) from public.commodities), 'rls_test_parameter', 'test value', 'indicative');
+
+  select rls_test.assert_true(
+    (select count(*) from public.commodity_specifications
+      where parameter = 'rls_test_parameter') = 1,
+    'staff should be able to insert a commodity specification'
+  );
+
+  delete from public.commodity_specifications where parameter = 'rls_test_parameter';
+
+  reset role;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 8c. The commercial offers (migrations 0026-0028)
+-- ---------------------------------------------------------------------------
+-- An offer is a commitment by a named party, not a market fact, so it lives in
+-- its own table with its own status and its own trail. Public read requires
+-- verified status AND the owner's disclosure consent AND an unexpired validity
+-- window; `update_offer_status()` is the only status-changing path and is
+-- restricted to staff. That staff check was missing originally and is the
+-- reason migration 0028 exists.
+begin;
+  -- The validator's stub auth.users has (id, email, raw_user_meta_data,
+  -- created_at); Supabase's real one has more columns. Only the id is needed
+  -- here, and `if not exists` keeps the fixture re-runnable.
+  insert into auth.users (id)
+  values
+    ('99999999-9999-9999-9999-999999999999'),
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+  on conflict (id) do nothing;
+
+  -- The fixture is re-runnable: a previous run that failed between the insert
+  -- and the rollback leaves these rows behind, and `on conflict` keeps the
+  -- suite usable without a manual reset.
+  insert into public.profiles (id, full_name, role, account_status)
+  values
+    ('99999999-9999-9999-9999-999999999999', 'RLS offer owner', 'customer', 'active'),
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'RLS offer verifier', 'verification_officer', 'active')
+  on conflict (id) do update
+    set role = excluded.role, account_status = 'active';
+
+  insert into public.buyer_offers
+    (user_id, counterparty_name, commodity_id, price_amount, price_type, unit_id,
+     currency_code, quantity_required, valid_from, valid_until, status, disclosure_consent)
+  select
+    '99999999-9999-9999-9999-999999999999',
+    'RLS Test Aggregator',
+    (select min(id) from public.commodities),
+    41000, 'wholesale_transaction',
+    (select min(id) from public.measurement_units),
+    'NGN', 500,
+    now() - interval '1 day', now() + interval '30 days',
+    'verified', false
+  where exists (select 1 from public.commodities);
+
+do $$
+declare
+  v_offer uuid;
+begin
+  select id into v_offer from public.buyer_offers
+  where user_id = '99999999-9999-9999-9999-999999999999' limit 1;
+
+  if v_offer is null then
+    raise notice 'no commodity fixture available; skipping offer assertions';
+    return;
+  end if;
+
+  -- A verified offer is still hidden from anon until the owner consents.
+  perform set_config('role', 'anon', true);
+  perform rls_test.assert_true(
+    (select count(*) from public.buyer_offers where id = v_offer) = 0,
+    'a verified offer must stay hidden until the owner consents to disclosure'
+  );
+
+  perform rls_test.assert_no_rows_affected(
+    'anon must not be able to write an offer',
+    format('update public.buyer_offers set price_amount = 1 where id = %L', v_offer)
+  );
+
+  perform set_config('role', 'postgres', true);
+  update public.buyer_offers set disclosure_consent = true where id = v_offer;
+
+  perform set_config('role', 'anon', true);
+  perform rls_test.assert_true(
+    (select count(*) from public.buyer_offers where id = v_offer) = 1,
+    'anon should see a verified offer once consent is given'
+  );
+
+  -- An expired offer is not a live opportunity and must not be published.
+  perform set_config('role', 'postgres', true);
+  update public.buyer_offers
+     set valid_from = now() - interval '3 days', valid_until = now() - interval '1 day'
+   where id = v_offer;
+
+  perform set_config('role', 'anon', true);
+  perform rls_test.assert_true(
+    (select count(*) from public.buyer_offers where id = v_offer) = 0,
+    'an expired offer must not be publicly readable'
+  );
+
+  -- The owner cannot edit their own verified offer. RLS's USING clause excludes
+  -- the row, so the UPDATE matches zero rows rather than raising.
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claim.sub',
+                     '99999999-9999-9999-9999-999999999999', true);
+  perform rls_test.assert_no_rows_affected(
+    'the owner must not be able to edit their own verified offer',
+    format('update public.buyer_offers set price_amount = 999999 where id = %L', v_offer)
+  );
+
+  -- The permission check migration 0028 added: a non-staff caller cannot verify
+  -- an offer, even through the workflow function. This is the assertion that
+  -- failed against the original 0027.
+  perform rls_test.assert_raises(
+    'a non-staff user must not be able to change an offer status',
+    format($f$select public.update_offer_status('buyer_offers', %L, 'verified', null)$f$, v_offer)
+  );
+
+  perform rls_test.assert_raises(
+    'a rejection without a reason must be refused',
+    format($f$select public.update_offer_status('buyer_offers', %L, 'rejected', null)$f$, v_offer)
+  );
+
+  -- Staff can. Verified here as the verification officer.
+  perform set_config('request.jwt.claim.sub',
+                     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', true);
+  perform rls_test.assert_true(
+    public.update_offer_status('buyer_offers', v_offer, 'rejected',
+                               'RLS permission test rejected this offer.') = 'rejected',
+    'staff should be able to reject an offer with a reason'
+  );
+
+  perform rls_test.assert_true(
+    (select count(*) from public.offer_verification_events where offer_id = v_offer) >= 1,
+    'the verification trail should record the rejection'
+  );
+end $$;
+
+reset role;
+rollback;
+
+-- The fixture rows were inserted outside the transaction above, so remove them.
+delete from public.offer_verification_events
+where offer_id in (select id from public.buyer_offers
+                   where user_id = '99999999-9999-9999-9999-999999999999');
+delete from public.audit_events
+where entity_id in (select id::text from public.buyer_offers
+                    where user_id = '99999999-9999-9999-9999-999999999999');
+delete from public.buyer_offers
+where user_id = '99999999-9999-9999-9999-999999999999';
+delete from public.profiles
+where id in ('99999999-9999-9999-9999-999999999999',
+             'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+delete from auth.users
+where id in ('99999999-9999-9999-9999-999999999999',
+             'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+
+-- =============================================================================
 -- 9. Cleanup
 --
 -- Everything above is a fixture. It is removed here so that running the suite

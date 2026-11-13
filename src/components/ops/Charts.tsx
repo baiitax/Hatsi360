@@ -13,9 +13,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { CHART_COLOURS } from '@/lib/chart-colours';
 
 /**
- * GonaPulse — the operational charts.
+ * Hatsi360 — the operational charts.
  *
  * The charts are thin wrappers over Recharts. They are given data that has
  * already been computed on the server from the database, and they show an
@@ -55,23 +56,23 @@ export function CollectionTrendChart({
         <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
           <defs>
             <linearGradient id="submittedFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0c8430" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#0c8430" stopOpacity={0.02} />
+              <stop offset="0%" stopColor={CHART_COLOURS.primary} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={CHART_COLOURS.primary} stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#eef0ee" />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#65756b' }} tickLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: '#65756b' }} tickLine={false} allowDecimals={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLOURS.grid} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: CHART_COLOURS.axis }} tickLine={false} />
+          <YAxis tick={{ fontSize: 11, fill: CHART_COLOURS.axis }} tickLine={false} allowDecimals={false} />
           <Tooltip
-            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d9dedb' }}
-            labelStyle={{ color: '#303733', fontWeight: 600 }}
+            contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${CHART_COLOURS.grid}` }}
+            labelStyle={{ color: CHART_COLOURS.tooltipText, fontWeight: 600 }}
           />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Area
             type="monotone"
             dataKey="submitted"
             name="Submitted"
-            stroke="#0c8430"
+            stroke={CHART_COLOURS.primary}
             fill="url(#submittedFill)"
             strokeWidth={2}
           />
@@ -79,7 +80,7 @@ export function CollectionTrendChart({
             type="monotone"
             dataKey="approved"
             name="Approved"
-            stroke="#175c2a"
+            stroke={CHART_COLOURS.primaryDeep}
             fill="none"
             strokeWidth={2}
           />
@@ -87,7 +88,7 @@ export function CollectionTrendChart({
             type="monotone"
             dataKey="published"
             name="Published"
-            stroke="#00b975"
+            stroke={CHART_COLOURS.positive}
             fill="none"
             strokeDasharray="4 3"
             strokeWidth={2}
@@ -129,16 +130,16 @@ export function CoverageBarChart({
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#eef0ee" />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#65756b' }} tickLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: '#65756b' }} tickLine={false} allowDecimals={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLOURS.grid} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: CHART_COLOURS.axis }} tickLine={false} />
+          <YAxis tick={{ fontSize: 11, fill: CHART_COLOURS.axis }} tickLine={false} allowDecimals={false} />
           <Tooltip
-            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d9dedb' }}
+            contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${CHART_COLOURS.grid}` }}
           />
           <Legend wrapperStyle={{ fontSize: 11 }} />
-          <Bar dataKey="value" name="Collected" fill="#0c8430" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="value" name="Collected" fill={CHART_COLOURS.primary} radius={[4, 4, 0, 0]} />
           {data.some((d) => d.expected !== undefined) ? (
-            <Bar dataKey="expected" name="Expected" fill="#d9dedb" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expected" name="Expected" fill={CHART_COLOURS.grid} radius={[4, 4, 0, 0]} />
           ) : null}
         </BarChart>
       </ResponsiveContainer>
@@ -151,7 +152,14 @@ export interface OutcomeBarDatum {
   value: number;
 }
 
-const OUTCOME_COLOURS = ['#0c8430', '#175c2a', '#93c383', '#eab308', '#dc2626', '#4f5d54'];
+const OUTCOME_COLOURS = [
+  CHART_COLOURS.primary,
+  CHART_COLOURS.primaryDeep,
+  CHART_COLOURS.positive,
+  CHART_COLOURS.warning,
+  CHART_COLOURS.negative,
+  CHART_COLOURS.axis,
+];
 
 export function OutcomeBarChart({
   data,
@@ -180,16 +188,16 @@ export function OutcomeBarChart({
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 24 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#eef0ee" horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 11, fill: '#65756b' }} allowDecimals={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLOURS.grid} horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 11, fill: CHART_COLOURS.axis }} allowDecimals={false} />
           <YAxis
             type="category"
             dataKey="label"
-            tick={{ fontSize: 11, fill: '#414b44' }}
+            tick={{ fontSize: 11, fill: CHART_COLOURS.axisStrong }}
             width={110}
           />
           <Tooltip
-            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d9dedb' }}
+            contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${CHART_COLOURS.grid}` }}
           />
           <Bar dataKey="value" name="Records" radius={[0, 4, 4, 0]}>
             {data.map((entry, index) => (

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import {
   BRAND,
   CONTACT,
+  DESIGN_TOKENS,
   INTELLIGENCE_TIERS,
   LEGAL_NAV,
   ORGANISATION,
@@ -12,23 +13,27 @@ import {
   PRIMARY_NAV,
   SECONDARY_NAV,
 } from '@/lib/brand';
+import { resolveRoute } from '@/lib/route-map';
 
 /**
  * Brand consistency tests.
  *
- * These are the tests that keep GonaPulse from quietly drifting back into
- * Pluck Live. They cover four things:
+ * These are the tests that keep Hatsi360 from quietly drifting back into an
+ * earlier product identity. They cover five things:
  *
  *  1. The identity constants are what the brief says they are.
  *  2. The palette is accessible — a colour that cannot carry text is marked
  *     as graphics-only, and the marks are the ones that clear WCAG AA.
- *  3. No customer-facing source file calls the product "Pluck Live". The only
- *     permitted occurrences are historical references to the previous system
- *     and the brand module's own comment.
- *  4. Every navigation entry points at a route that actually exists.
+ *  3. The design tokens in the stylesheet and the tokens recorded in the brand
+ *     module cannot drift apart.
+ *  4. No customer-facing source file calls the product by an earlier name.
+ *     The only permitted occurrences are historical references to the previous
+ *     system and the brand module's own comment.
+ *  5. Every navigation entry points at a route that actually exists.
  */
 
 const ROOT = join(process.cwd(), 'src');
+const PUBLIC = join(process.cwd(), 'public');
 
 function walk(directory: string): string[] {
   const entries = readdirSync(directory);
@@ -56,21 +61,28 @@ const HISTORICAL_CONTEXT = [
   'The previous Pluck Live system displayed',
   'the previous version of the Pluck Live system',
   'The previous Pluck Live site displayed',
+  'Migrated from the previous Pluck Live site',
 ];
 
-describe('GonaPulse identity', () => {
+describe('Hatsi360 identity', () => {
   it('uses the agreed primary identity', () => {
-    expect(BRAND.name).toBe('GonaPulse');
+    expect(BRAND.name).toBe('Hatsi360');
     expect(BRAND.descriptor).toBe('Agricultural Market Intelligence');
-    expect(BRAND.tagline).toBe('Know the market. Move with confidence.');
+    expect(BRAND.category).toBe('Agricultural Market Intelligence');
+    expect(BRAND.commodityDescriptor).toBe('Agricultural Commodity Intelligence');
+    expect(BRAND.tagline).toBe(
+      'Know the harvest. Understand the market. Trade with confidence.',
+    );
   });
 
   it('keeps the corporate endorsement subordinate', () => {
     expect(BRAND.endorsement).toBe('Powered by Pluck Agro');
-    expect(BRAND.ownershipStatement).toContain('GonaPulse');
+    expect(BRAND.ownershipStatement).toContain('Hatsi360');
     expect(BRAND.ownershipStatement).toContain('Pluck Agro');
     // The endorsement must never claim legal structure we cannot verify.
-    expect(BRAND.ownershipStatement).not.toMatch(/\b(subsidiary|division|registered|company|group)\b/i);
+    expect(BRAND.ownershipStatement).not.toMatch(
+      /\b(subsidiary|division|registered|company|group)\b/i,
+    );
   });
 
   it('states the operating market as Northern Nigeria and the expansion as a plan', () => {
@@ -81,11 +93,11 @@ describe('GonaPulse identity', () => {
 
   it('names every product surface distinctly from the corporate identity', () => {
     expect(BRAND.surfaces.portal).toContain('Access Portal');
-    expect(BRAND.surfaces.fieldApp).toContain('Field App');
+    expect(BRAND.surfaces.fieldApp).toContain('Field');
     expect(BRAND.surfaces.controlCentre).toContain('Control Centre');
     expect(BRAND.surfaces.customerWorkspace).toContain('Customer Workspace');
     for (const surface of Object.values(BRAND.surfaces)) {
-      expect(surface).toContain('GonaPulse');
+      expect(surface).toContain('Hatsi360');
       expect(surface).not.toContain('Pluck Agro');
     }
   });
@@ -97,9 +109,84 @@ describe('GonaPulse identity', () => {
   });
 
   it('exposes the organisation for structured data', () => {
-    expect(ORGANISATION.name).toBe('GonaPulse');
+    expect(ORGANISATION.name).toBe('Hatsi360');
     expect(ORGANISATION.endorsement).toBe(BRAND.endorsement);
     expect(ORGANISATION.logo).toMatch(/^\/brand\//);
+  });
+});
+
+describe('brand assets', () => {
+  /**
+   * The artwork is supplied by the product's owner. Every file the site
+   * serves is derived from those two files by
+   * `scripts/brand_assets.py`, so the list below is the whole system.
+   */
+  const required = [
+    'hatsi360-logo-horizontal.png',
+    'hatsi360-logo-horizontal-light.png',
+    'hatsi360-logo-horizontal-mono.png',
+    'hatsi360-logo-horizontal-mono-light.png',
+    'hatsi360-lockup-compact.png',
+    'hatsi360-lockup-compact-light.png',
+    'hatsi360-lockup-compact-mono.png',
+    'hatsi360-mark.png',
+    'hatsi360-mark-light.png',
+    'hatsi360-mark-mono.png',
+    'hatsi360-mark-mono-light.png',
+    'hatsi360-favicon-16.png',
+    'hatsi360-favicon-32.png',
+    'hatsi360-icon-192.png',
+    'hatsi360-icon-512.png',
+    'hatsi360-apple-touch-icon.png',
+    'hatsi360-social-1200x630.png',
+    'hatsi360-wordmark.png',
+  ];
+
+  it('ships every variant of the logo system', () => {
+    for (const file of required) {
+      expect(existsSync(join(PUBLIC, 'brand', file)), `${file} is missing`).toBe(true);
+    }
+  });
+
+  it('serves no asset that the owner did not supply', () => {
+    const served = readdirSync(join(PUBLIC, 'brand'));
+    for (const file of served) {
+      expect(required, `${file} is not part of the supplied artwork`).toContain(file);
+    }
+  });
+
+  it('uses the supplied artwork in the logo component', () => {
+    const logo = readFileSync(
+      join(process.cwd(), 'src', 'components', 'brand', 'Logo.tsx'),
+      'utf8',
+    );
+    for (const file of [
+      'hatsi360-logo-horizontal.png',
+      'hatsi360-lockup-compact.png',
+      'hatsi360-mark.png',
+    ]) {
+      expect(logo, `${file} is not used by the logo component`).toContain(file);
+    }
+    // The mark is the owner's artwork, not a redrawn stand-in.
+    expect(logo).not.toContain('linearGradient');
+    expect(logo).not.toContain('KERNEL_COUNT');
+  });
+
+  it('names the product in the application icon', () => {
+    const icon = join(process.cwd(), 'src', 'app', 'apple-icon.png');
+    expect(existsSync(icon)).toBe(true);
+    expect(statSync(icon).size).toBeGreaterThan(1000);
+  });
+
+  it('keeps the social card at the size a card reader expects', () => {
+    const card = join(PUBLIC, 'brand', 'hatsi360-social-1200x630.png');
+    expect(existsSync(card)).toBe(true);
+    const bytes = readFileSync(card);
+    // A PNG header carries the width and height at a fixed offset.
+    const width = bytes.readUInt32BE(16);
+    const height = bytes.readUInt32BE(20);
+    expect(width).toBe(1200);
+    expect(height).toBe(630);
   });
 });
 
@@ -126,7 +213,7 @@ describe('palette accessibility', () => {
       const measured = contrast(colour.hex, '#ffffff');
       expect(
         Math.abs(measured - colour.contrastOnWhite),
-        `${colour.name} (#${colour.hex}) records ${colour.contrastOnWhite} but measures ${measured.toFixed(1)}`,
+        `${colour.name} (#${colour.hex}) records ${colour.contrastOnWhite} but measures ${measured.toFixed(2)}`,
       ).toBeLessThan(0.15);
     }
   });
@@ -153,13 +240,33 @@ describe('palette accessibility', () => {
   });
 
   it('keeps the primary brand colour strong enough to carry white text', () => {
-    const primary = PALETTE.find((colour) => colour.name === 'Harvest');
+    const primary = PALETTE.find((colour) => colour.name === 'Deep Harvest Green');
     expect(primary).toBeDefined();
     expect(contrast(primary!.hex, '#ffffff')).toBeGreaterThanOrEqual(4.5);
   });
 });
 
-describe('no "Pluck Live" in customer-facing source', () => {
+describe('design tokens', () => {
+  const css = readFileSync(join(process.cwd(), 'src', 'app', 'globals.css'), 'utf8');
+
+  it('defines every recorded token in the stylesheet', () => {
+    const missing: string[] = [];
+    for (const [token, hex] of Object.entries(DESIGN_TOKENS)) {
+      const declaration = `--color-${token}: ${hex.toLowerCase()};`;
+      if (!css.toLowerCase().includes(declaration.toLowerCase())) missing.push(declaration);
+    }
+    expect(missing, `These tokens are not in globals.css:\n${missing.join('\n')}`).toEqual([]);
+  });
+
+  it('does not scatter the old palette hexes through the stylesheet', () => {
+    // #0d2c1b was the previous primary brand colour and #c4841e the previous
+    // gold. Both must be gone, or the old identity is still visible.
+    expect(css.toLowerCase()).not.toContain('#0d2c1b');
+    expect(css.toLowerCase()).not.toContain('#c4841e');
+  });
+});
+
+describe('no earlier product identity in customer-facing source', () => {
   const files = walk(ROOT);
 
   it('finds source files to check', () => {
@@ -193,6 +300,18 @@ describe('no "Pluck Live" in customer-facing source', () => {
     ).toEqual([]);
   });
 
+  it('does not carry the previous working name anywhere in the source', () => {
+    const offenders: string[] = [];
+    for (const file of files) {
+      const contents = readFileSync(file, 'utf8');
+      if (/gona\s?pulse/i.test(contents)) offenders.push(relative(ROOT, file));
+    }
+    expect(
+      offenders,
+      `The previous working name must be gone from the source:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+
   it('does not use the old "PL" monogram anywhere', () => {
     const offenders: string[] = [];
     for (const file of files) {
@@ -201,7 +320,7 @@ describe('no "Pluck Live" in customer-facing source', () => {
         offenders.push(relative(ROOT, file));
       }
     }
-    expect(offenders, `The "PL" monogram must be replaced by the GonaPulse mark`).toEqual([]);
+    expect(offenders, `The "PL" monogram must be replaced by the Hatsi360 mark`).toEqual([]);
   });
 });
 
@@ -212,27 +331,37 @@ describe('navigation integrity', () => {
   });
 
   it('points every navigation entry at a real route', () => {
-    const appDirectory = join(process.cwd(), 'src', 'app');
+    /**
+     * Every route the application serves, discovered from the app directory.
+     *
+     * A route group — a folder in parentheses — changes the layout a page is
+     * rendered in but never the URL it is served at, so the group is skipped
+     * when the URL is worked out.
+     */
+    function servedRoutes(): Set<string> {
+      const appDirectory = join(process.cwd(), 'src', 'app');
+      const routes = new Set<string>();
 
-    function routeExists(href: string): boolean {
-      const route = href.replace(/^\//, '');
-      const candidates = [
-        join(appDirectory, route, 'page.tsx'),
-        join(appDirectory, `${route}.tsx`),
-        join(appDirectory, route, 'route.ts'),
-      ];
-      return candidates.some((candidate) => {
-        try {
-          return statSync(candidate).isFile();
-        } catch {
-          return false;
+      function walk(directory: string, prefix: string): void {
+        for (const entry of readdirSync(directory, { withFileTypes: true })) {
+          const path = join(directory, entry.name);
+          if (entry.isDirectory()) {
+            const isGroup = entry.name.startsWith('(') && entry.name.endsWith(')');
+            walk(path, isGroup ? prefix : `${prefix}/${entry.name}`);
+          } else if (entry.name === 'page.tsx') {
+            routes.add(prefix === '' ? '/' : prefix);
+          }
         }
-      });
+      }
+
+      walk(appDirectory, '');
+      return routes;
     }
 
+    const routes = servedRoutes();
     const broken = [...PRIMARY_NAV, ...SECONDARY_NAV, ...LEGAL_NAV]
       .map((link) => link.href)
-      .filter((href) => !routeExists(href));
+      .filter((href) => !routes.has(resolveRoute(href)));
 
     expect(broken, `These navigation entries point at routes that do not exist: ${broken.join(', ')}`)
       .toEqual([]);
@@ -242,6 +371,17 @@ describe('navigation integrity', () => {
     for (const link of LEGAL_NAV) {
       expect(link.href.startsWith('/')).toBe(true);
     }
+  });
+
+  it('uses the navigation vocabulary the brief asks for', () => {
+    const labels = PRIMARY_NAV.map((link) => link.label);
+    expect(labels).toContain('Commodities');
+    expect(labels).toContain('Market Prices');
+    expect(labels).toContain('Markets');
+    expect(labels).toContain('Compare Prices');
+    expect(labels).toContain('Market Insights');
+    expect(labels).toContain('Reports');
+    expect(labels).toContain('About');
   });
 });
 

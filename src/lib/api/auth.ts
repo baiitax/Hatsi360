@@ -61,14 +61,24 @@ export async function authenticateApiKey(
 ): Promise<ApiAuthResult> {
   const rawKey = extractApiKey(request);
 
-  // When no database is configured the API runs in read-only, anonymous mode so
-  // the endpoints can still be exercised and documented.
-  if (!isSupabaseConfigured()) {
+  // A keyless caller is admitted to any endpoint that does not require a scope.
+  //
+  // Every `/api/v1` endpoint is a read-only view of published data, so this is
+  // real free access rather than a teaser, and it is the same data the public
+  // website already renders. It is metered at `anonymousRateLimit` (default
+  // 120/min) per client address.
+  //
+  // This check must come before the database lookup: the anonymous tier does
+  // not depend on a database being configured. It previously sat after it, so
+  // a configured project refused every keyless request with 401 — which closed
+  // free public price discovery entirely, and made `anonymousRateLimit`,
+  // `/api-docs` ("the endpoints below are read-only and currently open") and
+  // the launch gate's "public price API is reachable without a key" check all
+  // describe behaviour that did not exist.
+  if (!rawKey) {
     if (requiredScope) return { ok: false, reason: 'missing' };
     return { ok: true, application: null, anonymous: true };
   }
-
-  if (!rawKey) return { ok: false, reason: 'missing' };
 
   const admin = createAdminClient();
   const hash = hashApiKey(rawKey);

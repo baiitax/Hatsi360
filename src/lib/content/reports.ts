@@ -46,9 +46,9 @@ export const REPORTS: ReportDefinition[] = [
     method:
       'Median of published observations per market and commodity, grouped by the market the observation was collected in. Only observations with a recorded price type are included. Markets with a single observation are shown with their sample size rather than smoothed into a trend.',
     body: [
-      'This review is built from the price observations GonaPulse has published for the grain commodities in its catalogue. It is written from the record, not from memory: every figure below is the median of the observations that were actually published for that market in the window stated, and the number of observations behind each figure is shown.',
+      'This review is built from the price observations Hatsi360 has published for the grain commodities in its catalogue. It is written from the record, not from memory: every figure below is the median of the observations that were actually published for that market in the window stated, and the number of observations behind each figure is shown.',
       'A grain market does not trade at one price. The same commodity is asked at different prices in different markets, and within a market the asking price moves as the day\'s supply arrives. That is why the figures here are broken down by market rather than averaged into a single national number — a national average across markets with different transport costs and different volumes tells a trader very little.',
-      'Where the record is thin, this review says so. A market that has published a handful of observations is shown with that handful beside it, because a median computed from two observations is a median of two observations and nothing more. GonaPulse does not extend a series it does not have, and it does not interpolate across days with no published observation.',
+      'Where the record is thin, this review says so. A market that has published a handful of observations is shown with that handful beside it, because a median computed from two observations is a median of two observations and nothing more. Hatsi360 does not extend a series it does not have, and it does not interpolate across days with no published observation.',
       'The practical reading is a comparison, not a forecast. Where two markets differ materially for the same commodity and price type, the difference is where the question is — whether it is transport, timing, grade, or the state of supply on the day. The record tells you the difference is real. Deciding its cause is a job for someone standing in the market.',
     ],
     scope: { windowDays: 90 },
@@ -82,7 +82,7 @@ export const REPORTS: ReportDefinition[] = [
       'Every market and commodity in the catalogue is counted, and each is marked by the recency of its most recent published observation. Coverage is reported as counts, never as a headline claim.',
     body: [
       'Coverage is the first question any serious user of a price platform should ask, and it is usually the last one answered. This review answers it directly: how many markets in the catalogue are publishing, how many are not, and how recent the newest observation is in each.',
-      'GonaPulse distinguishes three states. A market that is reporting has published observations. A market that is in the catalogue but not reporting is a gap that we state rather than hide. A commodity that has only one observation is thin, and a thin commodity does not support the kind of comparison that a well-covered one does.',
+      'Hatsi360 distinguishes three states. A market that is reporting has published observations. A market that is in the catalogue but not reporting is a gap that we state rather than hide. A commodity that has only one observation is thin, and a thin commodity does not support the kind of comparison that a well-covered one does.',
       'This report contains no aggregate claim about market size, ranking or accuracy. It contains counts of what has been published, and the freshness of what has been published.',
     ],
     scope: { windowDays: null },

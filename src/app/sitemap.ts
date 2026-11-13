@@ -22,6 +22,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/compare`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${base}/insights`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${base}/reports`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${base}/solutions`, changeFrequency: 'monthly', priority: 0.7 },
+    // The public URL. The route is implemented by `/coverage-report`; see
+    // `src/lib/route-map.ts`.
     { url: `${base}/coverage`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${base}/methodology`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/pricing`, changeFrequency: 'monthly', priority: 0.6 },

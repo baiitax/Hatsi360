@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { submitEnquiry } from '@/lib/forms/actions';
+import { HatsiSpinner } from '@/components/loading/HatsiActionLoader';
 
 const fieldClass =
   'w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none';
@@ -108,9 +109,17 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={pending}
-        className="mt-6 rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
+        aria-busy={pending}
+        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
       >
-        {pending ? 'Sending…' : 'Send message'}
+        {pending ? (
+          <>
+            <HatsiSpinner />
+            Sending your message…
+          </>
+        ) : (
+          'Send message'
+        )}
       </button>
     </form>
   );

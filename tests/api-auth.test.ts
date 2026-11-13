@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkRateLimit, extractApiKey, hashApiKey } from '@/lib/api/auth';
+import { authenticateApiKey, checkRateLimit, extractApiKey, hashApiKey } from '@/lib/api/auth';
 
 describe('API key hashing', () => {
   it('produces a stable SHA-256 hash', () => {
@@ -96,5 +96,107 @@ describe('rate limiting', () => {
     for (let i = 0; i < 3; i += 1) checkRateLimit('key-e', 3, now);
     expect(checkRateLimit('key-e', 3, now).allowed).toBe(false);
     expect(checkRateLimit('key-f', 3, now).allowed).toBe(true);
+  });
+});
+
+describe('the anonymous free tier', () => {
+  // Every /api/v1 endpoint is a read-only view of published data. The launch
+  // gate asserts "public price API is reachable without a key", /api-docs says
+  // "the endpoints below are read-only and currently open", and
+  // `anonymousRateLimit` exists for exactly this caller. This group pins that
+  // contract: a keyless caller is admitted to a scopeless endpoint and refused
+  // one that requires a scope, and this does not depend on whether a database
+  // is configured.
+  //
+  // The bug this covers: the keyless branch sat after the
+  // `isSupabaseConfigured()` branch, so a configured project returned 401 for
+  // every keyless request and free public price discovery was closed off.
+
+  const anonymousRequest = () =>
+    new Request('https://example.test/api/v1/prices/latest?limit=1');
+
+  it('admits a keyless caller to an endpoint with no scope', async () => {
+    const result = await authenticateApiKey(anonymousRequest());
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.application).toBeNull();
+      expect(result.anonymous).toBe(true);
+    }
+  });
+
+  it('refuses a keyless caller when the endpoint requires a scope', async () => {
+    const result = await authenticateApiKey(anonymousRequest(), 'reports:read');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe('missing');
+  });
+
+  it('keeps the anonymous tier independent of the database configuration', async () => {
+    // The configured case is the one that regressed. Setting the variables the
+    // config helper reads makes `isSupabaseConfigured()` true, which is the
+    // state the deployed project runs in.
+    const previous = {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      key: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    };
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'publishable-test-key';
+    try {
+      const result = await authenticateApiKey(anonymousRequest());
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.anonymous).toBe(true);
+
+      const scoped = await authenticateApiKey(anonymousRequest(), 'reports:read');
+      expect(scoped.ok).toBe(false);
+    } finally {
+      if (previous.url === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      else process.env.NEXT_PUBLIC_SUPABASE_URL = previous.url;
+      if (previous.key === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      else process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = previous.key;
+    }
+  });
+
+  it('never falls back to the anonymous tier when a key is supplied', async () => {
+    // Admitting keyless callers must not weaken key validation: a supplied key
+    // goes to the database lookup and either matches or fails. It must never
+    // silently degrade into anonymous access.
+    //
+    // The lookup needs a service-role key, which is not present in the test
+    // environment, so it raises. The assertion is on the invariant that matters
+    // and is testable here: the anonymous branch is not taken.
+    const previous = {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      key: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      service: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    };
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'publishable-test-key';
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    try {
+      const request = new Request('https://example.test/api/v1/prices/latest', {
+        headers: { authorization: 'Bearer pl_live_notarealkey' },
+      });
+      let result: Awaited<ReturnType<typeof authenticateApiKey>> | undefined;
+      let raised: unknown;
+      try {
+        result = await authenticateApiKey(request);
+      } catch (error) {
+        raised = error;
+      }
+      if (result) {
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.reason).toBe('invalid');
+      } else {
+        // The only acceptable failure is a configuration error, and never an
+        // anonymous success.
+        expect(String(raised)).toMatch(/service|key|environment/i);
+      }
+    } finally {
+      if (previous.url === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      else process.env.NEXT_PUBLIC_SUPABASE_URL = previous.url;
+      if (previous.key === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+      else process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = previous.key;
+      if (previous.service === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+      else process.env.SUPABASE_SERVICE_ROLE_KEY = previous.service;
+    }
   });
 });

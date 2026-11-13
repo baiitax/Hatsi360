@@ -40,7 +40,7 @@ export default async function SettingsPage() {
             settingKey="business.name"
             label="Operation name"
             description="Shown in the field app and on the public price pages."
-            value={readSetting(settings, 'business.name', 'GonaPulse')}
+            value={readSetting(settings, 'business.name', 'Hatsi360')}
           />
           <SettingsEditor
             settingKey="business.currency"

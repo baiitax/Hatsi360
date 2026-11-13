@@ -1,10 +1,12 @@
 /**
- * Reference data for GonaPulse.
+ * Reference data for Hatsi360.
  *
  * Provenance:
  *  - Countries, states, markets, categories and commodities are transcribed from
  *    the public catalogue pages of https://liveprice.pluckagro.com (captured
- *    2026-10-22, see audit/legacy-pages/).
+ *    2026-10-22). The structured capture is kept in `audit/source/` and is
+ *    asserted by `tests/data-integrity.test.ts`; the raw HTML pages it was
+ *    transcribed from were not retained.
  *  - Descriptions are verbatim from the live site except where noted.
  *  - No price data lives in this file.
  *
@@ -215,7 +217,7 @@ export const markets: Market[] = [
 
 /**
  * The legacy site used five category labels. This rebuild keeps those five as
- * the *source* taxonomy and adds the wider GonaPulse taxonomy underneath, so
+ * the *source* taxonomy and adds the wider Hatsi360 taxonomy underneath, so
  * historical records keep their original classification and new commodities can
  * be filed consistently.
  */
@@ -320,7 +322,7 @@ export const commodityCategories: CommodityCategory[] = [
   },
 ];
 
-/** Legacy category label -> GonaPulse category id. */
+/** Legacy category label -> Hatsi360 category id. */
 export const legacyCategoryMap: Record<string, number> = {
   Grains: 1,
   Legumes: 2,

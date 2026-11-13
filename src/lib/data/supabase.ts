@@ -320,6 +320,7 @@ export const supabaseSource: DataSource = {
         defaultVarietyId: c.default_variety_id as number | null,
         categoryName: (category?.name as string) ?? null,
         categorySlug: (category?.slug as string) ?? null,
+        freshnessWindowHours: (c.freshness_window_hours as number) ?? 72,
         synonyms: synonymMap.get(c.id as number) ?? [],
         marketCount: stats?.markets.size ?? 0,
         latestObservationAt: stats?.latest ?? null,

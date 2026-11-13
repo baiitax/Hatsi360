@@ -109,13 +109,17 @@ on conflict (id) do update set role = excluded.role, account_status = excluded.a
 delete from public.market_agent_assignments
 where (user_id, market_id) in (
   ('33333333-3333-3333-3333-333333333333', 1),
+  ('44444444-4444-4444-4444-444444444444', 1),
   ('44444444-4444-4444-4444-444444444444', 2)
 );
 
 insert into public.market_agent_assignments (user_id, market_id, status, starts_on)
 values
   ('33333333-3333-3333-3333-333333333333', 1, 'active', current_date - 30),
-  ('44444444-4444-4444-4444-444444444444', 2, 'active', current_date - 30);
+  ('44444444-4444-4444-4444-444444444444', 2, 'active', current_date - 30),
+  -- The second agent also covers the first market, so that only the rule
+  -- about who owns a draft can stop them from submitting it.
+  ('44444444-4444-4444-4444-444444444444', 1, 'active', current_date - 30);
 
 -- A published legacy-era observation used as the baseline for the correction
 -- step, plus the agent's own new submission.
@@ -905,6 +909,619 @@ rollback;
 
 
 -- =============================================================================
+-- 10g. Saving a draft on the server, then submitting it
+--
+-- The field app saves a draft so the work survives a lost phone. Submitting
+-- that draft must turn the same record into the submitted observation — no
+-- second row — and a second submit must not create one either.
+--
+-- The drafts are inserted outside a transaction, as labelled test fixtures,
+-- so that the agent can act on them with the same row-level security the
+-- application applies. They are removed by the cleanup section.
+-- =============================================================================
+delete from public.price_observations
+where id in (
+  'bbbbbbbb-0000-0000-0000-000000000002',
+  'bbbbbbbb-0000-0000-0000-000000000003',
+  'bbbbbbbb-0000-0000-0000-000000000004',
+  'bbbbbbbb-0000-0000-0000-000000000005'
+);
+
+-- An observation with evidence attached, used by the storage tests. It is
+-- committed rather than rolled back so that a second agent can be shown to
+-- be unable to reach it.
+insert into public.price_observations (
+  id, commodity_id, market_id, price_type, reported_amount, reported_unit_id,
+  currency_code, collected_at, agent_user_id, verification_status,
+  source_system, source_reference, updated_at
+) values
+  ('bbbbbbbb-0000-0000-0000-000000000005', 1, 1, 'wholesale_transaction', 43000, 1, 'NGN',
+   now(), '33333333-3333-3333-3333-333333333333', 'draft',
+   'test_fixture', 'field-evidence-draft', now() - interval '10 minutes');
+
+insert into public.price_observation_evidence (
+  observation_id, storage_path, file_name, content_type, byte_size, uploaded_by
+) values (
+  'bbbbbbbb-0000-0000-0000-000000000005',
+  'bbbbbbbb-0000-0000-0000-000000000005/price-board.jpg',
+  'price-board.jpg', 'image/jpeg', 20480,
+  '33333333-3333-3333-3333-333333333333'
+);
+
+insert into public.price_observations (
+  id, commodity_id, market_id, price_type, reported_amount, reported_unit_id,
+  currency_code, collected_at, agent_user_id, verification_status,
+  source_system, source_reference, updated_at
+) values
+  ('bbbbbbbb-0000-0000-0000-000000000002', 1, 1, 'wholesale_transaction', 40000, 1, 'NGN',
+   now(), '33333333-3333-3333-3333-333333333333', 'draft',
+   'test_fixture', 'field-app-draft', now() - interval '10 minutes'),
+  ('bbbbbbbb-0000-0000-0000-000000000003', 1, 1, 'wholesale_transaction', 40000, 1, 'NGN',
+   now(), '33333333-3333-3333-3333-333333333333', 'draft',
+   'test_fixture', 'field-conflict-draft', now() - interval '10 minutes'),
+  ('bbbbbbbb-0000-0000-0000-000000000004', 1, 1, 'wholesale_transaction', 40000, 1, 'NGN',
+   now(), '33333333-3333-3333-3333-333333333333', 'draft',
+   'test_fixture', 'field-other-agent-draft', now() - interval '10 minutes');
+
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select rls_test.assert_true(
+    (select count(*) from public.price_observations
+      where source_reference = 'field-app-draft' and verification_status = 'draft') = 1,
+    'the draft should be saved with the draft status'
+  );
+
+  -- Submitting the draft in place.
+  select public.submit_observation(
+    jsonb_build_object('market_id', 1, 'commodity_id', 1, 'reported_amount', 41000,
+                       'reported_unit_id', 1, 'price_type', 'wholesale_transaction',
+                       'collected_at', now()),
+    'field-draft-submit-key',
+    (select id from public.price_observations where source_reference = 'field-app-draft')
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.price_observations
+      where source_reference = 'field-app-draft') = 1,
+    'submitting a draft must not create a second observation'
+  );
+
+  select rls_test.assert_true(
+    (select verification_status = 'submitted' from public.price_observations
+      where source_reference = 'field-app-draft'),
+    'the submitted draft should move to the submitted state'
+  );
+
+  select rls_test.assert_true(
+    (select reported_amount = 41000 from public.price_observations
+      where source_reference = 'field-app-draft'),
+    'the submitted draft should carry the amount the agent sent'
+  );
+
+  select rls_test.assert_true(
+    (select submitted_at is not null from public.price_observations
+      where source_reference = 'field-app-draft'),
+    'the submitted draft should record when it was sent'
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.price_verification_events
+      where observation_id = (select id from public.price_observations
+        where source_reference = 'field-app-draft')
+        and action = 'submitted') = 1,
+    'submitting a draft should write a verification event'
+  );
+
+  -- Retrying the same submit with the same key must be harmless.
+  select public.submit_observation(
+    jsonb_build_object('market_id', 1, 'commodity_id', 1, 'reported_amount', 41000,
+                       'reported_unit_id', 1, 'price_type', 'wholesale_transaction',
+                       'collected_at', now()),
+    'field-draft-submit-key',
+    (select id from public.price_observations where source_reference = 'field-app-draft')
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.price_observations
+      where source_reference = 'field-app-draft') = 1,
+    'a retried draft submission must not create a second observation'
+  );
+
+  -- The draft is no longer a draft, so it cannot be submitted again.
+  select rls_test.assert_raises(
+    'a submitted draft must not be submitted a second time',
+    $q$select public.submit_observation(
+        jsonb_build_object('market_id', 1, 'commodity_id', 1, 'reported_amount', 41000,
+                           'reported_unit_id', 1, 'price_type', 'wholesale_transaction',
+                           'collected_at', now()),
+        'field-draft-submit-key-2',
+        (select id from public.price_observations where source_reference = 'field-app-draft'))$q$
+  );
+rollback;
+
+-- =============================================================================
+-- 10h. Conflict detection when the draft changed on the server
+--
+-- If the record moved on while the agent was working on it, the submission is
+-- refused rather than overwriting a change the agent never saw.
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select rls_test.assert_raises(
+    'a submission based on a stale version must be refused',
+    $q$select public.submit_observation(
+        jsonb_build_object('market_id', 1, 'commodity_id', 1, 'reported_amount', 41000,
+                           'reported_unit_id', 1, 'price_type', 'wholesale_transaction',
+                           'collected_at', now(),
+                           'expected_updated_at', (now() - interval '1 hour')::text),
+        'field-conflict-key',
+        (select id from public.price_observations where source_reference = 'field-conflict-draft'))$q$
+  );
+
+  select rls_test.assert_true(
+    (select verification_status = 'draft' from public.price_observations
+      where source_reference = 'field-conflict-draft'),
+    'a refused submission must leave the draft untouched'
+  );
+
+  -- The same submission with the current version is accepted.
+  select public.submit_observation(
+    jsonb_build_object('market_id', 1, 'commodity_id', 1, 'reported_amount', 41000,
+                       'reported_unit_id', 1, 'price_type', 'wholesale_transaction',
+                       'collected_at', now(),
+                       'expected_updated_at', (select updated_at from public.price_observations
+                         where source_reference = 'field-conflict-draft')::text),
+    'field-conflict-key-2',
+    (select id from public.price_observations where source_reference = 'field-conflict-draft')
+  );
+
+  select rls_test.assert_true(
+    (select verification_status = 'submitted' from public.price_observations
+      where source_reference = 'field-conflict-draft'),
+    'a submission based on the current version must succeed'
+  );
+rollback;
+
+-- =============================================================================
+-- 10i. An agent may not submit somebody else's draft
+--
+-- The second agent covers the same market, so only the ownership rule can
+-- stop them.
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '44444444-4444-4444-4444-444444444444';
+
+  select rls_test.assert_raises(
+    'an agent must not be able to submit another agent''s draft',
+    $q$select public.submit_observation(
+        jsonb_build_object('market_id', 1, 'commodity_id', 1, 'reported_amount', 41000,
+                           'reported_unit_id', 1, 'price_type', 'wholesale_transaction',
+                           'collected_at', now()),
+        'field-other-agent-key',
+        'bbbbbbbb-0000-0000-0000-000000000004'::uuid)$q$
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.price_observations
+      where source_reference = 'field-other-agent-draft') = 0,
+    'the other agent must not be able to read a draft that is not theirs'
+  );
+rollback;
+
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select rls_test.assert_true(
+    (select verification_status = 'draft' from public.price_observations
+      where source_reference = 'field-other-agent-draft'),
+    'the other agent''s draft must be left as it was'
+  );
+
+  select rls_test.assert_true(
+    (select reported_amount = 40000 from public.price_observations
+      where source_reference = 'field-other-agent-draft'),
+    'the other agent''s draft must keep its original amount'
+  );
+rollback;
+
+
+-- =============================================================================
+-- 10j. The collection session and the market intelligence
+--
+-- One market visit is one session with several observations in it. The
+-- intelligence an agent records sits beside the price and never inside it.
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  -- A session may only be opened at a market the agent covers.
+  select rls_test.assert_raises(
+    'an agent must not be able to open a session at an unassigned market',
+    $q$select public.open_collection_batch(2, null, null, null)$q$
+  );
+
+  select public.open_collection_batch(1, null, null, 'Morning round') as batch;
+
+  select rls_test.assert_true(
+    (select count(*) from public.collection_batches
+      where agent_user_id = '33333333-3333-3333-3333-333333333333'
+        and market_id = 1
+        and completed_at is null) = 1,
+    'the agent should be able to open a session at an assigned market'
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.collection_batches
+      where reference like 'COL-%' and completed_at is null
+        and agent_user_id = '33333333-3333-3333-3333-333333333333') = 1,
+    'the session should carry a generated reference'
+  );
+
+  -- A price collected inside the session points at it.
+  insert into public.price_observations (
+    commodity_id, market_id, price_type, reported_amount, reported_unit_id,
+    currency_code, collected_at, agent_user_id, verification_status,
+    source_system, source_reference, collection_batch_id
+  )
+  select 1, 1, 'wholesale_transaction', 42000, 1, 'NGN', now(),
+         '33333333-3333-3333-3333-333333333333', 'draft',
+         'agent_app', 'field-session-price',
+         (select id from public.collection_batches
+           where agent_user_id = '33333333-3333-3333-3333-333333333333'
+             and completed_at is null limit 1);
+
+  select rls_test.assert_true(
+    (select count(*) from public.price_observations
+      where source_reference = 'field-session-price'
+        and collection_batch_id is not null) = 1,
+    'a price collected in the session should point at it'
+  );
+
+  -- The intelligence is recorded beside the price.
+  insert into public.observation_market_intelligence (
+    observation_id, availability, supply_level, demand_level,
+    price_direction, market_activity, sentiment, developments, agent_user_id
+  )
+  select id, 'limited', 'low', 'high', 'rising', 'moderate', 'positive',
+         'Road works on the approach to the market.', agent_user_id
+  from public.price_observations where source_reference = 'field-session-price';
+
+  select rls_test.assert_true(
+    (select availability = 'limited' and demand_level = 'high'
+       and price_direction = 'rising'
+     from public.observation_market_intelligence
+     where observation_id = (select id from public.price_observations
+       where source_reference = 'field-session-price')),
+    'the market intelligence should be stored beside the price'
+  );
+
+  select rls_test.assert_true(
+    (select reported_amount = 42000 from public.price_observations
+      where source_reference = 'field-session-price'),
+    'the recorded intelligence must not change the price'
+  );
+
+  -- Closing the session records the visit.
+  select public.close_collection_batch(
+    (select id from public.collection_batches
+      where agent_user_id = '33333333-3333-3333-3333-333333333333'
+        and completed_at is null limit 1),
+    'Morning round');
+
+  select rls_test.assert_true(
+    (select count(*) from public.collection_batches
+      where agent_user_id = '33333333-3333-3333-3333-333333333333'
+        and completed_at is not null) = 1,
+    'closing the session should mark it complete'
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from public.market_visit_records
+      where market_id = 1 and agent_user_id = '33333333-3333-3333-3333-333333333333') = 1,
+    'closing the session should record the visit'
+  );
+
+  -- Closing twice is harmless.
+  select public.close_collection_batch(
+    (select id from public.collection_batches
+      where agent_user_id = '33333333-3333-3333-3333-333333333333'
+        and completed_at is not null limit 1),
+    'Morning round');
+rollback;
+
+-- =============================================================================
+-- 10j-2. The optional visit coordinate
+--
+-- The agent may confirm a position when opening a session. It is optional,
+-- it is range-checked, and a session without one opens exactly the same way.
+-- The coordinate describes where the agent stood, never what the price was.
+--
+-- Each scenario is its own transaction on purpose: `now()` does not advance
+-- inside a transaction, and the visit record is keyed on the session's start
+-- time, so two sessions opened in one transaction would look like one visit.
+-- =============================================================================
+
+-- A session opened without a position carries none, and closing it records a
+-- visit with no position either.
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select public.open_collection_batch(1, null, null, 'No position offered') as batch;
+  select rls_test.assert_true(
+    (select gps_latitude is null and gps_longitude is null
+     from public.collection_batches
+     where agent_user_id = '33333333-3333-3333-3333-333333333333'
+       and completed_at is null limit 1),
+    'a session opened without a position should carry none'
+  );
+
+  select public.close_collection_batch(
+    (select id from public.collection_batches
+      where agent_user_id = '33333333-3333-3333-3333-333333333333'
+        and completed_at is null limit 1),
+    null);
+
+  select rls_test.assert_true(
+    (select gps_latitude is null and gps_longitude is null
+     from public.market_visit_records
+     where market_id = 1
+       and agent_user_id = '33333333-3333-3333-3333-333333333333'
+     order by id desc limit 1),
+    'a visit from a session without a position should carry none'
+  );
+rollback;
+
+-- A confirmed position is stored on the session and carried onto the visit.
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select public.open_collection_batch(
+    1, null, null, 'Position confirmed', 12.002213, 8.592034
+  ) as batch;
+  select rls_test.assert_true(
+    (select gps_latitude = 12.002213 and gps_longitude = 8.592034
+     from public.collection_batches
+     where agent_user_id = '33333333-3333-3333-3333-333333333333'
+       and completed_at is null limit 1),
+    'a confirmed position should be stored on the session'
+  );
+
+  select public.close_collection_batch(
+    (select id from public.collection_batches
+      where agent_user_id = '33333333-3333-3333-3333-333333333333'
+        and completed_at is null limit 1),
+    null);
+
+  select rls_test.assert_true(
+    (select gps_latitude = 12.002213 and gps_longitude = 8.592034
+     from public.market_visit_records
+     where market_id = 1
+       and agent_user_id = '33333333-3333-3333-3333-333333333333'
+     order by id desc limit 1),
+    'closing should carry the position onto the visit record'
+  );
+rollback;
+
+-- A coordinate out of range is dropped rather than stored, and does not stop
+-- the session from opening.
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select public.open_collection_batch(
+    1, null, null, 'Nonsense position', 999, 999
+  ) as batch;
+  select rls_test.assert_true(
+    (select count(*) from public.collection_batches
+      where agent_user_id = '33333333-3333-3333-3333-333333333333'
+        and completed_at is null) = 1,
+    'an out-of-range position should not stop the session opening'
+  );
+  select rls_test.assert_true(
+    (select gps_latitude is null and gps_longitude is null
+     from public.collection_batches
+     where agent_user_id = '33333333-3333-3333-3333-333333333333'
+       and completed_at is null limit 1),
+    'an out-of-range position should be dropped rather than stored'
+  );
+rollback;
+
+-- A coordinate is never required: the four-argument form still works after
+-- the six-argument form has been used.
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select public.open_collection_batch(1, null, null, 'Back to no position') as batch;
+  select rls_test.assert_true(
+    (select count(*) from public.collection_batches
+      where agent_user_id = '33333333-3333-3333-3333-333333333333'
+        and completed_at is null) = 1,
+    'the four-argument form should still open a session'
+  );
+rollback;
+
+-- =============================================================================
+-- 10k. An agent must not touch another agent's session or intelligence
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '44444444-4444-4444-4444-444444444444';
+
+  select rls_test.assert_raises(
+    'an agent must not be able to close another agent''s session',
+    $q$select public.close_collection_batch(
+        (select id from public.collection_batches
+          where agent_user_id = '33333333-3333-3333-3333-333333333333' limit 1),
+        null)$q$
+  );
+rollback;
+
+
+-- =============================================================================
+-- 10l. The agent's own details, and nothing else
+--
+-- The function writes the display name and the alternative phone. The role,
+-- the account state and the region stay out of reach.
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  select public.update_agent_contact('Agent One Renamed', '0800 111 2222');
+
+  select rls_test.assert_true(
+    (select full_name = 'Agent One Renamed' from public.profiles
+      where id = '33333333-3333-3333-3333-333333333333'),
+    'the agent should be able to change their display name'
+  );
+
+  select rls_test.assert_true(
+    (select role = 'agent' from public.profiles
+      where id = '33333333-3333-3333-3333-333333333333'),
+    'the agent role must not change when the details are saved'
+  );
+
+  select rls_test.assert_true(
+    (select account_status = 'active' from public.profiles
+      where id = '33333333-3333-3333-3333-333333333333'),
+    'the account state must not change when the details are saved'
+  );
+
+  -- The name is required.
+  select rls_test.assert_raises(
+    'a blank name must be refused',
+    $q$select public.update_agent_contact('   ', null)$q$
+  );
+rollback;
+
+-- =============================================================================
+-- 10m. The market intelligence belongs to the observation
+--
+-- One agent may not read the intelligence attached to another agent's
+-- observation, and may not attach their own intelligence to it.
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '44444444-4444-4444-4444-444444444444';
+
+  select rls_test.assert_true(
+    (select count(*) from public.observation_market_intelligence
+      where observation_id = (select id from public.price_observations
+        where source_reference = 'field-session-price')) = 0,
+    'an agent must not read the intelligence on another agent''s observation'
+  );
+
+  select rls_test.assert_raises(
+    'an agent must not attach intelligence to another agent''s observation',
+    $q$insert into public.observation_market_intelligence (
+        observation_id, availability, agent_user_id)
+      values ((select id from public.price_observations
+        where source_reference = 'field-session-price'), 'scarce',
+        '44444444-4444-4444-4444-444444444444')$q$
+  );
+rollback;
+
+
+-- =============================================================================
+-- 10n. The evidence bucket
+--
+-- The evidence is private: the bucket is not public, the path proves which
+-- observation a file belongs to, and the link is signed and short-lived.
+-- =============================================================================
+begin;
+  select rls_test.assert_true(
+    (select public from storage.buckets where id = 'hatsi360-evidence') = false,
+    'the evidence bucket must not be public'
+  );
+
+  select rls_test.assert_true(
+    (select file_size_limit = 5242880 from storage.buckets where id = 'hatsi360-evidence'),
+    'the evidence bucket must carry the size limit'
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from storage.buckets
+      where id = 'hatsi360-evidence'
+        and 'image/jpeg' = any(allowed_mime_types)) = 1,
+    'the evidence bucket must allow the photograph types'
+  );
+rollback;
+
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+
+  -- The object is written under the observation's own folder, which is what
+  -- the storage policy proves ownership from.
+  insert into storage.objects (bucket_id, name, owner)
+  values ('hatsi360-evidence', 'bbbbbbbb-0000-0000-0000-000000000005/price-board.jpg',
+          '33333333-3333-3333-3333-333333333333');
+
+  select rls_test.assert_true(
+    (select count(*) from storage.objects
+      where bucket_id = 'hatsi360-evidence') = 1,
+    'the agent should be able to write evidence for their own draft'
+  );
+
+  -- The signed link is short-lived and points at the stored path.
+  select rls_test.assert_true(
+    (select public.agent_evidence_url(
+        (select id from public.price_observation_evidence
+          where observation_id = 'bbbbbbbb-0000-0000-0000-000000000005'))
+        like '%hatsi360-evidence/bbbbbbbb-0000-0000-0000-000000000005/price-board.jpg%'),
+    'the signed link should point at the stored evidence'
+  );
+
+  select rls_test.assert_true(
+    (select public.agent_evidence_url(
+        (select id from public.price_observation_evidence
+          where observation_id = 'bbbbbbbb-0000-0000-0000-000000000005'))
+        like '%expires=300%'),
+    'the signed link should expire'
+  );
+rollback;
+
+-- =============================================================================
+-- 10o. Another agent's evidence is out of reach
+-- =============================================================================
+begin;
+  set local role authenticated;
+  set local request.jwt.claim.sub = '44444444-4444-4444-4444-444444444444';
+
+  select rls_test.assert_raises(
+    'an agent must not be able to sign a link to another agent''s evidence',
+    $q$select public.agent_evidence_url(
+        (select id from public.price_observation_evidence
+          where observation_id = 'bbbbbbbb-0000-0000-0000-000000000005'))$q$
+  );
+
+  select rls_test.assert_raises(
+    'an agent must not be able to write into another agent''s evidence folder',
+    $q$insert into storage.objects (bucket_id, name, owner)
+      values ('hatsi360-evidence',
+              'bbbbbbbb-0000-0000-0000-000000000005/price-board.jpg',
+              '44444444-4444-4444-4444-444444444444')$q$
+  );
+
+  select rls_test.assert_true(
+    (select count(*) from storage.objects
+      where bucket_id = 'hatsi360-evidence') = 0,
+    'an agent must not be able to read another agent''s evidence object'
+  );
+rollback;
+
+
+-- =============================================================================
 -- 11. Cleanup
 --
 -- Every case above is wrapped in a transaction that is rolled back, so the
@@ -937,11 +1554,16 @@ where user_id in (
 delete from public.audit_logs
 where entity_id in (
   'aaaaaaaa-0000-0000-0000-000000000001',
-  'bbbbbbbb-0000-0000-0000-000000000001'
+  'bbbbbbbb-0000-0000-0000-000000000001',
+  'bbbbbbbb-0000-0000-0000-000000000002',
+  'bbbbbbbb-0000-0000-0000-000000000003',
+  'bbbbbbbb-0000-0000-0000-000000000004'
 );
 
 delete from public.collection_task_events
 where task_id in (select id from public.collection_tasks where id in (901, 902));
+
+delete from storage.objects where bucket_id = 'hatsi360-evidence';
 
 delete from public.price_observations where source_system = 'test_fixture';
 
@@ -953,6 +1575,7 @@ where assigned_agent_id = '33333333-3333-3333-3333-333333333333';
 delete from public.market_agent_assignments
 where (user_id, market_id) in (
   ('33333333-3333-3333-3333-333333333333', 1),
+  ('44444444-4444-4444-4444-444444444444', 1),
   ('44444444-4444-4444-4444-444444444444', 2)
 );
 

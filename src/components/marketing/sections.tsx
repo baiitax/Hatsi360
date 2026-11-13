@@ -8,9 +8,14 @@ import type {
 import { PRICE_TYPE_META } from '@/types/domain';
 import { formatMoney, formatDate, formatDateTime } from '@/lib/money';
 import { BRAND } from '@/lib/brand';
+import { CategoryGlyph } from './CategoryGlyph';
+import { CHART_COLOURS, STATUS_COLOURS } from '@/lib/chart-colours';
+import { VerificationBadge } from '@/components/ui/data-display';
+import { getCategoryImage, getCommodityImage, getPageImage } from '@/lib/images/registry';
+import { HatsiImage } from '@/components/media/HatsiImage';
 
 /**
- * The marketing sections of the GonaPulse website.
+ * The marketing sections of the Hatsi360 website.
  *
  * Every figure rendered here comes from a record. Where a record does not
  * exist the section says so rather than showing a number.
@@ -101,19 +106,6 @@ export function MarketPulse({
 
 /* --------------------------------------------------------------- categories */
 
-const CATEGORY_ICON: Record<string, string> = {
-  grains: '🌾',
-  oilseeds: '🌻',
-  pulses: '🫘',
-  'roots-tubers': '🥔',
-  'fruits-vegetables': '🍅',
-  'spices-herbs': '🌿',
-  'livestock-poultry': '🐄',
-  export: '📦',
-  processed: '🏭',
-  'by-products': '♻️',
-};
-
 export function CategoryGrid({
   categories,
   commodityCounts,
@@ -121,28 +113,145 @@ export function CategoryGrid({
   categories: CommodityCategory[];
   commodityCounts: Map<number, number>;
 }) {
-  const visible = categories.slice(0, 10);
+  const visible = categories.slice(0, 12);
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      {visible.map((category) => (
-        <Link
-          key={category.id}
-          href={`/commodities?category=${category.slug}`}
-          className="card card-hover group flex flex-col gap-1 p-4"
-        >
-          <span aria-hidden="true" className="text-xl">
-            {CATEGORY_ICON[category.slug] ?? '🌱'}
-          </span>
-          <span className="font-display text-sm font-bold text-ink-900 group-hover:text-brand-700">
-            {category.name}
-          </span>
-          <span className="text-xs text-ink-500">
-            {commodityCounts.get(category.id) ?? 0} commodit
-            {(commodityCounts.get(category.id) ?? 0) === 1 ? 'y' : 'ies'}
-          </span>
-        </Link>
-      ))}
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {visible.map((category) => {
+        const image = getCategoryImage(category.slug);
+        return (
+          <Link
+            key={category.id}
+            href={`/commodities?category=${category.slug}`}
+            className="card card-hover group flex flex-col overflow-hidden"
+          >
+            <HatsiImage
+              asset={image}
+              sizes="(min-width: 1024px) 18rem, (min-width: 640px) 28vw, 45vw"
+              ratio="landscape"
+              className="rounded-t-[0.875rem]"
+              imageClassName="transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+            />
+            <span className="flex flex-col gap-2 p-4">
+              <span className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand-100">
+                <CategoryGlyph slug={category.slug} size={26} />
+              </span>
+              <span className="font-display text-sm font-bold text-ink-900 group-hover:text-brand-700">
+                {category.name}
+              </span>
+              <span className="text-xs text-ink-500">
+                {commodityCounts.get(category.id) ?? 0} commodit
+                {(commodityCounts.get(category.id) ?? 0) === 1 ? 'y' : 'ies'}
+              </span>
+            </span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------ featured commodities */
+
+export interface LatestCommodityPrice {
+  amount: number;
+  currencyCode: string;
+  unitLabel: string;
+  marketName: string;
+  marketSlug: string | null;
+  collectedAt: string;
+  status: PriceObservation['verificationStatus'];
+}
+
+/**
+ * The commodities that currently have a published price.
+ *
+ * The card shows the latest figure, its unit, its market, the date it was
+ * collected and the verification state. Nothing here is estimated: a
+ * commodity without a published figure is not shown in this list.
+ */
+export function FeaturedCommodities({
+  commodities,
+  latestByCommodity,
+}: {
+  commodities: Commodity[];
+  latestByCommodity: Map<number, LatestCommodityPrice>;
+}) {
+  if (commodities.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-ink-300 bg-ink-50 p-8 text-center">
+        <p className="font-display text-lg font-semibold text-ink-800">
+          No commodity has a published price yet
+        </p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-ink-500">
+          The catalogue is in place and collection is under way. Until an observation is verified
+          and published, no price is shown.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {commodities.map((commodity) => {
+        const latest = latestByCommodity.get(commodity.id);
+        const image = getCommodityImage(commodity.slug);
+        return (
+          <article key={commodity.id} className="card card-hover group flex flex-col overflow-hidden">
+            <HatsiImage
+              asset={image}
+              sizes="(min-width: 1024px) 22rem, (min-width: 640px) 45vw, 92vw"
+              ratio="landscape"
+              className="rounded-t-[0.875rem]"
+              imageClassName="transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+            />
+            <div className="flex flex-1 flex-col p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">
+                  {commodity.categoryName}
+                </p>
+                <h3 className="mt-1 text-base font-bold leading-tight">
+                  <Link
+                    href={`/commodities/${commodity.slug}`}
+                    className="transition-colors hover:text-brand-700"
+                  >
+                    {commodity.name}
+                  </Link>
+                </h3>
+              </div>
+              {latest ? <VerificationBadge status={latest.status} /> : null}
+            </div>
+
+            {latest ? (
+              <>
+                <p className="figure mt-3 text-2xl text-ink-950">
+                  {formatMoney(latest.amount, { currency: latest.currencyCode })}
+                  <span className="ml-1 text-xs font-normal text-ink-500">
+                    {latest.unitLabel ? `/ ${latest.unitLabel}` : ''}
+                  </span>
+                </p>
+                <p className="mt-1 truncate text-xs text-ink-500">
+                  {latest.marketName} &middot; collected {formatDate(latest.collectedAt)}
+                </p>
+              </>
+            ) : (
+              <p className="mt-3 text-sm italic leading-relaxed text-ink-500">
+                No published price for this commodity yet.
+              </p>
+            )}
+
+            <Link
+              href={`/commodities/${commodity.slug}`}
+              className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-brand-800"
+            >
+              Price history and markets
+              <span aria-hidden="true">→</span>
+            </Link>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -155,13 +264,46 @@ export function CategoryGrid({
  * A market is plotted only where its coordinates are verified. Where they are
  * not, the market appears in the list instead — the coverage is never
  * embellished to look complete.
+ *
+ * Four states are distinguished, so an inactive market is never presented as
+ * an actively monitored one:
+ *
+ *   active    — published observations inside the freshness window
+ *   stale     — published observations, but outside the freshness window
+ *   registered— in the catalogue, no published observation yet
+ *   awaiting  — scheduled for field coverage, not yet in the catalogue
  */
+export type CoverageStatus = 'active' | 'stale' | 'registered';
+
+export const COVERAGE_STATUS_META: Record<
+  CoverageStatus,
+  { label: string; detail: string; className: string }
+> = {
+  active: {
+    label: 'Reporting',
+    detail: 'Published observations inside the freshness window',
+    className: 'bg-leaf-100 text-leaf-700',
+  },
+  stale: {
+    label: 'Stale',
+    detail: 'Published observations, but outside the freshness window',
+    className: 'bg-harvest-100 text-harvest-700',
+  },
+  registered: {
+    label: 'Not yet reporting',
+    detail: 'In the catalogue, with no published observation yet',
+    className: 'bg-ink-100 text-ink-500',
+  },
+};
+
 export function CoverageMap({
   markets,
   reportingMarketIds,
+  statusByMarket,
 }: {
   markets: Market[];
   reportingMarketIds: Set<number>;
+  statusByMarket?: Map<number, CoverageStatus>;
 }) {
   const plotted = markets.filter(
     (market) =>
@@ -171,6 +313,19 @@ export function CoverageMap({
       market.longitude !== null,
   );
   const unplotted = markets.filter((market) => !plotted.includes(market));
+
+  const statusFor = (market: Market): CoverageStatus =>
+    statusByMarket?.get(market.id) ??
+    (reportingMarketIds.has(market.id) ? 'active' : 'registered');
+
+  const counts = markets.reduce(
+    (accumulator, market) => {
+      const status = statusFor(market);
+      accumulator[status] += 1;
+      return accumulator;
+    },
+    { active: 0, stale: 0, registered: 0 } as Record<CoverageStatus, number>,
+  );
 
   const lats = plotted.map((market) => market.latitude as number);
   const lngs = plotted.map((market) => market.longitude as number);
@@ -200,25 +355,24 @@ export function CoverageMap({
               role="img"
               aria-label={`Map of ${plotted.length} markets with verified coordinates`}
             >
-              <rect x="0" y="0" width="100" height="100" rx="3" fill="#f1f0ec" />
+              <rect x="0" y="0" width="100" height="100" rx="3" fill={CHART_COLOURS.band} />
               {plotted.map((market) => {
                 const x = 8 + ((market.longitude as number) - minLng) / spanLng * 84;
                 const y = 92 - ((market.latitude as number) - minLat) / spanLat * 84;
-                const reporting = reportingMarketIds.has(market.id);
+                const status = statusFor(market);
+                const fill =
+                  status === 'active'
+                      ? STATUS_COLOURS.active
+                      : status === 'stale'
+                        ? STATUS_COLOURS.stale
+                        : STATUS_COLOURS.registered;
                 return (
                   <g key={market.id}>
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="4"
-                      fill={reporting ? '#2a8a4e' : '#c9b29c'}
-                      stroke="#ffffff"
-                      strokeWidth="1.2"
-                    >
+                    <circle cx={x} cy={y} r="4" fill={fill} stroke={CHART_COLOURS.surface} strokeWidth="1.2">
                       <title>
                         {market.name}
                         {market.stateName ? `, ${market.stateName}` : ''} —{' '}
-                        {reporting ? 'has published observations' : 'no published observations yet'}
+                        {COVERAGE_STATUS_META[status].detail}
                       </title>
                     </circle>
                   </g>
@@ -227,8 +381,12 @@ export function CoverageMap({
             </svg>
             <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-500">
               <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden="true" className="size-2.5 rounded-full bg-brand-500" />
-                Has published observations
+                <span aria-hidden="true" className="size-2.5 rounded-full bg-brand-600" />
+                Reporting
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden="true" className="size-2.5 rounded-full bg-harvest-500" />
+                Stale
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span aria-hidden="true" className="size-2.5 rounded-full bg-earth-300" />
@@ -237,6 +395,20 @@ export function CoverageMap({
             </p>
           </>
         )}
+
+        <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-ink-100 pt-4">
+          {(['active', 'stale', 'registered'] as CoverageStatus[]).map((status) => (
+            <div key={status}>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                {COVERAGE_STATUS_META[status].label}
+              </dt>
+              <dd className="figure mt-1 text-xl text-ink-900">{counts[status]}</dd>
+              <dd className="mt-0.5 text-[0.7rem] leading-snug text-ink-500">
+                {COVERAGE_STATUS_META[status].detail}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
 
       <div className="card p-5">
@@ -245,7 +417,7 @@ export function CoverageMap({
         </h3>
         <ul className="mt-4 divide-y divide-ink-100">
           {markets.map((market) => {
-            const reporting = reportingMarketIds.has(market.id);
+            const status = statusFor(market);
             return (
               <li key={market.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
@@ -258,20 +430,16 @@ export function CoverageMap({
                   <p className="truncate text-xs text-ink-500">{market.stateName ?? 'Nigeria'}</p>
                 </div>
                 <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold ${
-                    reporting
-                      ? 'bg-leaf-100 text-leaf-700'
-                      : 'bg-ink-100 text-ink-500'
-                  }`}
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-semibold ${COVERAGE_STATUS_META[status].className}`}
                 >
-                  {reporting ? 'Reporting' : 'Not yet reporting'}
+                  {COVERAGE_STATUS_META[status].label}
                 </span>
               </li>
             );
           })}
         </ul>
         {unplotted.length > 0 ? (
-          <p className="mt-3 text-xs text-ink-400">
+          <p className="mt-3 text-xs text-ink-500">
             {unplotted.length} market{unplotted.length === 1 ? '' : 's'} have no verified
             coordinates, so {unplotted.length === 1 ? 'it is' : 'they are'} listed rather than
             plotted.
@@ -475,7 +643,7 @@ export function TrendPanel({
         role="img"
         aria-label={`${commodity.name} price history, ${points.length} days`}
       >
-        <line x1="0" y1={height - 12} x2={width} y2={height - 12} stroke="#e2e0da" strokeWidth="1" />
+        <line x1="0" y1={height - 12} x2={width} y2={height - 12} stroke={CHART_COLOURS.grid} strokeWidth="1" />
         {points.map((point, index) =>
           point.value === null ? null : (
             <circle
@@ -483,7 +651,7 @@ export function TrendPanel({
               cx={index * stepX}
               cy={height - ((point.value - min) / range) * (height - 24) - 12}
               r="3"
-              fill="#2a8a4e"
+              fill={CHART_COLOURS.primary}
             >
               <title>
                 {point.day}: {point.value} ({point.observations} observation
@@ -493,7 +661,7 @@ export function TrendPanel({
           ),
         )}
         {points.length > 1 ? (
-          <polyline points={path} fill="none" stroke="#17512f" strokeWidth="2" strokeLinejoin="round" />
+          <polyline points={path} fill="none" stroke={CHART_COLOURS.primaryDeep} strokeWidth="2" strokeLinejoin="round" />
         ) : null}
       </svg>
 
@@ -517,30 +685,38 @@ const DIFFERENTIATORS = [
     body: 'Prices are shown by market, not as a single national average, so a trader can see where the volume actually is.',
   },
   {
-    title: 'Field-based collection',
-    body: 'Prices are collected by agents assigned to the markets they cover, with the collection time recorded at source.',
+    title: 'Regional price comparison',
+    body: 'Markets are compared only when the commodity, grade, unit and price type are compatible — never merged to look complete.',
   },
   {
-    title: 'Structured verification',
+    title: 'Verified price observations',
     body: 'Approval and publication are separate acts, each recorded. An unverified report is never shown as a market price.',
   },
   {
-    title: 'Historical price records',
+    title: 'Historical market intelligence',
     body: 'Every published figure stays in the record. A correction is appended with its reason; a published price is never silently overwritten.',
   },
   {
-    title: 'Multi-market comparison',
-    body: 'Observations are compared only when the commodity, grade, unit and price type are compatible.',
+    title: 'Agricultural trade insights',
+    body: 'Analysis is written for the trade, not for the chart: what moved, where it moved and what the record actually supports.',
   },
   {
-    title: 'Business data services',
-    body: 'Programmatic access, structured exports and institutional data services for teams that work with market data.',
+    title: 'Business-focused reporting',
+    body: 'Market reports and exports are produced from the same record the public sees, so a briefing and a screen never disagree.',
+  },
+  {
+    title: 'Expanding market coverage',
+    body: 'Coverage is stated as it is: which markets report, which are registered, and which are still being built.',
+  },
+  {
+    title: 'Data provenance you can audit',
+    body: 'Collection time, submission time, verification time and publication time travel with every figure.',
   },
 ];
 
-export function WhyGonaPulse() {
+export function WhyHatsi360() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {DIFFERENTIATORS.map((item) => (
         <div key={item.title} className="card p-5">
           <h3 className="font-display text-base font-bold text-ink-900">{item.title}</h3>
@@ -554,25 +730,109 @@ export function WhyGonaPulse() {
 /* ------------------------------------------------------- business audiences */
 
 const AUDIENCES = [
-  { title: 'Agricultural traders', body: 'Know what is being asked for, and where, before you commit.' },
-  { title: 'Aggregators', body: 'Plan procurement against recorded prices instead of last week’s rumour.' },
-  { title: 'Processors', body: 'Track input costs across the markets that supply your plants.' },
-  { title: 'Exporters', body: 'Follow the export offers and the wholesale prices behind them.' },
-  { title: 'Institutional buyers', body: 'Historic series with documented provenance for planning and reporting.' },
-  { title: 'Research organisations', body: 'Structured, timestamped observations with units and source recorded.' },
-  { title: 'Development institutions', body: 'Monitor how prices move in the markets your programmes touch.' },
-  { title: 'Agricultural businesses', body: 'Market intelligence as an input to procurement, planning and strategy.' },
+  {
+    title: 'Farmers',
+    body: 'See the price being asked for in your market before you decide where to sell.',
+  },
+  {
+    title: 'Aggregators',
+    body: 'Plan procurement against recorded prices instead of last week’s rumour.',
+  },
+  {
+    title: 'Commodity traders',
+    body: 'Know what is being asked for, and where, before you commit.',
+  },
+  {
+    title: 'Processors',
+    body: 'Track input costs across the markets that supply your plants.',
+  },
+  {
+    title: 'Exporters',
+    body: 'Follow the export offers and the wholesale prices behind them.',
+  },
+  {
+    title: 'Agricultural cooperatives',
+    body: 'Give members one shared view of the market they are selling into.',
+  },
+  {
+    title: 'Financial institutions',
+    body: 'Historic series with documented provenance for lending and risk review.',
+  },
+  {
+    title: 'Development organisations',
+    body: 'Monitor how prices move in the markets your programmes touch.',
+  },
+  {
+    title: 'Government agencies',
+    body: 'Evidence for food security planning and market surveillance.',
+  },
+];
+
+/**
+ * The customer segments.
+ *
+ * The nine audiences are grouped into three panels, each led by a photograph
+ * of the work that audience does. The panels carry the audience list; the
+ * photograph carries the sense of place, and it is matched to the segment
+ * rather than used as decoration.
+ */
+const SEGMENTS: {
+  title: string;
+  body: string;
+  imageKey: string;
+  audiences: string[];
+}[] = [
+  {
+    title: 'Producers and traders',
+    body: 'The people who move physical grain: they need the recorded price for their own market, and the recorded price in the neighbouring one.',
+    imageKey: 'solutions.traders',
+    audiences: ['Farmers', 'Aggregators', 'Commodity traders', 'Agricultural cooperatives'],
+  },
+  {
+    title: 'Processors and exporters',
+    body: 'The people who buy in bulk and ship out: they need input costs across the markets that supply their plants, and a defensible export basis.',
+    imageKey: 'solutions.exporters',
+    audiences: ['Processors', 'Exporters'],
+  },
+  {
+    title: 'Institutions and policy',
+    body: 'The people who need an evidence base: a documented series with provenance, a collection method they can audit, and coverage stated honestly.',
+    imageKey: 'solutions.institutions',
+    audiences: ['Financial institutions', 'Development organisations', 'Government agencies'],
+  },
 ];
 
 export function BusinessSolutions() {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {AUDIENCES.map((audience) => (
-        <div key={audience.title} className="rounded-xl border border-ink-200 bg-white p-4">
-          <h3 className="font-display text-sm font-bold text-ink-900">{audience.title}</h3>
-          <p className="mt-1.5 text-xs leading-relaxed text-ink-600">{audience.body}</p>
-        </div>
-      ))}
+    <div className="grid gap-5 lg:grid-cols-3">
+      {SEGMENTS.map((segment) => {
+        const image = getPageImage(segment.imageKey);
+        const audiences = AUDIENCES.filter((audience) => segment.audiences.includes(audience.title));
+        return (
+          <article key={segment.title} className="card flex flex-col overflow-hidden">
+            <HatsiImage
+              asset={image}
+              sizes="(min-width: 1024px) 24rem, 92vw"
+              ratio="landscape"
+              className="rounded-t-[0.875rem]"
+            />
+            <div className="flex flex-1 flex-col p-5">
+              <h3 className="font-display text-base font-bold text-ink-900">{segment.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-ink-600">{segment.body}</p>
+              <ul className="mt-4 space-y-2 border-t border-ink-100 pt-4">
+                {audiences.map((audience) => (
+                  <li key={audience.title} className="text-sm font-semibold text-ink-800">
+                    {audience.title}
+                    <span className="mt-0.5 block text-xs font-normal leading-relaxed text-ink-600">
+                      {audience.body}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }

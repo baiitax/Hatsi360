@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { BRAND, CONTACT, LEGAL_NAV } from '@/lib/brand';
-import { BrandLogo } from '@/components/brand/Logo';
+import { BrandLockup } from '@/components/brand/Logo';
 
 const COLUMNS = [
   {
@@ -26,7 +26,7 @@ const COLUMNS = [
   {
     title: 'Platform',
     links: [
-      { href: '/about', label: 'About GonaPulse' },
+      { href: '/about', label: 'About Hatsi360' },
       { href: '/dashboard', label: 'Customer workspace' },
       { href: '/contact', label: 'Business enquiries' },
       { href: '/faq', label: 'FAQs' },
@@ -35,7 +35,7 @@ const COLUMNS = [
 ];
 
 /**
- * The GonaPulse footer.
+ * The Hatsi360 footer.
  *
  * The corporate endorsement appears here, subordinate to the product brand,
  * exactly as the brand architecture requires. Social links are omitted
@@ -47,7 +47,7 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-ink-200 bg-white">
       <div className="container-page grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-6">
         <div className="lg:col-span-2">
-          <BrandLogo size={44} showDescriptor />
+          <BrandLockup width={300} />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-600">
             {BRAND.name} collects, verifies and publishes agricultural commodity prices from
             the markets of {BRAND.operatingMarket}. Every published figure carries the market,

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 /**
- * GonaPulse — the shared data table.
+ * Hatsi360 — the shared data table.
  *
  * One table for every directory in the admin console: the same header,
  * the same empty state, the same pagination, so an administrator learns one

@@ -6,7 +6,7 @@ import { formatPercent, operationalToday } from '@/lib/analytics/format';
 import type { UserRole } from '@/types/domain';
 
 /**
- * GonaPulse — the operational reports.
+ * Hatsi360 — the operational reports.
  *
  * Twelve reports, each with a documented scope, a documented column set and a
  * role that may run it. Every report is built from the operational snapshot,

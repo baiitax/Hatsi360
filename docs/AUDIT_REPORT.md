@@ -38,8 +38,10 @@ verified**, not how important it is.
 
 **Material used**
 
-* 46 raw HTML captures of the legacy site (`audit/legacy-pages/`) — the independent truth
-  for the data-integrity tests.
+* `audit/source/legacy-catalogue.json`, `legacy-pairs.json`, `legacy-price-history.json` — the
+  structured capture, and the independent truth for the data-integrity tests.
+* *(46 raw HTML captures were also taken but were removed on 2026-11-12; they are no longer
+  retained.)*
 * `audit/source/legacy-catalogue.json`, `legacy-pairs.json`, `legacy-price-history.json` — the
   extracted markets, commodities and price history.
 * `scripts/build_legacy_dataset.py` — the deterministic reconstruction of the legacy dataset
@@ -162,7 +164,7 @@ computes the median, minimum, maximum, count and window from published observati
 ### F-07 · A Google Maps API key and a map token are embedded in a public page — `VERIFIED_IN_UI`
 
 **Method.** `GET /market-detail.php?market_id=7` — the HTML contains
-`AIzaSyCmL18misQw9KdwqGaw3zHkitj8vG6QF2Y` and a map token `87652`.
+`AIzaSy…[redacted]` and a map token (redacted).
 
 **Impact.** A third-party credential is public. Anyone can use it against Google's Maps billing
 account. This is an owner-side rotation item, not a code fix.
@@ -226,7 +228,9 @@ is stated by the coverage notice, and the disclaimer explains the limits.
 
 **Method.** A case-insensitive grep for `unit`, `kg`, `bag`, `tonne`, `naira`, `NGN`, `wholesale`,
 `retail`, `verified`, `source` and `collected` across all **46** captured pages
-(`audit/legacy-pages/`) returned **no data-field matches**. The only hits are marketing copy:
+returned **no data-field matches**.
+
+> **The raw HTML captures were removed on 2026-11-12.** The structured capture in `audit/source/` is retained and is what `tests/data-integrity.test.ts` asserts against; the raw pages were corroborating evidence and are no longer in the repository. The only hits are marketing copy:
 `unit` occurs inside the word "opportunities" in the homepage, and `verified` occurs in the FAQ
 sentence "We have a network of verified data collectors". The rendered price blocks are bare
 numbers with no unit, price type, currency or source.

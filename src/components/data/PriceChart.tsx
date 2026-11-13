@@ -14,6 +14,7 @@ import {
   YAxis,
 } from 'recharts';
 import type { PriceSeriesPoint } from '@/types/domain';
+import { CHART_COLOURS } from '@/lib/chart-colours';
 
 export interface ChartSeries {
   key: string;
@@ -29,7 +30,7 @@ export interface ChartSeries {
  * the median. The band is deliberately visible so a single day with one report
  * does not look like a settled market price.
  */
-export function PriceChart({
+export function HistoricalPriceChart({
   series,
   currencySymbol = '₦',
   height = 320,
@@ -74,7 +75,7 @@ export function PriceChart({
               </linearGradient>
             ))}
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#d9dedb" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLOURS.grid} vertical={false} />
           <XAxis
             dataKey="date"
             tickFormatter={(v: string) => {
@@ -83,13 +84,13 @@ export function PriceChart({
                 ? v
                 : parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
             }}
-            tick={{ fontSize: 11, fill: '#65756b' }}
-            axisLine={{ stroke: '#d9dedb' }}
+            tick={{ fontSize: 11, fill: CHART_COLOURS.axis }}
+            axisLine={{ stroke: CHART_COLOURS.grid }}
             tickLine={false}
             minTickGap={24}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: '#65756b' }}
+            tick={{ fontSize: 11, fill: CHART_COLOURS.axis }}
             axisLine={false}
             tickLine={false}
             width={72}
@@ -121,9 +122,9 @@ export function PriceChart({
             }}
             contentStyle={{
               borderRadius: 12,
-              border: '1px solid #d9dedb',
+              border: `1px solid ${CHART_COLOURS.grid}`,
               fontSize: 12,
-              boxShadow: '0 8px 24px -12px rgb(18 33 13 / 0.25)',
+              boxShadow: '0 8px 24px -12px rgb(18 59 42 / 0.25)',
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
@@ -142,7 +143,7 @@ export function PriceChart({
                 type="monotone"
                 dataKey={`${series[0]!.key}_min`}
                 stroke="none"
-                fill="#ffffff"
+                fill={CHART_COLOURS.surface}
                 fillOpacity={0.72}
                 name="Range floor"
                 legendType="none"
@@ -178,6 +179,14 @@ export function PriceChart({
   );
 }
 
+/**
+ * The historical price chart.
+ *
+ * Named for the catalogue in the design system; `PriceChart` remains as an
+ * alias so existing imports keep working.
+ */
+export const PriceChart = HistoricalPriceChart;
+
 /** A compact bar chart of observation counts per day — shows data density. */
 export function ObservationCountChart({
   series,
@@ -200,16 +209,16 @@ export function ObservationCountChart({
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 4, right: 12, bottom: 0, left: 4 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#d9dedb" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLOURS.grid} vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 10, fill: '#65756b' }}
-            axisLine={{ stroke: '#d9dedb' }}
+            tick={{ fontSize: 10, fill: CHART_COLOURS.axis }}
+            axisLine={{ stroke: CHART_COLOURS.grid }}
             tickLine={false}
             minTickGap={30}
           />
           <YAxis
-            tick={{ fontSize: 10, fill: '#65756b' }}
+            tick={{ fontSize: 10, fill: CHART_COLOURS.axis }}
             axisLine={false}
             tickLine={false}
             width={28}
@@ -218,7 +227,7 @@ export function ObservationCountChart({
           <Tooltip
             labelFormatter={(label) => String(label ?? '')}
             formatter={(value) => [`${value} observation${Number(value) === 1 ? '' : 's'}`]}
-            contentStyle={{ borderRadius: 12, border: '1px solid #d9dedb', fontSize: 12 }}
+            contentStyle={{ borderRadius: 12, border: `1px solid ${CHART_COLOURS.grid}`, fontSize: 12 }}
           />
           {series.map((s) => (
             <Bar key={s.key} dataKey={s.key} fill={s.color} radius={[3, 3, 0, 0]} name={s.label} />

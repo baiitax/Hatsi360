@@ -1,7 +1,7 @@
 import type { UserRole } from '@/types/domain';
 
 /**
- * GonaPulse — the admin console navigation.
+ * Hatsi360 — the admin console navigation.
  *
  * Two rules decide what appears here:
  *
@@ -37,6 +37,13 @@ export const ADMIN_NAV: NavGroup[] = [
         label: 'Overview',
         icon: '◧',
         roles: ['verification_officer', 'market_supervisor', 'analyst', 'admin', 'super_admin'],
+      },
+      {
+        href: '/admin/operations',
+        label: 'Live operations',
+        icon: '◉',
+        roles: ['verification_officer', 'market_supervisor', 'analyst', 'admin', 'super_admin'],
+        badge: 'pendingVerification',
       },
       {
         href: '/admin/search',
@@ -90,8 +97,49 @@ export const ADMIN_NAV: NavGroup[] = [
       },
       {
         href: '/admin/schedule',
-        label: 'Collection plan',
+        label: 'Collection planner',
         icon: '◷',
+        roles: ['market_supervisor', 'admin', 'super_admin'],
+      },
+      {
+        href: '/admin/assignments',
+        label: 'Agent assignments',
+        icon: '⇄',
+        roles: ['market_supervisor', 'analyst', 'admin', 'super_admin'],
+      },
+    ],
+  },
+  {
+    label: 'Catalogue',
+    items: [
+      {
+        href: '/admin/commodities',
+        label: 'Commodities',
+        icon: '❑',
+        roles: ['analyst', 'market_supervisor', 'admin', 'super_admin'],
+      },
+      {
+        href: '/admin/categories',
+        label: 'Commodity categories',
+        icon: '⊞',
+        roles: ['analyst', 'market_supervisor', 'admin', 'super_admin'],
+      },
+      {
+        href: '/admin/grades',
+        label: 'Grades',
+        icon: '◍',
+        roles: ['analyst', 'admin', 'super_admin'],
+      },
+      {
+        href: '/admin/units',
+        label: 'Units',
+        icon: '⚖',
+        roles: ['analyst', 'admin', 'super_admin'],
+      },
+      {
+        href: '/admin/zones',
+        label: 'Market zones',
+        icon: '◇',
         roles: ['market_supervisor', 'admin', 'super_admin'],
       },
     ],
@@ -107,9 +155,42 @@ export const ADMIN_NAV: NavGroup[] = [
       },
       {
         href: '/admin/reports',
-        label: 'Reports & exports',
+        label: 'Reports',
         icon: '⤓',
         roles: ['analyst', 'market_supervisor', 'admin', 'super_admin'],
+      },
+      {
+        href: '/admin/exports',
+        label: 'Exports',
+        icon: '⇩',
+        roles: ['admin', 'super_admin'],
+      },
+    ],
+  },
+  {
+    // Commercial is listed even though the paid tiers are not purchasable.
+    // The screens themselves state that plainly — hiding the module would
+    // leave the tables in the schema with no way to inspect them, and would
+    // make the platform's own commercial state invisible to its operators.
+    label: 'Commercial',
+    items: [
+      {
+        href: '/admin/customers',
+        label: 'Customers',
+        icon: '☴',
+        roles: ['admin', 'super_admin'],
+      },
+      {
+        href: '/admin/subscriptions',
+        label: 'Subscriptions',
+        icon: '⟡',
+        roles: ['admin', 'super_admin'],
+      },
+      {
+        href: '/admin/api-management',
+        label: 'API management',
+        icon: '⚯',
+        roles: ['admin', 'super_admin'],
       },
     ],
   },
@@ -136,9 +217,21 @@ export const ADMIN_NAV: NavGroup[] = [
       },
       {
         href: '/admin/system',
-        label: 'Jobs & health',
+        label: 'Jobs & system health',
         icon: '⟳',
         roles: ['admin', 'super_admin'],
+      },
+      {
+        href: '/admin/profile',
+        label: 'Profile',
+        icon: '☺',
+        roles: [
+          'verification_officer',
+          'market_supervisor',
+          'analyst',
+          'admin',
+          'super_admin',
+        ],
       },
     ],
   },

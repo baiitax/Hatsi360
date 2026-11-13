@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { signIn, type AuthActionState } from '@/lib/auth/actions';
+import { HatsiSpinner } from '@/components/loading/HatsiActionLoader';
 
 /**
  * The central sign-in form.
@@ -91,13 +92,21 @@ export function CentralSignInForm({ next }: { next?: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
+        aria-busy={pending}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:opacity-60"
       >
-        {pending ? 'Signing in…' : 'Sign in'}
+        {pending ? (
+          <>
+            <HatsiSpinner />
+            Signing in…
+          </>
+        ) : (
+          'Sign in'
+        )}
       </button>
 
       <p className="text-center text-xs leading-relaxed text-ink-500">
-        Market agent and staff accounts are created by the GonaPulse control centre. If you
+        Market agent and staff accounts are created by the Hatsi360 control centre. If you
         need an account, contact your supervisor.
       </p>
     </form>

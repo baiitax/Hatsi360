@@ -103,7 +103,7 @@ export default async function MarketsPage({
     <>
       <PageHeader
         title="Markets"
-        description="The markets GonaPulse covers. A market with no agent and no schedule is a coverage gap, and it is reported as one rather than hidden."
+        description="The markets Hatsi360 covers. A market with no agent and no schedule is a coverage gap, and it is reported as one rather than hidden."
         breadcrumbs={[
           { label: 'Control Centre', href: '/admin/overview' },
           { label: 'Markets' },
