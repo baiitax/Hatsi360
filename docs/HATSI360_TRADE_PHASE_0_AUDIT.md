@@ -289,6 +289,14 @@ Blocked phases (offers, forecasts, external feeds, AI copilot) are recorded as *
 
 ## 10. Classification summary
 
+This table records what Phase Zero found on the date it ran. It is not updated
+in place. Two rows have since been superseded, and the current state is recorded
+in the second addendum to `docs/HATSI360_TRADE_PHASE_2_STATUS_REPORT.md`:
+"Buyer and seller offers — BLOCKED, no table" (the tables now exist, created by
+migrations 0026 and 0027) and "Best buy / best sell — reframed, no offers" (the
+offers exist but remain private by default, so they are still not ranked as
+market facts).
+
 | Capability | Classification |
 |---|---|
 | Price observation data model | VERIFIED IN DATABASE |

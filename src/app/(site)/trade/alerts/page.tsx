@@ -29,8 +29,12 @@ export const dynamic = 'force-dynamic';
  *
  * What this page deliberately does not offer:
  *
- *   - "New opportunity" alerts. An opportunity requires a commercial offer,
- *     which does not exist. An alert on the lowest recorded price would fire
+ *   - "New opportunity" alerts. An opportunity requires a commercial offer.
+ *     Offers do exist in this platform (`buyer_offers` / `seller_offers`,
+ *     verified through `offer_verification_events`), but an offer is private
+ *     by default: only a verified, disclosed and unexpired one is publicly
+ *     readable, and even then it is one counterparty's commitment rather than
+ *     a market fact. Alerting on the lowest recorded price instead would fire
  *     on ordinary market variation, which brief §15 forbids.
  *   - Frequency controls beyond what the channel implies. There is no
  *     notification scheduler in the platform, so promising digest frequency
@@ -164,9 +168,10 @@ export default async function TradeAlertsPage() {
           <Panel title="What is not offered">
             <p className="text-[11px] leading-relaxed text-ink-600">
               There is no alert for a &ldquo;new opportunity&rdquo;. An
-              opportunity requires a commercial offer, and the platform records
-              none — so such an alert would fire on ordinary market variation
-              rather than on something a trader can act on.
+              opportunity requires a commercial offer, and an offer is a private
+              commitment between two named parties rather than a market fact —
+              so such an alert would fire on ordinary market variation rather
+              than on something a trader can act on.
             </p>
             <p className="mt-2 text-[11px] leading-relaxed text-ink-600">
               Digest frequency is not configurable, because the platform has no

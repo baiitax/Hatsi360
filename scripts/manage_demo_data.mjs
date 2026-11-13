@@ -177,6 +177,56 @@ const STATE_MIX = [
 const OBSERVATIONS_PER_MARKET = 11;
 const DAYS_OF_HISTORY = 21;
 
+/**
+ * The commercial workflow.
+ *
+ * Offers are the one part of this dataset that CAN be made public, because
+ * `buyer_offers_public_read` / `seller_offers_public_read` expose a row when
+ * `status = 'verified' AND disclosure_consent AND (valid_until IS NULL OR
+ * valid_until > now())`.
+ *
+ * That gate is deliberately not used here for anything but a small, explicitly
+ * labelled set. An offer is a commercial commitment from a named counterparty;
+ * publishing a synthetic one presents a fabricated trading opportunity as real,
+ * which is precisely what the brief forbids. So the majority of these offers
+ * sit in the verification workflow, and the handful that are published say
+ * DEMO in their counterparty name and their notes.
+ */
+/**
+ * The status each offer takes, in order, cycling as the market loop runs.
+ *
+ * This is a deliberate rotation rather than a random draw. With only thirty
+ * offers a random split can land with no `withdrawn` rows at all, and a demo
+ * whose verification workflow never shows one of its own end states is worse
+ * than one with a hand-set mix. Over ten offers this gives 3 verified,
+ * 2 submitted, 2 draft, 2 rejected and 1 withdrawn — so a verification queue
+ * with work in it, offers with an outcome, and offers that failed down.
+ */
+const OFFER_STATUS_CYCLE = [
+  'verified',
+  'submitted',
+  'draft',
+  'rejected',
+  'verified',
+  'withdrawn',
+  'submitted',
+  'verified',
+  'draft',
+  'rejected',
+];
+
+/** Of every three verified offers, two are published and one is withheld. The
+ *  withheld one keeps disclosure_consent false, so the public RLS policy
+ *  excludes it on its own terms rather than by a status trick. */
+const PUBLISH_EVERY_THIRD_VERIFIED = 3;
+
+const REJECTION_REASONS = [
+  'Price is outside the range recorded at this market.',
+  'Quantity and unit do not match the commodity as listed.',
+  'No disclosure consent on file, so the offer cannot be published.',
+  'Validity window overlaps an existing verified offer.',
+];
+
 /* ----------------------------------------------------------------- lookup */
 
 async function lookup() {
@@ -205,18 +255,24 @@ async function lookup() {
     grades: grades ?? [],
     unitId: new Map((units ?? []).map((u) => [u.code, u.id])),
     users: users ?? [],
+    // Offers and public-account features need an honest owner. The agent owns
+    // observations; a customer owns offers; a public account owns saved
+    // commodities and alerts. Attributing any of those to staff would
+    // misrepresent who is doing what.
+    customer: users.find((u) => u.role === 'customer') ?? null,
+    publicUser: users.find((u) => u.role === 'public_user') ?? null,
   };
 }
 
 /* ----------------------------------------------------------------- build -- */
 
-function pickState(rng) {
+function pickState(rng, mix = STATE_MIX) {
   let r = rng();
-  for (const s of STATE_MIX) {
+  for (const s of mix) {
     if (r < s.weight) return s.status;
     r -= s.weight;
   }
-  return STATE_MIX[0].status;
+  return mix[0].status;
 }
 
 function round(value) {
@@ -353,7 +409,179 @@ function buildPlan(ref) {
     }
   }
 
-  return { assignments, batches, observations, agent, verifier };
+  /* -------------------------------------------------- commercial offers -- */
+
+  const offers = [];
+  const offerEvents = [];
+
+  if (ref.customer && verifier) {
+    const offerCommodities = COMMODITIES.filter((c) => ref.commodityId.has(c.slug)).slice(0, 10);
+    let offerSeq = 0;
+    let verifiedSeen = 0;
+
+    for (const market of MARKETS) {
+      // Six offers per market: three buy-side, three sell-side.
+      for (let side = 0; side < 2; side += 1) {
+        for (let k = 0; k < 3; k += 1) {
+          const commodity = offerCommodities[(offerSeq + k) % offerCommodities.length];
+          const commodityId = ref.commodityId.get(commodity.slug);
+          if (!commodityId) continue;
+          offerSeq += 1;
+
+          const isBuyer = side === 0;
+          // A seller offer is an asking price; a buyer offer has no "bid" value
+          // in the price_type enum, so it is labelled indicative rather than
+          // dressed up as an export price it is not.
+          const priceType = isBuyer ? 'indicative' : 'wholesale_asking';
+          const quantity = [5, 10, 25, 40, 60, 100][Math.floor(rng() * 6)];
+          const status = OFFER_STATUS_CYCLE[offerSeq % OFFER_STATUS_CYCLE.length];
+          if (status === 'verified') verifiedSeen += 1;
+          const grade = ref.grades.find(
+            (g) => g.commodity_id === commodityId && g.id === commodity.grade,
+          ) ?? ref.grades.find((g) => g.commodity_id === commodityId);
+          const unitId = ref.unitId.get(commodity.unit);
+
+          const validFrom = new Date(now - 9 * day);
+          // Rejected and withdrawn offers keep a live window so their status is
+          // the only thing excluding them; a lapsed window would let an expired
+          // offer look merely out of date rather than refused.
+          const validUntil = new Date(now + (14 + Math.floor(rng() * 20)) * day);
+
+          const isPublished =
+            status === 'verified' && verifiedSeen % PUBLISH_EVERY_THIRD_VERIFIED !== 0;
+          const verifiedAt = status === 'verified' ? new Date(now - 6 * day) : null;
+          const isRejected = status === 'rejected';
+
+          const offer = {
+            user_id: ref.customer.id,
+            organization_id: null,
+            // The counterparty name is where the demonstration label lives on a
+            // published row. It is the one field a public reader always sees.
+            counterparty_name: `DEMO — Test ${isBuyer ? 'Buyer' : 'Seller'} ${offerSeq}`,
+            commodity_id: commodityId,
+            grade_id: grade ? grade.id : null,
+            variety_id: null,
+            // A verified offer that is withheld carries disclosure_consent
+            // false, so the public policy excludes it on its own terms rather
+            // than by a status trick.
+            price_amount: round(commodity.low + rng() * (commodity.high - commodity.low)),
+            price_type: priceType,
+            unit_id: unitId ?? null,
+            quantity: isBuyer ? 'quantity_required' : 'quantity_available',
+            quantityUnitId: unitId ?? null,
+            quantityValue: quantity,
+            currency_code: 'NGN',
+            market_id: market.id,
+            // buyer_offers has delivery_location, seller_offers has
+            // warehouse_location. Same fact, different column per side.
+            location: isBuyer ? 'delivery_location' : 'warehouse_location',
+            locationValue: market.name,
+            delivery_terms: isBuyer ? 'Ex-market, buyer arranges collection' : 'Ex-warehouse, seller arranges haulage',
+            valid_from: validFrom.toISOString(),
+            valid_until: validUntil.toISOString(),
+            quality_requirements: 'Sorted, moisture within tolerance, no foreign matter.',
+            notes:
+              'TEST FIXTURE — synthetic commercial offer for demonstration only. ' +
+              'Not a real commitment to trade. Never treat as a confirmed opportunity.',
+            status,
+            disclosure_consent: isPublished,
+            verified_by: verifiedAt ? verifier.id : null,
+            verified_at: verifiedAt ? verifiedAt.toISOString() : null,
+            rejection_reason: isRejected
+              ? REJECTION_REASONS[Math.floor(rng() * REJECTION_REASONS.length)]
+              : null,
+            created_by: ref.customer.id,
+          };
+          // Index within this side's array, so the verification trail can point
+          // at the row it belongs to once the ids are known.
+          const sideOffers = offers.filter((o) => o.side === (isBuyer ? 'buyer' : 'seller'));
+          const offerIndex = sideOffers.length;
+          const table = isBuyer ? 'buyer_offers' : 'seller_offers';
+          offers.push({ ...offer, side: isBuyer ? 'buyer' : 'seller' });
+
+          // The verification trail, so the workflow is demonstrable rather than
+          // just its end state.
+          const event = (from_status, to_status, actor_id, reason) => {
+            offerEvents.push({ offer_table: table, offer_index: offerIndex, from_status, to_status, actor_id, reason });
+          };
+
+          event(null, 'draft', ref.customer.id, 'TEST FIXTURE — offer drafted for demonstration.');
+          if (status !== 'draft') {
+            event('draft', 'submitted', ref.customer.id, 'TEST FIXTURE — submitted for verification.');
+          }
+          if (status === 'verified' || status === 'rejected') {
+            event(
+              'submitted',
+              status,
+              verifier.id,
+              isRejected
+                ? 'TEST FIXTURE — ' + offer.rejection_reason
+                : 'TEST FIXTURE — verified by the demonstration verification officer.',
+            );
+          }
+        }
+      }
+    }
+  }
+
+  /* ---------------------------------------- public-account demonstration -- */
+
+  const saved = [];
+  const savedMarkets = [];
+  const alerts = [];
+
+  if (ref.publicUser) {
+    const watchCommodities = COMMODITIES.slice(0, 6);
+    for (const c of watchCommodities) {
+      const id = ref.commodityId.get(c.slug);
+      if (!id) continue;
+      saved.push({
+        user_id: ref.publicUser.id,
+        commodity_id: id,
+        note: 'TEST FIXTURE — saved by the demonstration public account.',
+      });
+    }
+    // /trade/watchlist reads saved_commodities AND saved_markets for the
+    // signed-in user, so both are seeded or the page renders half a watchlist.
+    const savedMarketRows = MARKETS.slice(0, 3).map((m) => ({
+      user_id: ref.publicUser.id,
+      market_id: m.id,
+      note: 'TEST FIXTURE — saved by the demonstration public account.',
+    }));
+    savedMarkets.push(...savedMarketRows);
+
+    for (let i = 0; i < 4; i += 1) {
+      const c = watchCommodities[i % watchCommodities.length];
+      const id = ref.commodityId.get(c.slug);
+      if (!id) continue;
+      alerts.push({
+        user_id: ref.publicUser.id,
+        commodity_id: id,
+        market_id: null,
+        price_type: 'wholesale_asking',
+        direction: i % 2 === 0 ? 'below' : 'above',
+        threshold_amount: round(c.low + (c.high - c.low) * 0.5),
+        threshold_percent: null,
+        channel: i % 3 === 0 ? 'sms' : 'email',
+        is_active: true,
+      });
+    }
+  }
+
+  return {
+    assignments,
+    batches,
+    observations,
+    offers,
+    offerEvents,
+    saved,
+    savedMarkets,
+    alerts,
+    agent,
+    verifier,
+    customer: ref.customer,
+    publicUser: ref.publicUser,
+  };
 }
 
 /* ------------------------------------------------------------------ main -- */
@@ -381,7 +609,13 @@ async function main() {
     if (!canUsePg) return null;
     const r = await pg.query(
       `select (select count(*)::int from price_observations where source_system = 'test_fixture') as observations,
-              (select count(*)::int from collection_batches where notes like 'TEST FIXTURE%') as batches`,
+              (select count(*)::int from collection_batches where notes like 'TEST FIXTURE%') as batches,
+              (select count(*)::int from buyer_offers where notes like 'TEST FIXTURE%') as buyer_offers,
+              (select count(*)::int from seller_offers where notes like 'TEST FIXTURE%') as seller_offers,
+              (select count(*)::int from offer_verification_events where reason like 'TEST FIXTURE%') as offer_events,
+              (select count(*)::int from saved_commodities where note like 'TEST FIXTURE%') as saved,
+              (select count(*)::int from saved_markets where note like 'TEST FIXTURE%') as saved_markets,
+              (select count(*)::int from price_alerts where user_id in (select id from profiles where role='public_user')) as alerts`,
     );
     return r.rows[0];
   };
@@ -391,6 +625,38 @@ async function main() {
       const counts = await countFixtures();
       if (counts) {
         console.log(`fixtures present: ${counts.observations} observations, ${counts.batches} batches`);
+        // Report every table this seeder writes, so --status answers "is the
+        // demonstration data there" in one command rather than making the
+        // reader query each table by hand.
+        console.log(
+          `                    ${counts.buyer_offers} buyer offers, ${counts.seller_offers} seller offers, ` +
+            `${counts.offer_events} offer events`,
+        );
+        console.log(
+          `                    ${counts.saved} saved commodities, ${counts.saved_markets} saved markets, ` +
+            `${counts.alerts} price alerts`,
+        );
+        if (canUsePg) {
+          const published = await pg.query(
+            `select (select count(*)::int from buyer_offers
+                      where notes like 'TEST FIXTURE%' and status = 'verified'
+                        and disclosure_consent
+                        and (valid_until is null or valid_until > now())) as buyer_offers,
+                    (select count(*)::int from seller_offers
+                      where notes like 'TEST FIXTURE%' and status = 'verified'
+                        and disclosure_consent
+                        and (valid_until is null or valid_until > now())) as seller_offers,
+                    (select count(*)::int from published_price_observations
+                      where source_system = 'test_fixture'
+                         or source_reference = 'test_fixture') as leaked_observations`,
+          );
+          const p = published.rows[0];
+          console.log(
+            `                    ${p.buyer_offers + p.seller_offers} offers publicly readable, ` +
+              `${p.leaked_observations} fixture observations published` +
+              (p.leaked_observations === 0 ? ' (correct)' : ' — LEAK, remove them'),
+          );
+        }
       }
       if (statusOnly) return;
     }
@@ -400,6 +666,25 @@ async function main() {
         console.error('--remove needs SUPABASE_DB_* credentials.');
         process.exit(1);
       }
+      const events = await pg.query(
+        `delete from offer_verification_events where reason like 'TEST FIXTURE%' returning id`,
+      );
+      const seller = await pg.query(
+        `delete from seller_offers where notes like 'TEST FIXTURE%' returning id`,
+      );
+      const buyer = await pg.query(
+        `delete from buyer_offers where notes like 'TEST FIXTURE%' returning id`,
+      );
+      const saved = await pg.query(
+        `delete from saved_commodities where note like 'TEST FIXTURE%' returning id`,
+      );
+      const alerts = await pg.query(
+        `delete from price_alerts a using profiles p
+          where a.user_id = p.id and p.role = 'public_user' returning a.id`,
+      );
+      const savedMarkets = await pg.query(
+        `delete from saved_markets where note like 'TEST FIXTURE%' returning id`,
+      );
       const batches = await pg.query(
         `delete from collection_batches where notes like 'TEST FIXTURE%' returning id`,
       );
@@ -421,7 +706,11 @@ async function main() {
         return { rowCount: 0 };
       });
       console.log(
-        `removed ${obs.rowCount} observations, ${batches.rowCount} batches, ${asg.rowCount ?? 0} extra assignments`,
+        `removed ${obs.rowCount} observations, ${batches.rowCount} batches, ` +
+          `${buyer.rowCount} buyer offers, ${seller.rowCount} seller offers, ` +
+          `${events.rowCount} offer events, ${saved.rowCount} saved commodities, ` +
+          `${savedMarkets.rowCount} saved markets, ${alerts.rowCount} price alerts, ` +
+          `${asg.rowCount ?? 0} extra assignments`,
       );
       return;
     }
@@ -447,6 +736,12 @@ async function main() {
         `for agent ${plan.agent.role}` +
         (plan.verifier ? ` (verifier ${plan.verifier.role})` : ' (no verifier account)'),
     );
+    if (!plan.customer || !plan.publicUser) {
+      console.log(
+        'note: no customer or public_user account found, so offers, saved commodities ' +
+          'and price alerts were skipped. Run scripts/manage_demo_users.mjs first.',
+      );
+    }
 
     if (dryRun) {
       const byStatus = {};
@@ -502,9 +797,79 @@ async function main() {
       if (error) throw new Error(`price_observations: ${error.message}`);
     }
 
+    /* Commercial offers. `offer_verification_events.offer_id` references the
+     * offer it belongs to, so the offers have to exist first and their ids read
+     * back before the trail can be written. */
+    const buyerOffers = plan.offers.filter((o) => o.side === 'buyer');
+    const sellerOffers = plan.offers.filter((o) => o.side === 'seller');
+
+    // `buyer_offers` carries quantity_required and `seller_offers`
+    // quantity_available; neither has the other column, so the shared plan row
+    // is rewritten per table rather than sent with a null the API rejects.
+    const insertOffers = async (table, rows) => {
+      if (rows.length === 0) return new Map();
+      const payload = rows.map(
+        ({ side, quantity, quantityUnitId, quantityValue, location, locationValue, ...o }) => ({
+          ...o,
+          [quantity]: quantityValue,
+          quantity_unit_id: quantityUnitId,
+          [location]: locationValue,
+        }),
+      );
+      const { data, error } = await admin.from(table).insert(payload).select('id, counterparty_name');
+      if (error) throw new Error(`${table}: ${error.message}`);
+      // counterparty_name is unique per fixture, so it is the join key back to
+      // the verification events.
+      return new Map((data ?? []).map((r) => [r.counterparty_name, r.id]));
+    };
+
+    const buyerIds = await insertOffers('buyer_offers', buyerOffers);
+    const sellerIds = await insertOffers('seller_offers', sellerOffers);
+
+    // Each event knows which offer it belongs to by its counterparty name.
+    const nameById = (offer) => offer.counterparty_name;
+    const resolvedEvents = [];
+    for (const e of plan.offerEvents) {
+      const names = e.offer_table === 'buyer_offers' ? buyerOffers : sellerOffers;
+      const idMap = e.offer_table === 'buyer_offers' ? buyerIds : sellerIds;
+      const offerId = idMap.get(nameById(names[e.offer_index]));
+      if (!offerId) continue;
+      const { offer_index: _idx, ...rest } = e;
+      resolvedEvents.push({
+        offer_table: rest.offer_table,
+        offer_id: offerId,
+        from_status: rest.from_status,
+        to_status: rest.to_status,
+        actor_id: rest.actor_id,
+        reason: rest.reason,
+      });
+    }
+    if (resolvedEvents.length > 0) {
+      const { error: evErr } = await admin.from('offer_verification_events').insert(resolvedEvents);
+      if (evErr) throw new Error(`offer_verification_events: ${evErr.message}`);
+    }
+
+    if (plan.saved.length > 0) {
+      const { error } = await admin.from('saved_commodities').insert(plan.saved);
+      if (error) throw new Error(`saved_commodities: ${error.message}`);
+    }
+    if (plan.savedMarkets.length > 0) {
+      const { error } = await admin.from('saved_markets').insert(plan.savedMarkets);
+      if (error) throw new Error(`saved_markets: ${error.message}`);
+    }
+    if (plan.alerts.length > 0) {
+      const { error } = await admin.from('price_alerts').insert(plan.alerts);
+      if (error) throw new Error(`price_alerts: ${error.message}`);
+    }
+
     const counts = await countFixtures();
     if (counts) {
-      console.log(`created: ${counts.observations} observations, ${counts.batches} batches`);
+      console.log(
+        `created: ${counts.observations} observations, ${counts.batches} batches, ` +
+          `${counts.buyer_offers} buyer offers, ${counts.seller_offers} seller offers, ` +
+          `${counts.offer_events} offer events, ${counts.saved} saved commodities, ` +
+          `${counts.saved_markets} saved markets, ${counts.alerts} price alerts`,
+      );
     }
 
     /* The guarantee, tested rather than asserted. If a fixture is ever publicly
@@ -522,6 +887,39 @@ async function main() {
       throw new Error(`LEAK: ${leaked} fixture rows are publicly readable. Remove them now.`);
     }
     console.log('verified: 0 fixture rows are publicly readable through the published view');
+
+    /* Offers are the one surface where a fixture IS meant to be visible, so the
+     * probe here is inverted: it asserts the public read returns exactly the
+     * offers the plan marked published, and nothing else. A wider result means
+     * an offer leaked past its RLS policy or past the plan. */
+    const published = plan.offers.filter((o) => o.status === 'verified' && o.disclosure_consent);
+    for (const table of ['buyer_offers', 'seller_offers']) {
+      const { count, error } = await anon
+        .from(table)
+        .select('id', { count: 'exact', head: true })
+        .like('notes', 'TEST FIXTURE%');
+      if (error) throw new Error(`public offer probe (${table}): ${error.message}`);
+      const expected = published.filter((o) => (table === 'buyer_offers' ? 'buyer' : 'seller') === o.side).length;
+      if (count !== expected) {
+        throw new Error(
+          `LEAK: public ${table} returned ${count} fixture rows, expected ${expected}.`,
+        );
+      }
+      // Every publicly readable fixture must carry the demonstration label.
+      const { data: visible, error: vErr } = await anon
+        .from(table)
+        .select('counterparty_name')
+        .like('notes', 'TEST FIXTURE%');
+      if (vErr) throw new Error(`public offer names (${table}): ${vErr.message}`);
+      for (const row of visible ?? []) {
+        if (!String(row.counterparty_name).startsWith('DEMO')) {
+          throw new Error(`LEAK: ${table} row "${row.counterparty_name}" is public without a DEMO label.`);
+        }
+      }
+    }
+    console.log(
+      `verified: exactly ${published.length} fixture offers are publicly readable, all DEMO-labelled`,
+    );
   } finally {
     if (canUsePg) await pg.end().catch(() => {});
   }

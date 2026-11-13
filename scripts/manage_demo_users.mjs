@@ -60,7 +60,7 @@ const DEMO_PASSWORD = 'hatsi360-demo';
 const DEMO_MARKET_ID = 1;
 
 /**
- * The three accounts.
+ * The demo accounts.
  *
  * `role` is the database role, which is what the server-side guards and the RLS
  * policies read. The browser never chooses a destination: `landingPathForRole`
@@ -85,6 +85,24 @@ const ACCOUNTS = [
     fullName: 'DEMO — Administrator',
     note: 'Administrator. Lands in the Control Centre. This is the account the public sign-in page exposes, so it is the one to remove first.',
   },
+  {
+    // A commercial account, so buyer_offers and seller_offers have an honest
+    // owner. Without one, offers would have to be attributed to staff, which
+    // would misrepresent who is trading.
+    email: 'demo.customer@hatsi360.test',
+    role: 'customer',
+    fullName: 'DEMO — Customer (Buyer/Seller)',
+    note: 'Customer. Owns the demonstration buyer and seller offers, so the trade workflow has a real counterparty rather than a staff account.',
+  },
+  {
+    // The role a free self-registration produces. This is the account the
+    // login page describes as "only adds saved commodities and price alerts",
+    // so saved_commodities and price_alerts have an owner.
+    email: 'demo.public@hatsi360.test',
+    role: 'public_user',
+    fullName: 'DEMO — Public Account',
+    note: 'Free public account. Owns the demonstration saved commodities and price alerts. No operational permissions.',
+  },
 ];
 
 const db = new Client({
@@ -99,7 +117,7 @@ const db = new Client({
 
 async function findUserByEmail(email) {
   // The admin list endpoint is paginated; a targeted lookup is not offered, so
-  // page through until the address is found. The demo set is three accounts, so
+  // page through until the address is found. The demo set is five accounts, so
   // this terminates quickly.
   for (let page = 1; page <= 20; page += 1) {
     const res = await fetch(
@@ -368,7 +386,7 @@ async function main() {
     );
   }
 
-  console.log(`\nPassword for all three: ${DEMO_PASSWORD}`);
+  console.log(`\nPassword for every account: ${DEMO_PASSWORD}`);
   console.log(
     'These credentials are printed on the public sign-in page. Remove the accounts with\n' +
       '`node scripts/manage_demo_users.mjs --remove` before any public launch.',

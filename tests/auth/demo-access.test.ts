@@ -33,6 +33,12 @@ const DEMO_ACCOUNTS = [
   { email: 'demo.agent@hatsi360.test', role: 'agent', landing: '/agent/home' },
   { email: 'demo.verifier@hatsi360.test', role: 'verification_officer', landing: '/admin/verification' },
   { email: 'demo.admin@hatsi360.test', role: 'admin', landing: '/admin/overview' },
+  // Owns the demonstration offers, so the commercial workflow has a real
+  // counterparty rather than a staff account.
+  { email: 'demo.customer@hatsi360.test', role: 'customer', landing: '/dashboard' },
+  // Owns the saved commodities, saved markets and price alerts, which is what
+  // /trade/watchlist and /trade/alerts render for a signed-in public account.
+  { email: 'demo.public@hatsi360.test', role: 'public_user', landing: '/dashboard' },
 ] as const;
 
 const DEMO_PASSWORD = 'hatsi360-demo';
@@ -64,7 +70,11 @@ describe('the demo access panel', () => {
           ? 'Market agent'
           : account.role === 'verification_officer'
             ? 'Verification officer'
-            : 'Administrator',
+            : account.role === 'admin'
+              ? 'Administrator'
+              : account.role === 'customer'
+                ? 'Customer'
+                : 'Public account',
       );
     }
   });
@@ -76,7 +86,10 @@ describe('the demo access panel', () => {
     expect(source).toContain('<CopyButton');
     expect(source).toContain('CopyButton value={account.email}');
     expect(source).toContain('CopyButton value={DEMO_PASSWORD}');
-    // Three copy buttons for the addresses plus one for the shared password.
+    // One copy action for each address, plus one for the shared password. The
+    // address button is inside the map, so the source contains two literals:
+    // the mapped one and the standalone password one. The count of *rendered*
+    // buttons is DEMO_ACCOUNTS.length + 1, asserted in the browser walk.
     expect((source.match(/<CopyButton/g) ?? []).length).toBe(2);
   });
 
@@ -90,12 +103,13 @@ describe('the demo access panel', () => {
   });
 
   it('states plainly what the demo does and does not prove', () => {
-    // Overclaiming here would be the easiest failure in this whole change: the
-    // operational tables are empty, so "sample market intelligence" would be
-    // false. The copy says the portals open and the records are empty.
-    expect(source).toMatch(/does not add any market data/i);
-    expect(source).toMatch(/operational records are empty/i);
+    // Overclaiming here would be the easiest failure in this whole change. The
+    // copy must not present the demonstration records as market data, and must
+    // not claim the public price pages show them either — they do not, because
+    // `published_price_observations` filters `test_fixture` out.
+    expect(source).toMatch(/test fixtures/i);
     expect(source).not.toMatch(/sample (market )?(prices|data|intelligence)/i);
+    expect(source).not.toMatch(/real[- ]time/i);
   });
 
   it('carries the removal command, because the credentials are public', () => {

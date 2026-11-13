@@ -11,9 +11,11 @@
  *   candles.ts      — OHLC aggregation that refuses to fabricate.
  *   opportunities.ts — best buy, best sell and spread, reframed honestly.
  *
- * Read `docs/HATSI360_TRADE_PHASE_0_AUDIT.md` for why three of the brief's
- * headline features are not built: there are no commercial offers, no cost
- * data and no sub-daily collection in this platform.
+ * Read `docs/HATSI360_TRADE_PHASE_0_AUDIT.md` for why the brief's headline
+ * features are not built as described: there is no cost data and no sub-daily
+ * collection in this platform, and commercial offers — which the schema does
+ * hold, in `buyer_offers` and `seller_offers` — are private by default, so
+ * they are never ranked or alerted on as if they were market facts.
  */
 
 export {

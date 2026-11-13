@@ -268,11 +268,52 @@ create policy seller_offers_staff_read on public.seller_offers
 
 -- The verification trail is append-only. Anyone may read the events for an
 -- offer they can see; nobody may update or delete them.
+--
+-- The "an offer they can see" half is enforced, not assumed. `using (true)`
+-- published the trail of every draft, submitted, withdrawn and rejected offer
+-- to the anonymous public — including the rejection reasons, which are private
+-- commercial feedback. Migration 0031 carries the corrected policy and the
+-- reasoning; it is applied here too so a fresh database is correct from the
+-- start.
 drop policy if exists offer_verification_events_read on public.offer_verification_events;
 create policy offer_verification_events_read on public.offer_verification_events
   for select
   to anon, authenticated
-  using (true);
+  using (
+    public.is_staff()
+    or exists (
+      select 1
+        from public.buyer_offers o
+       where o.id = offer_verification_events.offer_id
+         and offer_verification_events.offer_table = 'buyer_offers'
+         and o.status = 'verified'
+         and o.disclosure_consent
+         and (o.valid_until is null or o.valid_until > now())
+    )
+    or exists (
+      select 1
+        from public.seller_offers o
+       where o.id = offer_verification_events.offer_id
+         and offer_verification_events.offer_table = 'seller_offers'
+         and o.status = 'verified'
+         and o.disclosure_consent
+         and (o.valid_until is null or o.valid_until > now())
+    )
+    or exists (
+      select 1
+        from public.buyer_offers o
+       where o.id = offer_verification_events.offer_id
+         and offer_verification_events.offer_table = 'buyer_offers'
+         and o.user_id = auth.uid()
+    )
+    or exists (
+      select 1
+        from public.seller_offers o
+       where o.id = offer_verification_events.offer_id
+         and offer_verification_events.offer_table = 'seller_offers'
+         and o.user_id = auth.uid()
+    )
+  );
 
 drop policy if exists offer_verification_events_staff_read on public.offer_verification_events;
 create policy offer_verification_events_staff_read on public.offer_verification_events

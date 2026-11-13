@@ -23,11 +23,11 @@ import { CopyButton } from './CopyButton';
  *
  * The copy of this panel states it plainly, because it would be easy to
  * overclaim: the demo proves that **each portal opens, routes correctly and
- * renders its own screens under real Row Level Security**. It does not prove
- * anything about market data, because there is none — the operational tables
- * are empty and the honest state is an empty one. Anyone who signs in and sees
- * "Nothing in this view" is seeing the truth about the platform, not a broken
- * demo.
+ * renders its own screens under real Row Level Security**. The demonstration
+ * records it renders are synthetic and marked as test fixtures throughout, so
+ * they prove the workflow, not the market. They never reach the public price
+ * pages: `published_price_observations` filters `test_fixture` out, and every
+ * demonstration row carries `published_at = NULL`.
  *
  * ## Why the credentials are on a public page
  *
@@ -55,6 +55,21 @@ const ACCOUNTS = [
     email: 'demo.admin@hatsi360.test',
     role: 'Administrator',
     destination: 'Control Centre — every admin module',
+  },
+  {
+    // Owns the demonstration buyer and seller offers, so the commercial
+    // workflow has a real counterparty rather than a staff account.
+    email: 'demo.customer@hatsi360.test',
+    role: 'Customer',
+    destination: 'Customer workspace — own buyer and seller offers',
+  },
+  {
+    // The role a free self-registration produces. Owns the saved commodities,
+    // saved markets and price alerts, so /trade/watchlist and /trade/alerts
+    // have something to render.
+    email: 'demo.public@hatsi360.test',
+    role: 'Public account',
+    destination: 'Watchlist and price alerts — no operational permissions',
   },
 ] as const;
 
@@ -85,11 +100,11 @@ export function DemoAccountsPanel({ next }: { next?: string }) {
               Demo access
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-ink-600">
-              Three test accounts, each landing in a different workspace. Signing in is the
+              Five test accounts, each landing in a different workspace. Signing in is the
               same sign-in a real account uses — it proves the portal opens and routes
-              correctly, under the same permissions. It does not add any market data: the
-              operational records are empty, so an empty screen is the honest state and not
-              a fault.
+              correctly, under the same permissions. The demonstration records are labelled
+              test fixtures and are never published to the public price pages, so an empty
+              public screen is the honest state and not a fault.
             </p>
           </div>
         </div>

@@ -507,3 +507,56 @@ Stated plainly, because the brief forbids claiming otherwise.
 - **`npm run lint` is still broken** (`next lint` was removed in Next 16), so
   TypeScript, Vitest, `next build` and the two verification scripts are the
   working gates.
+
+---
+
+## Second addendum — corrections to statements above that are no longer true
+
+This report is a dated record, and it is not rewritten. Where a statement made
+above has since become false, it is corrected here instead, with the date, so
+the history stays readable.
+
+**2026-10-22.**
+
+1. **§17, "No buyer or seller identity exists to expose, because no offers
+   exist."** No longer true. Migration `0026_commercial_offers.sql` created
+   `buyer_offers` and `seller_offers`, migration `0027_offer_workflow.sql`
+   created `offer_verification_events` and `update_offer_status()`, and both
+   offer tables now carry demonstration rows owned by a real `customer`
+   account. What remains true, and matters more: an offer is private by
+   default. `buyer_offers_public_read` and `seller_offers_public_read` expose a
+   row only when it is `verified` **and** `disclosure_consent` **and** not
+   expired, so an undisclosed or unverified offer is never publicly readable.
+   That is the exposure control the original sentence was gesturing at, stated
+   the way the schema actually enforces it.
+
+2. **§17's security list is incomplete.** Migration `0027` created
+   `offer_verification_events_read` as `using (true)` for `anon,
+   authenticated`, while its own comment said "anyone may read the events for
+   an offer they can see". The policy did not implement the sentence. Every
+   row of the verification trail — including the trail of drafts, withdrawn and
+   rejected offers, each carrying `actor_id` and a free-text `reason` — was
+   readable by the anonymous public. Found while seeding the demonstration
+   offers and fixed by migration
+   `0031_offer_verification_events_read_fix.sql`, which restricts the read to
+   offers the caller may read: staff read all, an owner reads their own, the
+   public reads only published offers. Verified by role-switching:
+   `anon` saw 69 events before the fix and 18 after, and all 18 belong to
+   published offers.
+
+3. **`src/lib/trade/opportunities.ts` carried a false header comment** asserting
+   "There is no `buyer_offers` or `seller_offers` table, and nothing in the
+   platform records a commercial offer." Both tables exist. The comment has been
+   corrected to state the real reason the module does not read them: an offer is
+   a private commitment by a named party, selectively disclosed by its owner, so
+   it is not a market price and cannot be ranked as one.
+
+4. **`/trade/alerts` carried the same claim in user-facing copy** ("the platform
+   records none"). Corrected to state the real reason there is no "new
+   opportunity" alert: an offer is a private commitment rather than a market
+   fact, so such an alert would fire on ordinary market variation.
+
+5. **§5, "The offer screens do not exist yet."** Still true. No public route
+   reads `buyer_offers` or `seller_offers`. The demonstration offers are
+   therefore visible only through the RLS-gated read path, exercised in the
+   database, not through a page.

@@ -42,10 +42,27 @@ Shared password: **`hatsi360-demo`**
 | `demo.agent@hatsi360.test` | `agent` | `/agent/home` | The field agent app. |
 | `demo.verifier@hatsi360.test` | `verification_officer` | `/admin/verification` | The verification queue — a *staff* workspace, not the admin console. |
 | `demo.admin@hatsi360.test` | `admin` | `/admin/overview` | The enterprise admin console. |
+| `demo.customer@hatsi360.test` | `customer` | `/dashboard` | Owns the demonstration buyer and seller offers. |
+| `demo.public@hatsi360.test` | `public_user` | `/dashboard` | Owns the saved commodities, saved markets and price alerts. |
 
-Three accounts, not one per role, because the requester asked for both the
-agent and admin portals to be testable and a verification officer is the role
-that actually exercises the offer workflow.
+Five accounts, not one per role, because the requester asked for both the agent
+and admin portals to be testable and a verification officer is the role that
+actually exercises the offer workflow.
+
+The last two were added later, for a specific reason: **the demonstration data
+has to be owned by real accounts, not by staff.** A buyer or seller offer
+attributed to a verification officer would misrepresent who is trading, and a
+saved commodity or price alert with no owner cannot render at all. So
+`buyer_offers` and `seller_offers` are owned by the `customer`, and
+`saved_commodities`, `saved_markets` and `price_alerts` are owned by the
+`public_user`. Neither of those two accounts is operational: neither can reach
+an agent or admin workspace, which `tests/routing/demo-landing.test.ts` asserts
+directly.
+
+A `customer` landing on `/dashboard` rather than a commercial workspace is not
+an oversight. There is no customer-facing offer screen in the application —
+see the second addendum to `docs/HATSI360_TRADE_PHASE_2_STATUS_REPORT.md` — so
+the honest landing page for the role is the generic workspace one.
 
 ### Why the agent has a market assignment
 
@@ -119,6 +136,12 @@ and the same `landingPathForRole()` redirect as a real one.
 The panel shows the target workspace on each button so the reader knows where
 they will land, and carries the removal command in its footer.
 
+Five rows were measured for layout, not three. The earlier measurement found a
+68px horizontal overflow at a 390px viewport with three rows; the row layout
+was changed to stack below `sm` and that was fixed. Adding two more rows made
+the measurement worth repeating: **overflow is 0px at 320, 360, 375, 390, 430,
+768, 1024 and 1440px.**
+
 ## The sweep — and a rule for future tests
 
 `auth.users` held **32 rows** after the demo accounts were created. The other
@@ -152,6 +175,17 @@ set, no console errors.
 | Market agent | `/agent/home` | 1 assigned market, **Start collection** enabled, Dawanau listed under "Your markets" |
 | Verification officer | `/admin/verification` | The queue with its status filters and an honest empty state: *"No sample or placeholder records are shown."* |
 | Administrator | `/admin/overview` | 11 registered markets, 1 registered agent, 0 observations / 0 awaiting verification / 0 published — each with its `public.*` source named |
+| Customer | `/dashboard` | The generic workspace landing page. No customer-facing offer screen exists. |
+| Public account | `/dashboard` | `/trade/watchlist` renders 6 saved commodities and 3 saved markets; `/trade/alerts` renders 4 alerts with thresholds, directions and channels |
+
+The public account's two pages are the only place in the application where the
+seeded rows are visible through a real route. `/trade/watchlist` reads
+`saved_commodities` and `saved_markets` for the signed-in user;
+`/trade/alerts` reads `price_alerts`. Each saved commodity shows
+*"No published observation yet"*, which is correct: the demonstration
+observations are test fixtures and are never published, so there is no
+published price to show and the page says so rather than showing the synthetic
+one.
 
 Run it with the server up:
 

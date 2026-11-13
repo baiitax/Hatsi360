@@ -9,13 +9,20 @@ import {
  * Trading opportunities.
  *
  * Brief §9 asks for a best-buy engine and §10 for a best-sell engine. Both are
- * written around commercial offers — buyer procurement prices and seller
- * offers — and neither exists in the schema. There is no `buyer_offers` or
- * `seller_offers` table, and nothing in the platform records a commercial
- * offer.
+ * written around commercial offers, and the schema does have those tables:
+ * `buyer_offers` and `seller_offers`, with an RLS-gated verification workflow
+ * (`offer_verification_events`, `update_offer_status()`).
  *
- * So this module does not build what the brief describes. It builds what the
- * data supports, and it is explicit about the difference:
+ * This module still does not read them, and the reason is about the data rather
+ * than the schema. An offer is a private commercial commitment between two
+ * named parties. It only becomes visible to the public when its owner has
+ * disclosed it AND a verification officer has verified it AND it has not
+ * lapsed. So the set of offers this engine could legally see is small,
+ * selective, and owner-controlled — it is not a market price, and ranking it as
+ * "best buy" would present a counterparty's private bid as a market fact.
+ *
+ * So this module builds what the data supports, and is explicit about the
+ * difference:
  *
  *   What the data holds:  the price an agent recorded at a market, verified
  *                         and published.
@@ -29,6 +36,9 @@ import {
  *
  * Brief §10.1 states the rule this implements: "Do not confuse a published
  * wholesale observation with a confirmed buyer commitment."
+ *
+ * Offers are a separate surface, read through their own RLS-gated path. Nothing
+ * on /trade queries them, and nothing here is derived from them.
  */
 
 /** What an opportunity result actually is. */
