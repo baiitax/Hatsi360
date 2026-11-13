@@ -1,6 +1,6 @@
-# Pluck Live
+# Hatsi360
 
-**Pluck Live** is the agricultural commodity price transparency and market intelligence platform
+**Hatsi360** is the agricultural commodity price transparency and market intelligence platform
 for **Pluck Agro**. It is the successor to the PHP site at `https://liveprice.pluckagro.com`,
 rebuilt on Next.js (App Router) + TypeScript + Supabase, with an emphasis on three things the old
 site never had: **honest data**, **real permissions**, and a **collection → verification →
