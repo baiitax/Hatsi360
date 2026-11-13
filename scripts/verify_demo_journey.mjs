@@ -17,7 +17,11 @@ const BASE = process.argv[2] ?? 'http://localhost:3103';
 const CASES = [
   {
     label: 'agent',
-    buttonText: /Market agent/,
+    // The panel shows one Sign in button per account, so the account has to be
+    // named to pick the right one. Selecting by email is the stable handle:
+    // the role label is presentation, the address is the record.
+    email: 'demo.agent@hatsi360.test',
+    roleLabel: /Market agent/,
     expectUrl: /\/agent(\/home)?(\?|$)/,
     expectText: /Field|collect|market|task/i,
     // The agent app must not be an error boundary.
@@ -25,14 +29,16 @@ const CASES = [
   },
   {
     label: 'verification_officer',
-    buttonText: /Verification officer/,
+    email: 'demo.verifier@hatsi360.test',
+    roleLabel: /Verification officer/,
     expectUrl: /\/admin\/verification/,
     expectText: /verif|queue|review|observ/i,
     mustNotMatch: /Application error|Unhandled Runtime/i,
   },
   {
     label: 'admin',
-    buttonText: /Administrator/,
+    email: 'demo.admin@hatsi360.test',
+    roleLabel: /Administrator/,
     expectUrl: /\/admin\/overview/,
     expectText: /overview|control|admin|metric|observ/i,
     mustNotMatch: /Application error|Unhandled Runtime/i,
@@ -58,12 +64,24 @@ try {
     try {
       await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-      // The panel must be there and describe itself as test-only.
-      const panel = page.locator('text=Demo accounts').first();
+      // The panel must be there, and it must not overclaim. The demo panel
+      // is a public page: if it promised sample market data it would be lying,
+      // because every operational table is empty.
+      const panel = page.getByText(/DEMO ACCESS/i).first();
       await panel.waitFor({ timeout: 15000 });
       r.steps.push(['panel rendered', 'OK']);
 
-      const button = page.getByRole('button', { name: c.buttonText }).first();
+      const panelText = await page.locator('body').innerText();
+      r.steps.push([
+        'panel is honest about empty data',
+        /does not add any market data/i.test(panelText) ? 'OK' : 'FAIL: no honesty statement',
+      ]);
+      if (!/does not add any market data/i.test(panelText)) failures += 1;
+
+      // Find this account's row by its email, then the Sign in button in it.
+      const row = page.locator('li', { hasText: c.email }).first();
+      await row.waitFor({ timeout: 15000 });
+      const button = row.getByRole('button', { name: /^Sign in$/ });
       await button.waitFor({ timeout: 15000 });
       await button.click();
 

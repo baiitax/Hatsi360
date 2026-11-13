@@ -38,28 +38,30 @@ everything resolves through `getAsset` / `resolveImage` / `getPageImage` /
 
 ### 52 registered assets
 
-| Role | Count | Served | Waiting on a source original |
-| --- | --- | --- | --- |
-| `commodity` | 19 | 19 | 0 |
-| `market` | 11 | 11 | 0 |
-| `hero` | 3 | 3 | 0 |
-| `agriculture` | 4 | 4 | 0 |
-| `infrastructure` | 4 | 4 | 0 |
-| `insights` | 4 | 4 | 0 |
-| `professionals` | 4 | **0** | **4** |
-| `reports` | 2 | **0** | **2** |
-| `ui` (placeholder) | 1 | 1 | 0 |
-| **Total** | **52** | **46** | **6** |
+| Role | Count | Served |
+| --- | --- | --- |
+| `commodity` | 19 | 19 |
+| `market` | 11 | 11 |
+| `hero` | 3 | 3 |
+| `agriculture` | 4 | 4 |
+| `infrastructure` | 4 | 4 |
+| `insights` | 4 | 4 |
+| `professionals` | 4 | 4 |
+| `reports` | 2 | 2 |
+| `ui` (placeholder) | 1 | 1 |
+| **Total** | **52** | **52** |
 
-Library size **11 162 KB**, no file over the 320 KB byte budget.
+Library size **12 448 KB**, no file over the 320 KB byte budget.
 
 ### The gap this audit found, and its cause
 
-Six assets are registered with complete metadata — `alt`, `subject`, `folder`,
-`name`, `width`, `height`, `licence`, `credit`, `role`, `representation` — but
-have **no source original in `assets/image-sources/`**, so
-`buildAsset()` returns `null` and every lookup silently falls back to
-`ui.placeholder`.
+At the time of the audit, six assets were registered with complete metadata —
+`alt`, `subject`, `folder`, `name`, `width`, `height`, `licence`, `credit`,
+`role`, `representation` — but had **no source original in
+`assets/image-sources/`**, so `buildAsset()` returned `null` and every lookup
+silently fell back to `ui.placeholder`. **All six have since been generated,
+verified on-subject and built.** The record is kept because the failure mode,
+not the fix, is the useful part.
 
 | Asset | Source original required | Page keys that fall back |
 | --- | --- | --- |
@@ -70,8 +72,10 @@ have **no source original in `assets/image-sources/`**, so
 | `reports.market-report` | `reports-market.jpg` | `reports.hero` |
 | `reports.coverage-report` | `reports-coverage.jpg` | `reports.coverage` |
 
-**9 page keys** resolve to the placeholder as a result. This is the single
-remaining cause of all 11 test failures in the suite.
+**9 page keys** resolved to the placeholder as a result: `home.audiences`,
+`about.collect`, `about.verify`, `solutions.traders`, `solutions.institutions`,
+`reports.hero`, `reports.coverage`, `methodology.hero`, `contact.hero`. This
+was the single remaining cause of all 11 test failures in the suite. **Now 0.**
 
 > **Why this class of defect is dangerous:** a catalogue entry with no built
 > derivative fails *silently* — `resolveImage` returns the placeholder, which
@@ -186,7 +190,7 @@ measured state.
 
 | # | Finding | Classification | Status |
 | --- | --- | --- | --- |
-| 1 | 6 registered assets have no source original → 9 page keys fall back to the placeholder | VERIFIED IN CODE | **OPEN** — originals pending |
+| 1 | 6 registered assets had no source original → 9 page keys fell back to the placeholder | VERIFIED IN CODE | **FIXED** — all 6 generated and built |
 | 2 | `ui.placeholder` claimed `representation: 'exact'`, suppressing its disclosure badge | VERIFIED IN CODE | **FIXED** |
 | 3 | 10 source originals generated and built (`market-loading`, `market-yam`, `agriculture-{maize,rice,legume,harvest}`, `infrastructure-{warehouse,grading,bagging,export}`) | VERIFIED IN UI | **DONE** |
 | 4 | No exact duplicate files; no content near-duplicates | VERIFIED IN CODE | CLEAN |
@@ -195,11 +199,19 @@ measured state.
 | 7 | No remote image URLs, no base64 payloads, no over-budget files | VERIFIED IN CODE | CLEAN |
 | 8 | 85 routes, no duplicates, all 200 | VERIFIED IN UI | CLEAN |
 
-## Next
+## Outcome
 
-1. Generate the 6 remaining source originals (`professionals-{trader,agent,
-   inspector,analyst}.jpg`, `reports-{market,coverage}.jpg`) at 1600×900.
-2. Re-run `scripts/build_image_library.py`.
-3. `tests/images/registry.test.ts` and `tests/images/designation.test.ts` to
-   zero failures.
-4. Re-run `scripts/verify_launch.sh`.
+1. All 6 remaining source originals generated at 1600×900 and verified by
+   reading each one back.
+2. `scripts/build_image_library.py` → **"Built 52 of 52 assets, 12448 KB"**.
+3. `tests/images/registry.test.ts` **32/32** and
+   `tests/images/designation.test.ts` **22/22**.
+4. `scripts/verify_launch.sh` → **98 passed / 0 failed**.
+
+One image was rejected and regenerated: the first `reports-coverage.jpg`
+rendered a hand-drawn map of Nigeria with legible city names and a tally
+sheet. Beyond the no-text rule, a map studded with named markets and route
+twine reads as a **coverage claim**, which the brief forbids. It was
+regenerated as a desk scene with no map and no legible text.
+
+**Full suite: 732 passed / 0 failed / 28 skipped.**

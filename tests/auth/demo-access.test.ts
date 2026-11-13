@@ -37,6 +37,20 @@ const DEMO_ACCOUNTS = [
 
 const DEMO_PASSWORD = 'hatsi360-demo';
 
+/**
+ * The two public Supabase values, typed as strings.
+ *
+ * `process.env` types every entry as `string | undefined`, which makes an
+ * `apikey` header fail the type checker even after a truthiness guard, because
+ * the guard and the use are in different scopes. Narrowing once, here, keeps
+ * the fetch calls honest without a non-null assertion at every use site.
+ */
+function supabasePublicEnv(): { url: string; key: string } | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  return url && key ? { url, key } : null;
+}
+
 /* ------------------------------------------------- the interface surface -- */
 
 describe('the demo access panel', () => {
@@ -180,7 +194,11 @@ describe('invitation-only account creation', () => {
 
 /* ------------------------------------------------ the live demo accounts -- */
 
-let db: { ok: boolean; reason?: string; rows: Record<string, string>[] } = { ok: false };
+type DbState =
+  | { ok: true; rows: Record<string, string>[] }
+  | { ok: false; reason: string };
+
+let db: DbState = { ok: false, reason: 'not yet checked' };
 
 beforeAll(async () => {
   const { SUPABASE_DB_HOST, SUPABASE_DB_PORT, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD, SUPABASE_DB_NAME } =
@@ -249,14 +267,14 @@ describe('the demo accounts are constrained by policy, not by hidden buttons', (
   let agentId: string | null = null;
 
   beforeAll(async () => {
-    const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY } = process.env;
-    if (!NEXT_PUBLIC_SUPABASE_URL || !NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return;
+    const env = supabasePublicEnv();
+    if (!env) return;
     try {
       const response = await fetch(
-        `${NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
+        `${env.url}/auth/v1/token?grant_type=password`,
         {
           method: 'POST',
-          headers: { apikey: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, 'content-type': 'application/json' },
+          headers: { apikey: env.key, 'content-type': 'application/json' },
           body: JSON.stringify({
             email: 'demo.agent@hatsi360.test',
             password: DEMO_PASSWORD,
@@ -279,14 +297,15 @@ describe('the demo accounts are constrained by policy, not by hidden buttons', (
 
   it('cannot promote itself to an operational role it does not hold', async () => {
     if (!agentToken || !agentId) return console.warn('[demo-access] SKIPPED: no agent session');
-    const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY } = process.env;
+    const env = supabasePublicEnv();
+    if (!env) return console.warn('[demo-access] SKIPPED: no Supabase env');
     const headers = {
-      apikey: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      apikey: env.key,
       authorization: `Bearer ${agentToken}`,
       'content-type': 'application/json',
     };
 
-    await fetch(`${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${agentId}`, {
+    await fetch(`${env.url}/rest/v1/profiles?id=eq.${agentId}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify({ role: 'super_admin' }),
@@ -300,7 +319,7 @@ describe('the demo accounts are constrained by policy, not by hidden buttons', (
     // So the attempt may fail loudly or change nothing. What it must never do
     // is succeed — which is what the read-back below asserts.
     const after = await fetch(
-      `${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${agentId}&select=role`,
+      `${env.url}/rest/v1/profiles?id=eq.${agentId}&select=role`,
       { headers, signal: AbortSignal.timeout(20000) },
     );
     const rows = (await after.json()) as { role: string }[];
@@ -310,11 +329,12 @@ describe('the demo accounts are constrained by policy, not by hidden buttons', (
 
   it('cannot change another account at all', async () => {
     if (!agentToken || !agentId) return console.warn('[demo-access] SKIPPED: no agent session');
-    const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY } = process.env;
-    const response = await fetch(`${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=neq.${agentId}`, {
+    const env = supabasePublicEnv();
+    if (!env) return console.warn('[demo-access] SKIPPED: no Supabase env');
+    const response = await fetch(`${env.url}/rest/v1/profiles?id=neq.${agentId}`, {
       method: 'PATCH',
       headers: {
-        apikey: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+        apikey: env.key,
         authorization: `Bearer ${agentToken}`,
         'content-type': 'application/json',
         prefer: 'return=representation',
@@ -331,13 +351,14 @@ describe('the demo accounts are constrained by policy, not by hidden buttons', (
 
   it('cannot write a price observation at a market it is not assigned to', async () => {
     if (!agentToken || !agentId) return console.warn('[demo-access] SKIPPED: no agent session');
-    const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY } = process.env;
+    const env = supabasePublicEnv();
+    if (!env) return console.warn('[demo-access] SKIPPED: no Supabase env');
     // Market 1 is the one market the demo agent IS assigned to. Every other
     // market is one it is not, and an insert there must be refused by policy.
-    const response = await fetch(`${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/price_observations`, {
+    const response = await fetch(`${env.url}/rest/v1/price_observations`, {
       method: 'POST',
       headers: {
-        apikey: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+        apikey: env.key,
         authorization: `Bearer ${agentToken}`,
         'content-type': 'application/json',
         prefer: 'return=representation',

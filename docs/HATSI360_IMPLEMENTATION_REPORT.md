@@ -1,6 +1,6 @@
 # Hatsi360 — Image Reconstruction & Login Access Implementation Report
 
-**Date:** 22 October 2026 · **Commit:** `9a00d0d` (pushed to `baiitax/Hatsi360`)
+**Date:** 22 October 2026 · **Commit:** `3056aad` (local; push pending a credential)
 **Scope:** (1) public website image reconstruction + image-to-content mapping,
 (2) login-page audit/redesign + demo credential access.
 
@@ -106,10 +106,16 @@ stalks, golden hour), `agriculture-rice-field.jpg` (mirror-still paddy,
 dead-straight seedling rows, distant tree line), `infrastructure-export.jpg`
 (palletised shrink-wrapped cartons, open shipping container on a concrete dock).
 
-**The remaining 6 are BLOCKED** — `generate_image` is capped at 10 per turn and
-the cap was consumed: `professionals-{trader,agent,inspector,analyst}.jpg`,
-`reports-{market,coverage}.jpg`. They must be generated in a later turn, then
-`python3 scripts/build_image_library.py` re-run.
+All 6 were generated in a later turn and verified on-subject by reading each
+one back. One — `reports-coverage.jpg` — was **rejected on first generation and
+regenerated**: the initial version rendered a hand-drawn map of Nigeria with
+legible city names and a daily tally sheet. That was not merely a text problem:
+a map studded with named markets and red route twine reads as a *coverage
+claim*, which the brief forbids ("do not invent ... national-coverage or
+availability claims"). It was regenerated as an honest desk scene with no map,
+no legible text and no geography.
+
+Final build: **52 of 52 assets, 12 448 KB, 0 files over budget.**
 
 ---
 
@@ -276,22 +282,27 @@ database that:
 ### Test suite — FUNCTIONALLY TESTED
 
 ```
-npx vitest run            (with .env.local loaded, HATSI_ORIGIN set)
+npx vitest run            (with .env.local loaded)
 
-Test Files  2 failed | 31 passed | 1 skipped   (34)
-     Tests  11 failed | 721 passed | 28 skipped (760)
+Test Files  33 passed | 1 skipped (34)
+     Tests  732 passed | 28 skipped (760)
 ```
 
-**All 11 failures are the 6 pending source originals** — 8 in
-`tests/images/registry.test.ts` and 3 in `tests/images/designation.test.ts`,
-each naming a missing file. **No other test fails.**
+**Zero failures.** The single skipped file is `tests/api-routes.test.ts`
+(28 tests), guarded by `describe.skipIf(!REQUEST_SCOPE)` because its handlers
+reach `createClient()` → `await cookies()`, which Next.js refuses outside a
+request scope — a pre-existing limitation, reproduced on stashed pre-change
+source, and covered instead by the HTTP-level `tests/api/http.test.ts`
+(**8 passed**).
 
 ### New tests written this phase — FUNCTIONALLY TESTED
 
 | File | Tests | Result |
 | --- | --- | --- |
-| `tests/images/designation.test.ts` | 22 | 19 pass, 3 fail on the 6 pending images |
+| `tests/images/designation.test.ts` | 22 | **22 pass** |
+| `tests/images/registry.test.ts` | 32 | **32 pass** |
 | `tests/auth/demo-access.test.ts` | 25 | **25 pass** |
+| `tests/api/http.test.ts` | 8 | **8 pass** |
 
 `designation.test.ts` asserts the invariants rather than re-describing the
 catalogue: every asset has a source original; no remote URLs; dimensions and
@@ -300,6 +311,16 @@ information; **every market asset is `representative`**; markets are 1:1 with
 assets; commodity reuse is limited to the named, justified exceptions; no two
 served files are byte-identical; the library stays inside its byte budget;
 generated imagery is disclosed as generated in every licence string.
+
+`verify_demo_journey.mjs` was also repaired: it was still selecting the panel
+by the copy `"Demo accounts"` and the buttons by `getByRole('button', { name:
+/Market agent/ })` — neither of which the redesigned panel satisfies (the
+heading is "Demo access" and the accessible name of each button is "Sign in").
+It now selects each account row by its **email address** and clicks the Sign in
+button within it, and it additionally asserts the panel states *"does not add
+any market data"*. **A stale test is a real defect**, and it would have been
+easy to record "all journeys passed" from a version of the script that could
+not run at all.
 
 `demo-access.test.ts` asserts the demo is real (it authenticates), honest (the
 copy says the records are empty) and constrained (it cannot promote itself,
@@ -311,9 +332,11 @@ modify another account, or write outside its assignment).
 | --- | --- |
 | `npx tsc --noEmit` | **clean** |
 | `next build` | **compiled** |
-| `scripts/build_image_library.py` | "Built 46 of 52 assets, 11162 KB" |
-| `scripts/verify_demo_journey.mjs` | **ALL JOURNEYS PASSED** |
+| `scripts/build_image_library.py` | **"Built 52 of 52 assets, 12448 KB"** |
+| `scripts/verify_launch.sh` | **98 passed / 0 failed** |
+| `scripts/verify_demo_journey.mjs` | **ALL JOURNEYS PASSED** (7 checks × 3 accounts) |
 | Playwright mobile/desktop probe | **0 overflow, 0 page errors** |
+| Playwright per-page image probe | 12 pages, **0 placeholders, 0 page errors** |
 | `npm run lint` | **BROKEN** — invokes `next lint`, removed in Next 16. Not fixed (out of scope; would need an ESLint flat-config migration). |
 
 ---
@@ -322,14 +345,12 @@ modify another account, or write outside its assignment).
 
 | # | Item | Classification | Blocker / next step |
 | --- | --- | --- | --- |
-| 1 | 6 source originals not generated | **BLOCKED** | `generate_image` 10-per-turn cap consumed. Retry next turn, then rebuild. |
-| 2 | 11 test failures | **BLOCKED** | All caused by item 1. |
-| 3 | `src/app/(site)/page.tsx` calls `source.listObservationsForAnalysis({})` | **VERIFIED IN CODE** | Full scan per render once rows exist. Needs pagination or a cache. |
+| 1 | `src/app/(site)/page.tsx` calls `source.listObservationsForAnalysis({})` | **VERIFIED IN CODE** | Full scan per render once rows exist. Needs pagination or a cache. |
 | 4 | No Lighthouse / LCP / INP / CLS numbers | **UNKNOWN** | No run performed. |
 | 5 | WebP/AVIF derivatives | **PLANNED** | Pipeline currently emits JPEG only. |
 | 6 | `npm run lint` broken | **VERIFIED IN CODE** | Next 16 removed `next lint`; needs flat-config migration. |
 | 7 | `agriculture.rice-field` orphaned | **VERIFIED IN CODE** | Retained deliberately; documented in the audit. |
-| 8 | A GitHub personal access token from an earlier session was exposed | — | **Should be revoked by the owner.** Not reproduced here — publishing a credential in order to flag it is how credentials end up in more places. |
+| 8 | A GitHub personal access token was exposed during this work and is recorded only as a fingerprint here — `ghp_3KXW…DxZb` (first 7 and last 4 characters). The full value is deliberately **not** written to this repository: committing a credential, even a revoked one, is how the next one leaks. | — | **The owner should revoke it.** The full value was passed to me out-of-band and exists only in the session, never in a tracked file. |
 
 ## Deliberately not done
 
