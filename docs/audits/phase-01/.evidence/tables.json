@@ -1,0 +1,450 @@
+[
+ {
+  "table": "_hatsi_migrations",
+  "rls": false,
+  "forced": false,
+  "policies": 0,
+  "rows": 29
+ },
+ {
+  "table": "account_status_events",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "agent_profiles",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 1
+ },
+ {
+  "table": "alert_delivery_logs",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "analytics_snapshots",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "api_applications",
+  "rls": true,
+  "forced": false,
+  "policies": 4,
+  "rows": 0
+ },
+ {
+  "table": "api_usage_logs",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "article_categories",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "articles",
+  "rls": true,
+  "forced": false,
+  "policies": 3,
+  "rows": 0
+ },
+ {
+  "table": "audit_events",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "audit_logs",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 6
+ },
+ {
+  "table": "auth_login_attempts",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 1
+ },
+ {
+  "table": "billing_events",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "buyer_offers",
+  "rls": true,
+  "forced": false,
+  "policies": 5,
+  "rows": 15
+ },
+ {
+  "table": "collection_batches",
+  "rls": true,
+  "forced": false,
+  "policies": 4,
+  "rows": 10
+ },
+ {
+  "table": "collection_task_events",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "collection_tasks",
+  "rls": true,
+  "forced": false,
+  "policies": 3,
+  "rows": 0
+ },
+ {
+  "table": "commodities",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 22
+ },
+ {
+  "table": "commodity_categories",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 14
+ },
+ {
+  "table": "commodity_fundamentals",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "commodity_grades",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 58
+ },
+ {
+  "table": "commodity_seasonality",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "commodity_specifications",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "commodity_synonyms",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 42
+ },
+ {
+  "table": "commodity_unit_conversions",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "commodity_varieties",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "contact_enquiries",
+  "rls": true,
+  "forced": false,
+  "policies": 3,
+  "rows": 0
+ },
+ {
+  "table": "countries",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 1
+ },
+ {
+  "table": "customer_subscriptions",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "data_quality_flags",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "data_quality_rule_versions",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "entitlement_catalog",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 6
+ },
+ {
+  "table": "entitlement_tiers",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 3
+ },
+ {
+  "table": "export_jobs",
+  "rls": true,
+  "forced": false,
+  "policies": 3,
+  "rows": 0
+ },
+ {
+  "table": "market_agent_assignments",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 6
+ },
+ {
+  "table": "market_collection_schedules",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "market_commodity_scope",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "market_operating_schedules",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "market_reports",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "market_visit_records",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "market_zones",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "markets",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 11
+ },
+ {
+  "table": "measurement_units",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 8
+ },
+ {
+  "table": "notification_delivery_logs",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 64
+ },
+ {
+  "table": "notifications",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 64
+ },
+ {
+  "table": "observation_market_intelligence",
+  "rls": true,
+  "forced": false,
+  "policies": 4,
+  "rows": 0
+ },
+ {
+  "table": "observation_quality_findings",
+  "rls": true,
+  "forced": false,
+  "policies": 4,
+  "rows": 0
+ },
+ {
+  "table": "offer_verification_events",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 69
+ },
+ {
+  "table": "organization_members",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "organizations",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "price_alerts",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 4
+ },
+ {
+  "table": "price_observation_evidence",
+  "rls": true,
+  "forced": false,
+  "policies": 4,
+  "rows": 0
+ },
+ {
+  "table": "price_observations",
+  "rls": true,
+  "forced": false,
+  "policies": 8,
+  "rows": 58
+ },
+ {
+  "table": "price_revision_history",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "price_source_registry",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 3
+ },
+ {
+  "table": "price_verification_events",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 2
+ },
+ {
+  "table": "profiles",
+  "rls": true,
+  "forced": false,
+  "policies": 4,
+  "rows": 5
+ },
+ {
+  "table": "report_subscriptions",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 0
+ },
+ {
+  "table": "saved_commodities",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 6
+ },
+ {
+  "table": "saved_markets",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 3
+ },
+ {
+  "table": "scheduled_job_runs",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 0
+ },
+ {
+  "table": "seller_offers",
+  "rls": true,
+  "forced": false,
+  "policies": 5,
+  "rows": 15
+ },
+ {
+  "table": "states",
+  "rls": true,
+  "forced": false,
+  "policies": 1,
+  "rows": 11
+ },
+ {
+  "table": "system_settings",
+  "rls": true,
+  "forced": false,
+  "policies": 2,
+  "rows": 12
+ }
+]

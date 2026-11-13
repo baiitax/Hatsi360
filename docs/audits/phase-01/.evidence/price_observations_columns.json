@@ -1,0 +1,200 @@
+[
+ {
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO",
+  "column_default": "gen_random_uuid()"
+ },
+ {
+  "column_name": "commodity_id",
+  "data_type": "bigint",
+  "is_nullable": "NO",
+  "column_default": null
+ },
+ {
+  "column_name": "market_id",
+  "data_type": "bigint",
+  "is_nullable": "NO",
+  "column_default": null
+ },
+ {
+  "column_name": "variety_id",
+  "data_type": "bigint",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "grade_id",
+  "data_type": "bigint",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "price_type",
+  "data_type": "USER-DEFINED",
+  "is_nullable": "NO",
+  "column_default": "'unspecified'::price_type"
+ },
+ {
+  "column_name": "reported_amount",
+  "data_type": "numeric",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "reported_unit_id",
+  "data_type": "bigint",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "package_weight_kg",
+  "data_type": "numeric",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "package_count",
+  "data_type": "integer",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "normalized_amount",
+  "data_type": "numeric",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "normalized_unit_id",
+  "data_type": "bigint",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "currency_code",
+  "data_type": "character",
+  "is_nullable": "NO",
+  "column_default": "'NGN'::bpchar"
+ },
+ {
+  "column_name": "collected_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "NO",
+  "column_default": null
+ },
+ {
+  "column_name": "collected_at_precision",
+  "data_type": "USER-DEFINED",
+  "is_nullable": "NO",
+  "column_default": "'minute'::timestamp_precision"
+ },
+ {
+  "column_name": "submitted_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "verified_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "published_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "rejected_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "agent_user_id",
+  "data_type": "uuid",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "verified_by",
+  "data_type": "uuid",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "verification_status",
+  "data_type": "USER-DEFINED",
+  "is_nullable": "NO",
+  "column_default": "'draft'::verification_status"
+ },
+ {
+  "column_name": "notes",
+  "data_type": "text",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "source_system",
+  "data_type": "USER-DEFINED",
+  "is_nullable": "NO",
+  "column_default": "'agent_app'::observation_source"
+ },
+ {
+  "column_name": "source_reference",
+  "data_type": "text",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "supersedes_id",
+  "data_type": "uuid",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "is_current",
+  "data_type": "boolean",
+  "is_nullable": "NO",
+  "column_default": "true"
+ },
+ {
+  "column_name": "created_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "NO",
+  "column_default": "now()"
+ },
+ {
+  "column_name": "updated_at",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "NO",
+  "column_default": "now()"
+ },
+ {
+  "column_name": "superseded_by",
+  "data_type": "uuid",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "submission_key",
+  "data_type": "text",
+  "is_nullable": "YES",
+  "column_default": null
+ },
+ {
+  "column_name": "quality_flags",
+  "data_type": "ARRAY",
+  "is_nullable": "NO",
+  "column_default": "'{}'::quality_flag_code[]"
+ },
+ {
+  "column_name": "collection_batch_id",
+  "data_type": "bigint",
+  "is_nullable": "YES",
+  "column_default": null
+ }
+]

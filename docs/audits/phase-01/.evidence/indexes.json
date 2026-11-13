@@ -1,0 +1,897 @@
+[
+ {
+  "tablename": "_hatsi_migrations",
+  "indexname": "_hatsi_migrations_pkey",
+  "indexdef": "CREATE UNIQUE INDEX _hatsi_migrations_pkey ON public._hatsi_migrations USING btree (name)"
+ },
+ {
+  "tablename": "account_status_events",
+  "indexname": "account_status_events_pkey",
+  "indexdef": "CREATE UNIQUE INDEX account_status_events_pkey ON public.account_status_events USING btree (id)"
+ },
+ {
+  "tablename": "account_status_events",
+  "indexname": "account_status_events_profile_idx",
+  "indexdef": "CREATE INDEX account_status_events_profile_idx ON public.account_status_events USING btree (profile_id, created_at DESC)"
+ },
+ {
+  "tablename": "agent_profiles",
+  "indexname": "agent_profiles_employee_code_key",
+  "indexdef": "CREATE UNIQUE INDEX agent_profiles_employee_code_key ON public.agent_profiles USING btree (employee_code)"
+ },
+ {
+  "tablename": "agent_profiles",
+  "indexname": "agent_profiles_pkey",
+  "indexdef": "CREATE UNIQUE INDEX agent_profiles_pkey ON public.agent_profiles USING btree (profile_id)"
+ },
+ {
+  "tablename": "alert_delivery_logs",
+  "indexname": "alert_delivery_logs_alert_idx",
+  "indexdef": "CREATE INDEX alert_delivery_logs_alert_idx ON public.alert_delivery_logs USING btree (alert_id, created_at DESC)"
+ },
+ {
+  "tablename": "alert_delivery_logs",
+  "indexname": "alert_delivery_logs_pkey",
+  "indexdef": "CREATE UNIQUE INDEX alert_delivery_logs_pkey ON public.alert_delivery_logs USING btree (id)"
+ },
+ {
+  "tablename": "analytics_snapshots",
+  "indexname": "analytics_snapshots_pkey",
+  "indexdef": "CREATE UNIQUE INDEX analytics_snapshots_pkey ON public.analytics_snapshots USING btree (id)"
+ },
+ {
+  "tablename": "analytics_snapshots",
+  "indexname": "analytics_snapshots_unique",
+  "indexdef": "CREATE UNIQUE INDEX analytics_snapshots_unique ON public.analytics_snapshots USING btree (snapshot_date, scope)"
+ },
+ {
+  "tablename": "api_applications",
+  "indexname": "api_applications_key_hash_idx",
+  "indexdef": "CREATE INDEX api_applications_key_hash_idx ON public.api_applications USING btree (key_hash)"
+ },
+ {
+  "tablename": "api_applications",
+  "indexname": "api_applications_key_prefix_key",
+  "indexdef": "CREATE UNIQUE INDEX api_applications_key_prefix_key ON public.api_applications USING btree (key_prefix)"
+ },
+ {
+  "tablename": "api_applications",
+  "indexname": "api_applications_pkey",
+  "indexdef": "CREATE UNIQUE INDEX api_applications_pkey ON public.api_applications USING btree (id)"
+ },
+ {
+  "tablename": "api_applications",
+  "indexname": "api_applications_user_idx",
+  "indexdef": "CREATE INDEX api_applications_user_idx ON public.api_applications USING btree (user_id)"
+ },
+ {
+  "tablename": "api_usage_logs",
+  "indexname": "api_usage_logs_application_idx",
+  "indexdef": "CREATE INDEX api_usage_logs_application_idx ON public.api_usage_logs USING btree (application_id, requested_at DESC)"
+ },
+ {
+  "tablename": "api_usage_logs",
+  "indexname": "api_usage_logs_pkey",
+  "indexdef": "CREATE UNIQUE INDEX api_usage_logs_pkey ON public.api_usage_logs USING btree (id)"
+ },
+ {
+  "tablename": "api_usage_logs",
+  "indexname": "api_usage_logs_requested_at_idx",
+  "indexdef": "CREATE INDEX api_usage_logs_requested_at_idx ON public.api_usage_logs USING btree (requested_at DESC)"
+ },
+ {
+  "tablename": "article_categories",
+  "indexname": "article_categories_pkey",
+  "indexdef": "CREATE UNIQUE INDEX article_categories_pkey ON public.article_categories USING btree (id)"
+ },
+ {
+  "tablename": "article_categories",
+  "indexname": "article_categories_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX article_categories_slug_key ON public.article_categories USING btree (slug)"
+ },
+ {
+  "tablename": "articles",
+  "indexname": "articles_category_idx",
+  "indexdef": "CREATE INDEX articles_category_idx ON public.articles USING btree (category_id)"
+ },
+ {
+  "tablename": "articles",
+  "indexname": "articles_pkey",
+  "indexdef": "CREATE UNIQUE INDEX articles_pkey ON public.articles USING btree (id)"
+ },
+ {
+  "tablename": "articles",
+  "indexname": "articles_published_idx",
+  "indexdef": "CREATE INDEX articles_published_idx ON public.articles USING btree (published_at DESC) WHERE is_published"
+ },
+ {
+  "tablename": "articles",
+  "indexname": "articles_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX articles_slug_key ON public.articles USING btree (slug)"
+ },
+ {
+  "tablename": "audit_events",
+  "indexname": "audit_events_actor_idx",
+  "indexdef": "CREATE INDEX audit_events_actor_idx ON public.audit_events USING btree (actor_id, created_at DESC)"
+ },
+ {
+  "tablename": "audit_events",
+  "indexname": "audit_events_entity_idx",
+  "indexdef": "CREATE INDEX audit_events_entity_idx ON public.audit_events USING btree (entity_table, entity_id, created_at DESC)"
+ },
+ {
+  "tablename": "audit_events",
+  "indexname": "audit_events_pkey",
+  "indexdef": "CREATE UNIQUE INDEX audit_events_pkey ON public.audit_events USING btree (id)"
+ },
+ {
+  "tablename": "audit_logs",
+  "indexname": "audit_logs_actor_idx",
+  "indexdef": "CREATE INDEX audit_logs_actor_idx ON public.audit_logs USING btree (actor_id, created_at DESC)"
+ },
+ {
+  "tablename": "audit_logs",
+  "indexname": "audit_logs_entity_idx",
+  "indexdef": "CREATE INDEX audit_logs_entity_idx ON public.audit_logs USING btree (entity_type, entity_id, created_at DESC)"
+ },
+ {
+  "tablename": "audit_logs",
+  "indexname": "audit_logs_pkey",
+  "indexdef": "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)"
+ },
+ {
+  "tablename": "auth_login_attempts",
+  "indexname": "auth_login_attempts_identifier_idx",
+  "indexdef": "CREATE INDEX auth_login_attempts_identifier_idx ON public.auth_login_attempts USING btree (identifier_hash, attempted_at DESC)"
+ },
+ {
+  "tablename": "auth_login_attempts",
+  "indexname": "auth_login_attempts_pkey",
+  "indexdef": "CREATE UNIQUE INDEX auth_login_attempts_pkey ON public.auth_login_attempts USING btree (id)"
+ },
+ {
+  "tablename": "billing_events",
+  "indexname": "billing_events_pkey",
+  "indexdef": "CREATE UNIQUE INDEX billing_events_pkey ON public.billing_events USING btree (id)"
+ },
+ {
+  "tablename": "billing_events",
+  "indexname": "billing_events_user_idx",
+  "indexdef": "CREATE INDEX billing_events_user_idx ON public.billing_events USING btree (user_id, occurred_at DESC)"
+ },
+ {
+  "tablename": "buyer_offers",
+  "indexname": "buyer_offers_commodity_idx",
+  "indexdef": "CREATE INDEX buyer_offers_commodity_idx ON public.buyer_offers USING btree (commodity_id, status)"
+ },
+ {
+  "tablename": "buyer_offers",
+  "indexname": "buyer_offers_market_idx",
+  "indexdef": "CREATE INDEX buyer_offers_market_idx ON public.buyer_offers USING btree (market_id) WHERE (market_id IS NOT NULL)"
+ },
+ {
+  "tablename": "buyer_offers",
+  "indexname": "buyer_offers_owner_idx",
+  "indexdef": "CREATE INDEX buyer_offers_owner_idx ON public.buyer_offers USING btree (user_id) WHERE (user_id IS NOT NULL)"
+ },
+ {
+  "tablename": "buyer_offers",
+  "indexname": "buyer_offers_pkey",
+  "indexdef": "CREATE UNIQUE INDEX buyer_offers_pkey ON public.buyer_offers USING btree (id)"
+ },
+ {
+  "tablename": "buyer_offers",
+  "indexname": "buyer_offers_validity_idx",
+  "indexdef": "CREATE INDEX buyer_offers_validity_idx ON public.buyer_offers USING btree (valid_until) WHERE (status = 'verified'::offer_status)"
+ },
+ {
+  "tablename": "collection_batches",
+  "indexname": "collection_batches_agent_started_idx",
+  "indexdef": "CREATE INDEX collection_batches_agent_started_idx ON public.collection_batches USING btree (agent_user_id, started_at DESC)"
+ },
+ {
+  "tablename": "collection_batches",
+  "indexname": "collection_batches_pkey",
+  "indexdef": "CREATE UNIQUE INDEX collection_batches_pkey ON public.collection_batches USING btree (id)"
+ },
+ {
+  "tablename": "collection_batches",
+  "indexname": "collection_batches_reference_key",
+  "indexdef": "CREATE UNIQUE INDEX collection_batches_reference_key ON public.collection_batches USING btree (reference)"
+ },
+ {
+  "tablename": "collection_task_events",
+  "indexname": "collection_task_events_pkey",
+  "indexdef": "CREATE UNIQUE INDEX collection_task_events_pkey ON public.collection_task_events USING btree (id)"
+ },
+ {
+  "tablename": "collection_task_events",
+  "indexname": "collection_task_events_task_idx",
+  "indexdef": "CREATE INDEX collection_task_events_task_idx ON public.collection_task_events USING btree (task_id, created_at)"
+ },
+ {
+  "tablename": "collection_tasks",
+  "indexname": "collection_tasks_assignee_due_idx",
+  "indexdef": "CREATE INDEX collection_tasks_assignee_due_idx ON public.collection_tasks USING btree (assigned_to, due_on)"
+ },
+ {
+  "tablename": "collection_tasks",
+  "indexname": "collection_tasks_assignee_idx",
+  "indexdef": "CREATE INDEX collection_tasks_assignee_idx ON public.collection_tasks USING btree (assigned_to, status)"
+ },
+ {
+  "tablename": "collection_tasks",
+  "indexname": "collection_tasks_deadline_idx",
+  "indexdef": "CREATE INDEX collection_tasks_deadline_idx ON public.collection_tasks USING btree (deadline_at) WHERE (status = ANY (ARRAY['open'::collection_task_status, 'in_progress'::collection_task_status]))"
+ },
+ {
+  "tablename": "collection_tasks",
+  "indexname": "collection_tasks_due_idx",
+  "indexdef": "CREATE INDEX collection_tasks_due_idx ON public.collection_tasks USING btree (due_on, status)"
+ },
+ {
+  "tablename": "collection_tasks",
+  "indexname": "collection_tasks_market_idx",
+  "indexdef": "CREATE INDEX collection_tasks_market_idx ON public.collection_tasks USING btree (market_id, due_on)"
+ },
+ {
+  "tablename": "collection_tasks",
+  "indexname": "collection_tasks_pkey",
+  "indexdef": "CREATE UNIQUE INDEX collection_tasks_pkey ON public.collection_tasks USING btree (id)"
+ },
+ {
+  "tablename": "collection_tasks",
+  "indexname": "collection_tasks_schedule_due_idx",
+  "indexdef": "CREATE UNIQUE INDEX collection_tasks_schedule_due_idx ON public.collection_tasks USING btree (schedule_id, due_on) WHERE (schedule_id IS NOT NULL)"
+ },
+ {
+  "tablename": "collection_tasks",
+  "indexname": "collection_tasks_status_idx",
+  "indexdef": "CREATE INDEX collection_tasks_status_idx ON public.collection_tasks USING btree (status, due_on)"
+ },
+ {
+  "tablename": "commodities",
+  "indexname": "commodities_category_idx",
+  "indexdef": "CREATE INDEX commodities_category_idx ON public.commodities USING btree (category_id)"
+ },
+ {
+  "tablename": "commodities",
+  "indexname": "commodities_legacy_id_key",
+  "indexdef": "CREATE UNIQUE INDEX commodities_legacy_id_key ON public.commodities USING btree (legacy_id)"
+ },
+ {
+  "tablename": "commodities",
+  "indexname": "commodities_name_trgm_idx",
+  "indexdef": "CREATE INDEX commodities_name_trgm_idx ON public.commodities USING gin (name gin_trgm_ops)"
+ },
+ {
+  "tablename": "commodities",
+  "indexname": "commodities_pkey",
+  "indexdef": "CREATE UNIQUE INDEX commodities_pkey ON public.commodities USING btree (id)"
+ },
+ {
+  "tablename": "commodities",
+  "indexname": "commodities_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX commodities_slug_key ON public.commodities USING btree (slug)"
+ },
+ {
+  "tablename": "commodity_categories",
+  "indexname": "commodity_categories_pkey",
+  "indexdef": "CREATE UNIQUE INDEX commodity_categories_pkey ON public.commodity_categories USING btree (id)"
+ },
+ {
+  "tablename": "commodity_categories",
+  "indexname": "commodity_categories_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX commodity_categories_slug_key ON public.commodity_categories USING btree (slug)"
+ },
+ {
+  "tablename": "commodity_fundamentals",
+  "indexname": "commodity_fundamentals_commodity_idx",
+  "indexdef": "CREATE INDEX commodity_fundamentals_commodity_idx ON public.commodity_fundamentals USING btree (commodity_id)"
+ },
+ {
+  "tablename": "commodity_fundamentals",
+  "indexname": "commodity_fundamentals_pkey",
+  "indexdef": "CREATE UNIQUE INDEX commodity_fundamentals_pkey ON public.commodity_fundamentals USING btree (id)"
+ },
+ {
+  "tablename": "commodity_fundamentals",
+  "indexname": "commodity_fundamentals_published_idx",
+  "indexdef": "CREATE INDEX commodity_fundamentals_published_idx ON public.commodity_fundamentals USING btree (published_at DESC) WHERE is_published"
+ },
+ {
+  "tablename": "commodity_fundamentals",
+  "indexname": "commodity_fundamentals_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX commodity_fundamentals_slug_key ON public.commodity_fundamentals USING btree (slug)"
+ },
+ {
+  "tablename": "commodity_grades",
+  "indexname": "commodity_grades_commodity_id_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX commodity_grades_commodity_id_slug_key ON public.commodity_grades USING btree (commodity_id, slug)"
+ },
+ {
+  "tablename": "commodity_grades",
+  "indexname": "commodity_grades_pkey",
+  "indexdef": "CREATE UNIQUE INDEX commodity_grades_pkey ON public.commodity_grades USING btree (id)"
+ },
+ {
+  "tablename": "commodity_seasonality",
+  "indexname": "commodity_seasonality_commodity_id_state_id_phase_start_mon_key",
+  "indexdef": "CREATE UNIQUE INDEX commodity_seasonality_commodity_id_state_id_phase_start_mon_key ON public.commodity_seasonality USING btree (commodity_id, state_id, phase, start_month)"
+ },
+ {
+  "tablename": "commodity_seasonality",
+  "indexname": "commodity_seasonality_commodity_idx",
+  "indexdef": "CREATE INDEX commodity_seasonality_commodity_idx ON public.commodity_seasonality USING btree (commodity_id)"
+ },
+ {
+  "tablename": "commodity_seasonality",
+  "indexname": "commodity_seasonality_pkey",
+  "indexdef": "CREATE UNIQUE INDEX commodity_seasonality_pkey ON public.commodity_seasonality USING btree (id)"
+ },
+ {
+  "tablename": "commodity_specifications",
+  "indexname": "commodity_specifications_commodity_id_grade_id_parameter_key",
+  "indexdef": "CREATE UNIQUE INDEX commodity_specifications_commodity_id_grade_id_parameter_key ON public.commodity_specifications USING btree (commodity_id, grade_id, parameter)"
+ },
+ {
+  "tablename": "commodity_specifications",
+  "indexname": "commodity_specifications_commodity_idx",
+  "indexdef": "CREATE INDEX commodity_specifications_commodity_idx ON public.commodity_specifications USING btree (commodity_id)"
+ },
+ {
+  "tablename": "commodity_specifications",
+  "indexname": "commodity_specifications_pkey",
+  "indexdef": "CREATE UNIQUE INDEX commodity_specifications_pkey ON public.commodity_specifications USING btree (id)"
+ },
+ {
+  "tablename": "commodity_synonyms",
+  "indexname": "commodity_synonyms_commodity_id_synonym_key",
+  "indexdef": "CREATE UNIQUE INDEX commodity_synonyms_commodity_id_synonym_key ON public.commodity_synonyms USING btree (commodity_id, synonym)"
+ },
+ {
+  "tablename": "commodity_synonyms",
+  "indexname": "commodity_synonyms_pkey",
+  "indexdef": "CREATE UNIQUE INDEX commodity_synonyms_pkey ON public.commodity_synonyms USING btree (id)"
+ },
+ {
+  "tablename": "commodity_synonyms",
+  "indexname": "commodity_synonyms_trgm_idx",
+  "indexdef": "CREATE INDEX commodity_synonyms_trgm_idx ON public.commodity_synonyms USING gin (synonym gin_trgm_ops)"
+ },
+ {
+  "tablename": "commodity_unit_conversions",
+  "indexname": "commodity_unit_conversions_commodity_id_from_unit_id_to_uni_key",
+  "indexdef": "CREATE UNIQUE INDEX commodity_unit_conversions_commodity_id_from_unit_id_to_uni_key ON public.commodity_unit_conversions USING btree (commodity_id, from_unit_id, to_unit_id)"
+ },
+ {
+  "tablename": "commodity_unit_conversions",
+  "indexname": "commodity_unit_conversions_pkey",
+  "indexdef": "CREATE UNIQUE INDEX commodity_unit_conversions_pkey ON public.commodity_unit_conversions USING btree (id)"
+ },
+ {
+  "tablename": "commodity_varieties",
+  "indexname": "commodity_varieties_commodity_id_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX commodity_varieties_commodity_id_slug_key ON public.commodity_varieties USING btree (commodity_id, slug)"
+ },
+ {
+  "tablename": "commodity_varieties",
+  "indexname": "commodity_varieties_pkey",
+  "indexdef": "CREATE UNIQUE INDEX commodity_varieties_pkey ON public.commodity_varieties USING btree (id)"
+ },
+ {
+  "tablename": "contact_enquiries",
+  "indexname": "contact_enquiries_pkey",
+  "indexdef": "CREATE UNIQUE INDEX contact_enquiries_pkey ON public.contact_enquiries USING btree (id)"
+ },
+ {
+  "tablename": "contact_enquiries",
+  "indexname": "contact_enquiries_status_idx",
+  "indexdef": "CREATE INDEX contact_enquiries_status_idx ON public.contact_enquiries USING btree (status, created_at DESC)"
+ },
+ {
+  "tablename": "countries",
+  "indexname": "countries_code_key",
+  "indexdef": "CREATE UNIQUE INDEX countries_code_key ON public.countries USING btree (code)"
+ },
+ {
+  "tablename": "countries",
+  "indexname": "countries_pkey",
+  "indexdef": "CREATE UNIQUE INDEX countries_pkey ON public.countries USING btree (id)"
+ },
+ {
+  "tablename": "customer_subscriptions",
+  "indexname": "customer_subscriptions_pkey",
+  "indexdef": "CREATE UNIQUE INDEX customer_subscriptions_pkey ON public.customer_subscriptions USING btree (id)"
+ },
+ {
+  "tablename": "customer_subscriptions",
+  "indexname": "customer_subscriptions_user_idx",
+  "indexdef": "CREATE INDEX customer_subscriptions_user_idx ON public.customer_subscriptions USING btree (user_id, status)"
+ },
+ {
+  "tablename": "data_quality_flags",
+  "indexname": "data_quality_flags_observation_idx",
+  "indexdef": "CREATE INDEX data_quality_flags_observation_idx ON public.data_quality_flags USING btree (observation_id)"
+ },
+ {
+  "tablename": "data_quality_flags",
+  "indexname": "data_quality_flags_pkey",
+  "indexdef": "CREATE UNIQUE INDEX data_quality_flags_pkey ON public.data_quality_flags USING btree (id)"
+ },
+ {
+  "tablename": "data_quality_flags",
+  "indexname": "data_quality_flags_unresolved_idx",
+  "indexdef": "CREATE INDEX data_quality_flags_unresolved_idx ON public.data_quality_flags USING btree (flag) WHERE (resolved_at IS NULL)"
+ },
+ {
+  "tablename": "data_quality_rule_versions",
+  "indexname": "data_quality_rule_versions_code_idx",
+  "indexdef": "CREATE INDEX data_quality_rule_versions_code_idx ON public.data_quality_rule_versions USING btree (rule_code, version DESC)"
+ },
+ {
+  "tablename": "data_quality_rule_versions",
+  "indexname": "data_quality_rule_versions_pkey",
+  "indexdef": "CREATE UNIQUE INDEX data_quality_rule_versions_pkey ON public.data_quality_rule_versions USING btree (id)"
+ },
+ {
+  "tablename": "data_quality_rule_versions",
+  "indexname": "data_quality_rule_versions_unique",
+  "indexdef": "CREATE UNIQUE INDEX data_quality_rule_versions_unique ON public.data_quality_rule_versions USING btree (rule_code, version)"
+ },
+ {
+  "tablename": "entitlement_catalog",
+  "indexname": "entitlement_catalog_pkey",
+  "indexdef": "CREATE UNIQUE INDEX entitlement_catalog_pkey ON public.entitlement_catalog USING btree (key)"
+ },
+ {
+  "tablename": "entitlement_tiers",
+  "indexname": "entitlement_tiers_pkey",
+  "indexdef": "CREATE UNIQUE INDEX entitlement_tiers_pkey ON public.entitlement_tiers USING btree (id)"
+ },
+ {
+  "tablename": "export_jobs",
+  "indexname": "export_jobs_pkey",
+  "indexdef": "CREATE UNIQUE INDEX export_jobs_pkey ON public.export_jobs USING btree (id)"
+ },
+ {
+  "tablename": "export_jobs",
+  "indexname": "export_jobs_requester_idx",
+  "indexdef": "CREATE INDEX export_jobs_requester_idx ON public.export_jobs USING btree (requested_by, created_at DESC)"
+ },
+ {
+  "tablename": "export_jobs",
+  "indexname": "export_jobs_status_idx",
+  "indexdef": "CREATE INDEX export_jobs_status_idx ON public.export_jobs USING btree (status, created_at DESC)"
+ },
+ {
+  "tablename": "market_agent_assignments",
+  "indexname": "market_agent_assignments_market_idx",
+  "indexdef": "CREATE INDEX market_agent_assignments_market_idx ON public.market_agent_assignments USING btree (market_id)"
+ },
+ {
+  "tablename": "market_agent_assignments",
+  "indexname": "market_agent_assignments_pkey",
+  "indexdef": "CREATE UNIQUE INDEX market_agent_assignments_pkey ON public.market_agent_assignments USING btree (id)"
+ },
+ {
+  "tablename": "market_agent_assignments",
+  "indexname": "market_agent_assignments_user_idx",
+  "indexdef": "CREATE INDEX market_agent_assignments_user_idx ON public.market_agent_assignments USING btree (user_id)"
+ },
+ {
+  "tablename": "market_collection_schedules",
+  "indexname": "market_collection_schedules_agent_idx",
+  "indexdef": "CREATE INDEX market_collection_schedules_agent_idx ON public.market_collection_schedules USING btree (assigned_agent_id) WHERE is_active"
+ },
+ {
+  "tablename": "market_collection_schedules",
+  "indexname": "market_collection_schedules_market_idx",
+  "indexdef": "CREATE INDEX market_collection_schedules_market_idx ON public.market_collection_schedules USING btree (market_id) WHERE is_active"
+ },
+ {
+  "tablename": "market_collection_schedules",
+  "indexname": "market_collection_schedules_pkey",
+  "indexdef": "CREATE UNIQUE INDEX market_collection_schedules_pkey ON public.market_collection_schedules USING btree (id)"
+ },
+ {
+  "tablename": "market_commodity_scope",
+  "indexname": "market_commodity_scope_pk",
+  "indexdef": "CREATE UNIQUE INDEX market_commodity_scope_pk ON public.market_commodity_scope USING btree (market_id, commodity_id)"
+ },
+ {
+  "tablename": "market_operating_schedules",
+  "indexname": "market_operating_schedules_market_id_day_of_week_key",
+  "indexdef": "CREATE UNIQUE INDEX market_operating_schedules_market_id_day_of_week_key ON public.market_operating_schedules USING btree (market_id, day_of_week)"
+ },
+ {
+  "tablename": "market_operating_schedules",
+  "indexname": "market_operating_schedules_pkey",
+  "indexdef": "CREATE UNIQUE INDEX market_operating_schedules_pkey ON public.market_operating_schedules USING btree (id)"
+ },
+ {
+  "tablename": "market_reports",
+  "indexname": "market_reports_pkey",
+  "indexdef": "CREATE UNIQUE INDEX market_reports_pkey ON public.market_reports USING btree (id)"
+ },
+ {
+  "tablename": "market_reports",
+  "indexname": "market_reports_premium_idx",
+  "indexdef": "CREATE INDEX market_reports_premium_idx ON public.market_reports USING btree (is_premium, published_at DESC)"
+ },
+ {
+  "tablename": "market_reports",
+  "indexname": "market_reports_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX market_reports_slug_key ON public.market_reports USING btree (slug)"
+ },
+ {
+  "tablename": "market_visit_records",
+  "indexname": "market_visit_records_market_idx",
+  "indexdef": "CREATE INDEX market_visit_records_market_idx ON public.market_visit_records USING btree (market_id, visited_at DESC)"
+ },
+ {
+  "tablename": "market_visit_records",
+  "indexname": "market_visit_records_pkey",
+  "indexdef": "CREATE UNIQUE INDEX market_visit_records_pkey ON public.market_visit_records USING btree (id)"
+ },
+ {
+  "tablename": "market_zones",
+  "indexname": "market_zones_pkey",
+  "indexdef": "CREATE UNIQUE INDEX market_zones_pkey ON public.market_zones USING btree (id)"
+ },
+ {
+  "tablename": "market_zones",
+  "indexname": "market_zones_state_id_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX market_zones_state_id_slug_key ON public.market_zones USING btree (state_id, slug)"
+ },
+ {
+  "tablename": "markets",
+  "indexname": "markets_legacy_id_key",
+  "indexdef": "CREATE UNIQUE INDEX markets_legacy_id_key ON public.markets USING btree (legacy_id)"
+ },
+ {
+  "tablename": "markets",
+  "indexname": "markets_name_trgm_idx",
+  "indexdef": "CREATE INDEX markets_name_trgm_idx ON public.markets USING gin (name gin_trgm_ops)"
+ },
+ {
+  "tablename": "markets",
+  "indexname": "markets_pkey",
+  "indexdef": "CREATE UNIQUE INDEX markets_pkey ON public.markets USING btree (id)"
+ },
+ {
+  "tablename": "markets",
+  "indexname": "markets_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX markets_slug_key ON public.markets USING btree (slug)"
+ },
+ {
+  "tablename": "markets",
+  "indexname": "markets_state_idx",
+  "indexdef": "CREATE INDEX markets_state_idx ON public.markets USING btree (state_id)"
+ },
+ {
+  "tablename": "measurement_units",
+  "indexname": "measurement_units_code_key",
+  "indexdef": "CREATE UNIQUE INDEX measurement_units_code_key ON public.measurement_units USING btree (code)"
+ },
+ {
+  "tablename": "measurement_units",
+  "indexname": "measurement_units_pkey",
+  "indexdef": "CREATE UNIQUE INDEX measurement_units_pkey ON public.measurement_units USING btree (id)"
+ },
+ {
+  "tablename": "notification_delivery_logs",
+  "indexname": "notification_delivery_logs_pkey",
+  "indexdef": "CREATE UNIQUE INDEX notification_delivery_logs_pkey ON public.notification_delivery_logs USING btree (id)"
+ },
+ {
+  "tablename": "notification_delivery_logs",
+  "indexname": "notification_delivery_logs_status_idx",
+  "indexdef": "CREATE INDEX notification_delivery_logs_status_idx ON public.notification_delivery_logs USING btree (status, updated_at DESC)"
+ },
+ {
+  "tablename": "notification_delivery_logs",
+  "indexname": "notification_delivery_logs_unique",
+  "indexdef": "CREATE UNIQUE INDEX notification_delivery_logs_unique ON public.notification_delivery_logs USING btree (notification_id, channel)"
+ },
+ {
+  "tablename": "notifications",
+  "indexname": "notifications_pkey",
+  "indexdef": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+ },
+ {
+  "tablename": "notifications",
+  "indexname": "notifications_unread_idx",
+  "indexdef": "CREATE INDEX notifications_unread_idx ON public.notifications USING btree (user_id) WHERE (read_at IS NULL)"
+ },
+ {
+  "tablename": "notifications",
+  "indexname": "notifications_user_created_idx",
+  "indexdef": "CREATE INDEX notifications_user_created_idx ON public.notifications USING btree (user_id, created_at DESC)"
+ },
+ {
+  "tablename": "notifications",
+  "indexname": "notifications_user_idx",
+  "indexdef": "CREATE INDEX notifications_user_idx ON public.notifications USING btree (user_id, created_at DESC)"
+ },
+ {
+  "tablename": "observation_market_intelligence",
+  "indexname": "observation_intelligence_agent_idx",
+  "indexdef": "CREATE INDEX observation_intelligence_agent_idx ON public.observation_market_intelligence USING btree (agent_user_id)"
+ },
+ {
+  "tablename": "observation_market_intelligence",
+  "indexname": "observation_market_intelligence_observation_id_key",
+  "indexdef": "CREATE UNIQUE INDEX observation_market_intelligence_observation_id_key ON public.observation_market_intelligence USING btree (observation_id)"
+ },
+ {
+  "tablename": "observation_market_intelligence",
+  "indexname": "observation_market_intelligence_pkey",
+  "indexdef": "CREATE UNIQUE INDEX observation_market_intelligence_pkey ON public.observation_market_intelligence USING btree (id)"
+ },
+ {
+  "tablename": "observation_quality_findings",
+  "indexname": "observation_quality_findings_observation_id_rule_code_rule__key",
+  "indexdef": "CREATE UNIQUE INDEX observation_quality_findings_observation_id_rule_code_rule__key ON public.observation_quality_findings USING btree (observation_id, rule_code, rule_version)"
+ },
+ {
+  "tablename": "observation_quality_findings",
+  "indexname": "observation_quality_findings_observation_idx",
+  "indexdef": "CREATE INDEX observation_quality_findings_observation_idx ON public.observation_quality_findings USING btree (observation_id)"
+ },
+ {
+  "tablename": "observation_quality_findings",
+  "indexname": "observation_quality_findings_pkey",
+  "indexdef": "CREATE UNIQUE INDEX observation_quality_findings_pkey ON public.observation_quality_findings USING btree (id)"
+ },
+ {
+  "tablename": "offer_verification_events",
+  "indexname": "offer_verification_events_offer_idx",
+  "indexdef": "CREATE INDEX offer_verification_events_offer_idx ON public.offer_verification_events USING btree (offer_table, offer_id, created_at DESC)"
+ },
+ {
+  "tablename": "offer_verification_events",
+  "indexname": "offer_verification_events_pkey",
+  "indexdef": "CREATE UNIQUE INDEX offer_verification_events_pkey ON public.offer_verification_events USING btree (id)"
+ },
+ {
+  "tablename": "organization_members",
+  "indexname": "organization_members_organization_id_user_id_key",
+  "indexdef": "CREATE UNIQUE INDEX organization_members_organization_id_user_id_key ON public.organization_members USING btree (organization_id, user_id)"
+ },
+ {
+  "tablename": "organization_members",
+  "indexname": "organization_members_pkey",
+  "indexdef": "CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id)"
+ },
+ {
+  "tablename": "organization_members",
+  "indexname": "organization_members_user_idx",
+  "indexdef": "CREATE INDEX organization_members_user_idx ON public.organization_members USING btree (user_id)"
+ },
+ {
+  "tablename": "organizations",
+  "indexname": "organizations_pkey",
+  "indexdef": "CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id)"
+ },
+ {
+  "tablename": "organizations",
+  "indexname": "organizations_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX organizations_slug_key ON public.organizations USING btree (slug)"
+ },
+ {
+  "tablename": "price_alerts",
+  "indexname": "price_alerts_pkey",
+  "indexdef": "CREATE UNIQUE INDEX price_alerts_pkey ON public.price_alerts USING btree (id)"
+ },
+ {
+  "tablename": "price_alerts",
+  "indexname": "price_alerts_user_idx",
+  "indexdef": "CREATE INDEX price_alerts_user_idx ON public.price_alerts USING btree (user_id, is_active)"
+ },
+ {
+  "tablename": "price_observation_evidence",
+  "indexname": "price_observation_evidence_observation_idx",
+  "indexdef": "CREATE INDEX price_observation_evidence_observation_idx ON public.price_observation_evidence USING btree (observation_id)"
+ },
+ {
+  "tablename": "price_observation_evidence",
+  "indexname": "price_observation_evidence_pkey",
+  "indexdef": "CREATE UNIQUE INDEX price_observation_evidence_pkey ON public.price_observation_evidence USING btree (id)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_agent_collected_idx",
+  "indexdef": "CREATE INDEX price_observations_agent_collected_idx ON public.price_observations USING btree (agent_user_id, collected_at DESC)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_agent_idx",
+  "indexdef": "CREATE INDEX price_observations_agent_idx ON public.price_observations USING btree (agent_user_id)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_batch_idx",
+  "indexdef": "CREATE INDEX price_observations_batch_idx ON public.price_observations USING btree (collection_batch_id) WHERE (collection_batch_id IS NOT NULL)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_collected_at_idx",
+  "indexdef": "CREATE INDEX price_observations_collected_at_idx ON public.price_observations USING btree (collected_at DESC)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_commodity_market_idx",
+  "indexdef": "CREATE INDEX price_observations_commodity_market_idx ON public.price_observations USING btree (commodity_id, market_id)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_duplicate_guard",
+  "indexdef": "CREATE UNIQUE INDEX price_observations_duplicate_guard ON public.price_observations USING btree (commodity_id, market_id, price_type, grade_id, reported_amount, reported_unit_id, collected_at) WHERE (is_current AND (verification_status <> 'rejected'::verification_status))"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_market_idx",
+  "indexdef": "CREATE INDEX price_observations_market_idx ON public.price_observations USING btree (market_id)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_pkey",
+  "indexdef": "CREATE UNIQUE INDEX price_observations_pkey ON public.price_observations USING btree (id)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_published_idx",
+  "indexdef": "CREATE INDEX price_observations_published_idx ON public.price_observations USING btree (published_at DESC) WHERE (published_at IS NOT NULL)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_status_idx",
+  "indexdef": "CREATE INDEX price_observations_status_idx ON public.price_observations USING btree (verification_status)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_submission_key_idx",
+  "indexdef": "CREATE UNIQUE INDEX price_observations_submission_key_idx ON public.price_observations USING btree (submission_key) WHERE (submission_key IS NOT NULL)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_submitted_idx",
+  "indexdef": "CREATE INDEX price_observations_submitted_idx ON public.price_observations USING btree (submitted_at DESC) WHERE (submitted_at IS NOT NULL)"
+ },
+ {
+  "tablename": "price_observations",
+  "indexname": "price_observations_type_idx",
+  "indexdef": "CREATE INDEX price_observations_type_idx ON public.price_observations USING btree (price_type)"
+ },
+ {
+  "tablename": "price_revision_history",
+  "indexname": "price_revision_history_observation_id_revision_number_key",
+  "indexdef": "CREATE UNIQUE INDEX price_revision_history_observation_id_revision_number_key ON public.price_revision_history USING btree (observation_id, revision_number)"
+ },
+ {
+  "tablename": "price_revision_history",
+  "indexname": "price_revision_history_pkey",
+  "indexdef": "CREATE UNIQUE INDEX price_revision_history_pkey ON public.price_revision_history USING btree (id)"
+ },
+ {
+  "tablename": "price_source_registry",
+  "indexname": "price_source_registry_pkey",
+  "indexdef": "CREATE UNIQUE INDEX price_source_registry_pkey ON public.price_source_registry USING btree (id)"
+ },
+ {
+  "tablename": "price_source_registry",
+  "indexname": "price_source_registry_source_system_key",
+  "indexdef": "CREATE UNIQUE INDEX price_source_registry_source_system_key ON public.price_source_registry USING btree (source_system)"
+ },
+ {
+  "tablename": "price_verification_events",
+  "indexname": "price_verification_events_observation_idx",
+  "indexdef": "CREATE INDEX price_verification_events_observation_idx ON public.price_verification_events USING btree (observation_id, created_at DESC)"
+ },
+ {
+  "tablename": "price_verification_events",
+  "indexname": "price_verification_events_pkey",
+  "indexdef": "CREATE UNIQUE INDEX price_verification_events_pkey ON public.price_verification_events USING btree (id)"
+ },
+ {
+  "tablename": "profiles",
+  "indexname": "profiles_pkey",
+  "indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)"
+ },
+ {
+  "tablename": "profiles",
+  "indexname": "profiles_role_idx",
+  "indexdef": "CREATE INDEX profiles_role_idx ON public.profiles USING btree (role)"
+ },
+ {
+  "tablename": "report_subscriptions",
+  "indexname": "report_subscriptions_pkey",
+  "indexdef": "CREATE UNIQUE INDEX report_subscriptions_pkey ON public.report_subscriptions USING btree (id)"
+ },
+ {
+  "tablename": "report_subscriptions",
+  "indexname": "report_subscriptions_user_id_report_id_key",
+  "indexdef": "CREATE UNIQUE INDEX report_subscriptions_user_id_report_id_key ON public.report_subscriptions USING btree (user_id, report_id)"
+ },
+ {
+  "tablename": "saved_commodities",
+  "indexname": "saved_commodities_pkey",
+  "indexdef": "CREATE UNIQUE INDEX saved_commodities_pkey ON public.saved_commodities USING btree (id)"
+ },
+ {
+  "tablename": "saved_commodities",
+  "indexname": "saved_commodities_user_id_commodity_id_key",
+  "indexdef": "CREATE UNIQUE INDEX saved_commodities_user_id_commodity_id_key ON public.saved_commodities USING btree (user_id, commodity_id)"
+ },
+ {
+  "tablename": "saved_markets",
+  "indexname": "saved_markets_pkey",
+  "indexdef": "CREATE UNIQUE INDEX saved_markets_pkey ON public.saved_markets USING btree (id)"
+ },
+ {
+  "tablename": "saved_markets",
+  "indexname": "saved_markets_user_id_market_id_key",
+  "indexdef": "CREATE UNIQUE INDEX saved_markets_user_id_market_id_key ON public.saved_markets USING btree (user_id, market_id)"
+ },
+ {
+  "tablename": "scheduled_job_runs",
+  "indexname": "scheduled_job_runs_job_idx",
+  "indexdef": "CREATE INDEX scheduled_job_runs_job_idx ON public.scheduled_job_runs USING btree (job_name, scheduled_for DESC)"
+ },
+ {
+  "tablename": "scheduled_job_runs",
+  "indexname": "scheduled_job_runs_pkey",
+  "indexdef": "CREATE UNIQUE INDEX scheduled_job_runs_pkey ON public.scheduled_job_runs USING btree (id)"
+ },
+ {
+  "tablename": "scheduled_job_runs",
+  "indexname": "scheduled_job_runs_unique",
+  "indexdef": "CREATE UNIQUE INDEX scheduled_job_runs_unique ON public.scheduled_job_runs USING btree (job_name, scheduled_for)"
+ },
+ {
+  "tablename": "seller_offers",
+  "indexname": "seller_offers_commodity_idx",
+  "indexdef": "CREATE INDEX seller_offers_commodity_idx ON public.seller_offers USING btree (commodity_id, status)"
+ },
+ {
+  "tablename": "seller_offers",
+  "indexname": "seller_offers_market_idx",
+  "indexdef": "CREATE INDEX seller_offers_market_idx ON public.seller_offers USING btree (market_id) WHERE (market_id IS NOT NULL)"
+ },
+ {
+  "tablename": "seller_offers",
+  "indexname": "seller_offers_owner_idx",
+  "indexdef": "CREATE INDEX seller_offers_owner_idx ON public.seller_offers USING btree (user_id) WHERE (user_id IS NOT NULL)"
+ },
+ {
+  "tablename": "seller_offers",
+  "indexname": "seller_offers_pkey",
+  "indexdef": "CREATE UNIQUE INDEX seller_offers_pkey ON public.seller_offers USING btree (id)"
+ },
+ {
+  "tablename": "seller_offers",
+  "indexname": "seller_offers_validity_idx",
+  "indexdef": "CREATE INDEX seller_offers_validity_idx ON public.seller_offers USING btree (valid_until) WHERE (status = 'verified'::offer_status)"
+ },
+ {
+  "tablename": "states",
+  "indexname": "states_country_id_slug_key",
+  "indexdef": "CREATE UNIQUE INDEX states_country_id_slug_key ON public.states USING btree (country_id, slug)"
+ },
+ {
+  "tablename": "states",
+  "indexname": "states_pkey",
+  "indexdef": "CREATE UNIQUE INDEX states_pkey ON public.states USING btree (id)"
+ },
+ {
+  "tablename": "states",
+  "indexname": "states_slug_idx",
+  "indexdef": "CREATE INDEX states_slug_idx ON public.states USING btree (slug)"
+ },
+ {
+  "tablename": "system_settings",
+  "indexname": "system_settings_pkey",
+  "indexdef": "CREATE UNIQUE INDEX system_settings_pkey ON public.system_settings USING btree (key)"
+ }
+]
