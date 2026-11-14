@@ -1,18 +1,20 @@
 /**
- * Hatsi360 — Professional Market Watch component.
+ * Hatsi360 — Professional Interactive Market Watch.
  *
- * A light-themed, professional replacement for the terminal-styled market watch.
- * Designed for the homepage with:
- *  - Professional table layout with icons
- *  - Sparkline price trends per commodity
- *  - Color-coded movement indicators
- *  - Responsive card layout on mobile
- *  - Proper verification status badges
+ * A light-themed, professional market watch component with:
+ *  - Sortable columns (commodity, market, price, change, updated)
+ *  - Up/down sort icons with visual feedback
+ *  - Click rows to open commodity detail modal
+ *  - Color-coded movement indicators with trend icons
+ *  - Verification status badges
+ *  - Fully responsive (table on desktop, cards on mobile)
  *  - Brand color palette (#0B3D2C, #E5A020, #1A6B40)
  */
 
+'use client';
+
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
 import {
   IconArrowUp,
   IconArrowDown,
@@ -20,7 +22,12 @@ import {
   IconVerified,
   IconClock,
   IconChevronRight,
+  IconSort,
 } from '@/components/ui/icons';
+import {
+  CommodityDetailModal,
+  type CommodityDetail,
+} from '@/components/homepage/CommodityDetailModal';
 
 /* ---------------------------------------------------------------- types --- */
 
@@ -28,8 +35,10 @@ export interface MarketWatchRow {
   id: string;
   commodityName: string;
   commoditySlug: string;
+  commodityId: number;
   marketName: string | null;
   marketSlug: string | null;
+  marketId: number | null;
   amount: number | null;
   currencyCode: string;
   unitLabel: string | null;
@@ -39,23 +48,86 @@ export interface MarketWatchRow {
   observedAt: string | null;
   verificationStatus: string;
   href?: string;
-  /** Optional sparkline data for trend visualization */
-  sparklineValues?: number[];
 }
+
+type SortColumn = 'commodity' | 'market' | 'price' | 'change' | 'updated';
+type SortDirection = 'asc' | 'desc';
 
 /* ------------------------------------------------------ main component ---- */
 
 export function ProfessionalMarketWatch({
   rows,
   title = 'Commodity Market Watch',
-  subtitle = 'Published price observations with unit, movement, time and verification',
-  onShowAll,
+  subtitle = 'Click any row for detailed analysis and live chart',
+  onViewAll,
 }: {
   rows: MarketWatchRow[];
   title?: string;
   subtitle?: string;
-  onShowAll?: string;
+  onViewAll?: string;
 }) {
+  const [sortColumn, setSortColumn] = useState<SortColumn>('price');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [selectedCommodity, setSelectedCommodity] = useState<CommodityDetail | null>(null);
+
+  const handleSort = useCallback(
+    (column: SortColumn) => {
+      if (sortColumn === column) {
+        setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortColumn(column);
+        setSortDirection(column === 'commodity' || column === 'market' ? 'asc' : 'desc');
+      }
+    },
+    [sortColumn],
+  );
+
+  const sortedRows = useMemo(() => {
+    const sorted = [...rows].sort((a, b) => {
+      let cmp = 0;
+      switch (sortColumn) {
+        case 'commodity':
+          cmp = a.commodityName.localeCompare(b.commodityName);
+          break;
+        case 'market':
+          cmp = (a.marketName ?? '').localeCompare(b.marketName ?? '');
+          break;
+        case 'price':
+          cmp = (a.amount ?? 0) - (b.amount ?? 0);
+          break;
+        case 'change':
+          cmp = (a.changePercent ?? 0) - (b.changePercent ?? 0);
+          break;
+        case 'updated':
+          cmp = (a.observedAt ?? '').localeCompare(b.observedAt ?? '');
+          break;
+      }
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+    return sorted;
+  }, [rows, sortColumn, sortDirection]);
+
+  const handleRowClick = useCallback((row: MarketWatchRow) => {
+    setSelectedCommodity({
+      id: row.id,
+      commodityName: row.commodityName,
+      commoditySlug: row.commoditySlug,
+      commodityId: row.commodityId,
+      marketName: row.marketName,
+      marketSlug: row.marketSlug,
+      marketId: row.marketId,
+      amount: row.amount,
+      currencyCode: row.currencyCode,
+      unitLabel: row.unitLabel,
+      priceTypeLabel: row.priceTypeLabel,
+      gradeName: row.gradeName,
+      changePercent: row.changePercent,
+      observedAt: row.observedAt,
+      verificationStatus: row.verificationStatus,
+      href: row.href,
+    });
+  }, []);
+
   if (rows.length === 0) {
     return (
       <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -73,88 +145,198 @@ export function ProfessionalMarketWatch({
   }
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      {/* Section Header */}
-      <div className="border-b border-gray-100 bg-gradient-to-br from-white to-gray-50/50 px-5 py-4 sm:px-6 sm:py-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="flex items-center gap-2.5 text-[1.0625rem] font-bold text-[#0B3D2C]">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[#E5A020]/10">
-                <IconVerified className="size-5 text-[#E5A020]" />
-              </span>
-              {title}
-            </h2>
-            <p className="mt-1 text-[0.75rem] text-gray-500">{subtitle}</p>
+    <>
+      <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        {/* Section Header */}
+        <div className="border-b border-gray-100 bg-gradient-to-br from-white to-gray-50/50 px-5 py-4 sm:px-6 sm:py-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2.5 text-[1.0625rem] font-bold text-[#0B3D2C]">
+                <span className="flex size-8 items-center justify-center rounded-lg bg-[#E5A020]/10">
+                  <IconVerified className="size-5 text-[#E5A020]" />
+                </span>
+                {title}
+              </h2>
+              <p className="mt-1 text-[0.75rem] text-gray-500">{subtitle}</p>
+            </div>
+            {onViewAll && (
+              <Link
+                href={onViewAll}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#0B3D2C]/15 bg-white px-4 py-2 text-[0.75rem] font-semibold text-[#0B3D2C] transition-all hover:border-[#E5A020]/40 hover:bg-[#E5A020]/5 hover:shadow-sm"
+              >
+                View Full Directory
+                <IconChevronRight className="size-3.5" />
+              </Link>
+            )}
           </div>
-          {onShowAll && (
-            <Link
-              href={onShowAll}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#0B3D2C]/15 bg-white px-4 py-2 text-[0.75rem] font-semibold text-[#0B3D2C] transition-all hover:border-[#E5A020]/40 hover:bg-[#E5A020]/5 hover:shadow-sm"
-            >
-              View Full Directory
-              <IconChevronRight className="size-3.5" />
-            </Link>
-          )}
         </div>
-      </div>
 
-      {/* Desktop Table */}
-      <div className="hidden md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="px-5 py-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-500">
-                  Commodity
-                </th>
-                <th className="px-5 py-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-500">
-                  Market
-                </th>
-                <th className="px-5 py-3 text-right text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-500">
-                  Price
-                </th>
-                <th className="px-5 py-3 text-right text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-500">
-                  Change
-                </th>
-                <th className="px-5 py-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-500">
-                  Verified
-                </th>
-                <th className="px-5 py-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-500">
-                  Updated
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {rows.map((row) => (
-                <MarketWatchTableRow key={row.id} row={row} />
-              ))}
-            </tbody>
-          </table>
+        {/* Desktop Table */}
+        <div className="hidden md:block">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  <SortHeader
+                    label="Commodity"
+                    column="commodity"
+                    sortColumn={sortColumn}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortHeader
+                    label="Market"
+                    column="market"
+                    sortColumn={sortColumn}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortHeader
+                    label="Price"
+                    column="price"
+                    align="right"
+                    sortColumn={sortColumn}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortHeader
+                    label="Change"
+                    column="change"
+                    align="right"
+                    sortColumn={sortColumn}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <th className="px-5 py-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-500">
+                    Verified
+                  </th>
+                  <SortHeader
+                    label="Updated"
+                    column="updated"
+                    sortColumn={sortColumn}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {sortedRows.map((row) => (
+                  <MarketWatchTableRow
+                    key={row.id}
+                    row={row}
+                    onClick={() => handleRowClick(row)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-      {/* Mobile Cards */}
-      <div className="md:hidden">
-        <div className="divide-y divide-gray-100">
-          {rows.map((row) => (
-            <MarketWatchMobileCard key={row.id} row={row} />
-          ))}
+        {/* Mobile Cards */}
+        <div className="md:hidden">
+          <div className="divide-y divide-gray-100">
+            {sortedRows.map((row) => (
+              <MarketWatchMobileCard
+                key={row.id}
+                row={row}
+                onClick={() => handleRowClick(row)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="border-t border-gray-100 bg-gray-50/30 px-5 py-3 sm:px-6">
-        <p className="text-[0.625rem] text-gray-400">
-          Movement is calculated between comparable observations. Data sourced from verified field collection.
-        </p>
-      </div>
-    </section>
+        {/* Footer */}
+        <div className="border-t border-gray-100 bg-gray-50/30 px-5 py-3 sm:px-6">
+          <div className="flex items-center justify-between">
+            <p className="text-[0.625rem] text-gray-400">
+              Click any row to view detailed chart and analysis
+            </p>
+            <p className="text-[0.5625rem] text-gray-400">
+              {rows.length} observation{rows.length === 1 ? '' : 's'}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Commodity Detail Modal */}
+      {selectedCommodity && (
+        <CommodityDetailModal
+          commodity={selectedCommodity}
+          onClose={() => setSelectedCommodity(null)}
+        />
+      )}
+    </>
   );
 }
 
-/* -------------------------------------------------- desktop row ---------- */
+/* -------------------------------------------------- sort header --------- */
 
-function MarketWatchTableRow({ row }: { row: MarketWatchRow }) {
+function SortHeader({
+  label,
+  column,
+  align = 'left',
+  sortColumn,
+  sortDirection,
+  onSort,
+}: {
+  label: string;
+  column: SortColumn;
+  align?: 'left' | 'right';
+  sortColumn: SortColumn;
+  sortDirection: SortDirection;
+  onSort: (column: SortColumn) => void;
+}) {
+  const isActive = sortColumn === column;
+  const alignClass = align === 'right' ? 'text-right' : 'text-left';
+
+  return (
+    <th className={`px-5 py-3 ${alignClass}`}>
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={`group inline-flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-wider transition-colors ${
+          align === 'right' ? 'flex-row-reverse' : ''
+        } ${
+          isActive ? 'text-[#0B3D2C]' : 'text-gray-500 hover:text-[#0B3D2C]'
+        }`}
+        aria-sort={
+          isActive
+            ? sortDirection === 'asc'
+              ? 'ascending'
+              : 'descending'
+            : 'none'
+        }
+      >
+        {label}
+        <span
+          className={`flex items-center transition-colors ${
+            isActive ? 'text-[#E5A020]' : 'text-gray-300 group-hover:text-gray-400'
+          }`}
+        >
+          {isActive ? (
+            sortDirection === 'asc' ? (
+              <IconArrowUp className="size-3" />
+            ) : (
+              <IconArrowDown className="size-3" />
+            )
+          ) : (
+            <IconSort className="size-3" />
+          )}
+        </span>
+      </button>
+    </th>
+  );
+}
+
+/* -------------------------------------------------- desktop row --------- */
+
+function MarketWatchTableRow({
+  row,
+  onClick,
+}: {
+  row: MarketWatchRow;
+  onClick: () => void;
+}) {
   const formatPrice = (amount: number, currency: string) =>
     new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -165,13 +347,13 @@ function MarketWatchTableRow({ row }: { row: MarketWatchRow }) {
   const movementBadge = getMovementBadge(row.changePercent);
 
   return (
-    <tr className="group transition-colors hover:bg-[#E5A020]/[0.02]">
+    <tr
+      className="group cursor-pointer transition-colors hover:bg-[#E5A020]/[0.02]"
+      onClick={onClick}
+    >
       {/* Commodity */}
       <td className="px-5 py-3.5">
-        <Link
-          href={row.href ?? `/commodities/${row.commoditySlug}`}
-          className="flex items-center gap-2.5 group-hover:text-[#E5A020] transition-colors"
-        >
+        <div className="flex items-center gap-2.5">
           {/* Commodity icon */}
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#0B3D2C]/[0.04] group-hover:bg-[#E5A020]/10 transition-colors">
             <span className="text-[0.75rem] font-bold text-[#0B3D2C]/60 group-hover:text-[#E5A020]">
@@ -179,32 +361,31 @@ function MarketWatchTableRow({ row }: { row: MarketWatchRow }) {
             </span>
           </div>
           <div className="min-w-0">
-            <span className="block truncate text-[0.8125rem] font-semibold text-[#0B3D2C]">
+            <span className="block truncate text-[0.8125rem] font-semibold text-[#0B3D2C] group-hover:text-[#E5A020] transition-colors">
               {row.commodityName}
             </span>
             {row.gradeName && (
-              <span className="block truncate text-[0.625rem] text-gray-400">
-                Grade: {row.gradeName}
-              </span>
-            )}
-            {row.priceTypeLabel && (
               <span className="block truncate text-[0.5625rem] text-gray-400">
-                {row.priceTypeLabel}
+                {row.gradeName}
+                {row.priceTypeLabel ? ` · ${row.priceTypeLabel}` : ''}
               </span>
             )}
           </div>
-        </Link>
+        </div>
       </td>
 
       {/* Market */}
       <td className="px-5 py-3.5">
         {row.marketSlug ? (
-          <Link
-            href={`/markets/${row.marketSlug}`}
-            className="text-[0.8125rem] text-gray-600 underline decoration-gray-200 underline-offset-2 transition-colors hover:text-[#0B3D2C] hover:decoration-[#E5A020]"
+          <span
+            className="text-[0.8125rem] text-gray-600 transition-colors group-hover:text-[#0B3D2C]"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.location.href = `/markets/${row.marketSlug}`;
+            }}
           >
             {row.marketName}
-          </Link>
+          </span>
         ) : (
           <span className="text-[0.8125rem] text-gray-400">
             {row.marketName ?? '—'}
@@ -222,7 +403,7 @@ function MarketWatchTableRow({ row }: { row: MarketWatchRow }) {
               {formatPrice(row.amount, row.currencyCode)}
             </span>
             {row.unitLabel && (
-              <span className="ml-1 text-[0.6875rem] text-gray-400">
+              <span className="ml-1 text-[0.625rem] text-gray-400">
                 /{row.unitLabel}
               </span>
             )}
@@ -247,7 +428,7 @@ function MarketWatchTableRow({ row }: { row: MarketWatchRow }) {
       <td className="px-5 py-3.5">
         <div className="flex items-center gap-1.5 text-[0.75rem] text-gray-500">
           <IconClock className="size-3.5 text-gray-400" />
-          {row.observedAt ? formatObservedAt(row.observedAt) : '—'}
+          {row.observedAt ? formatRelative(row.observedAt) : '—'}
         </div>
       </td>
     </tr>
@@ -256,7 +437,13 @@ function MarketWatchTableRow({ row }: { row: MarketWatchRow }) {
 
 /* -------------------------------------------------- mobile card --------- */
 
-function MarketWatchMobileCard({ row }: { row: MarketWatchRow }) {
+function MarketWatchMobileCard({
+  row,
+  onClick,
+}: {
+  row: MarketWatchRow;
+  onClick: () => void;
+}) {
   const formatPrice = (amount: number, currency: string) =>
     new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -267,9 +454,9 @@ function MarketWatchMobileCard({ row }: { row: MarketWatchRow }) {
   const movementBadge = getMovementBadge(row.changePercent);
 
   return (
-    <Link
-      href={row.href ?? `/commodities/${row.commoditySlug}`}
-      className="flex items-center gap-3.5 px-4 py-4 transition-colors hover:bg-[#E5A020]/[0.02]"
+    <div
+      onClick={onClick}
+      className="flex cursor-pointer items-center gap-3.5 px-4 py-4 transition-colors hover:bg-[#E5A020]/[0.02]"
     >
       {/* Commodity icon */}
       <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#0B3D2C]/[0.05]">
@@ -312,7 +499,7 @@ function MarketWatchMobileCard({ row }: { row: MarketWatchRow }) {
           {movementBadge.label}
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -395,19 +582,6 @@ function getVerificationConfig(status: string) {
         dotColor: 'bg-gray-400',
       };
   }
-}
-
-function formatObservedAt(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat('en-NG', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'UTC',
-  }).format(date);
 }
 
 function formatRelative(iso: string): string {

@@ -26,18 +26,14 @@ import {
   type CommodityCategory,
   type InsightItem,
 } from '@/components/homepage/HomepageComponents';
-import {
-  EmptyStatePanel,
-  ProvenanceNotice,
-} from '@/components/feedback/TerminalFeedback';
-import { MarketWatchCards, MarketWatchTable, type MarketWatchRow } from '@/components/market/MarketWatchTable';
+import { EmptyStatePanel } from '@/components/feedback/TerminalFeedback';
 import {
   MarketMovers,
   type MoverRow,
 } from '@/components/market/MarketOverview';
 import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/marketing/StructuredData';
 import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
-import { ProfessionalMarketWatch } from '@/components/homepage/ProfessionalMarketWatch';
+import { ProfessionalMarketWatch, type MarketWatchRow } from '@/components/homepage/ProfessionalMarketWatch';
 
 /**
  * The Hatsi360 Markets homepage — professional market intelligence design.
@@ -150,8 +146,8 @@ export default async function MarketsHomePage() {
             <ProfessionalMarketWatch
               rows={summary.watchRows.slice(0, 12)}
               title="Commodity Market Watch"
-              subtitle="Published price observations with unit, movement, time and verification"
-              onShowAll="/prices"
+              subtitle="Click any row for detailed analysis and live chart"
+              onViewAll="/prices"
             />
           )}
 
@@ -270,8 +266,10 @@ async function loadHomepage(): Promise<HomepageSummary> {
     id: String(observation.id),
     commodityName: observation.commodityName ?? 'Unnamed commodity',
     commoditySlug: observation.commoditySlug ?? '',
+    commodityId: observation.commodityId,
     marketName: observation.marketName ?? null,
     marketSlug: observation.marketSlug ?? null,
+    marketId: observation.marketId ?? null,
     amount: observation.normalizedAmount ?? observation.reportedAmount,
     currencyCode: observation.currencyCode,
     unitLabel: observation.unitName ?? null,
