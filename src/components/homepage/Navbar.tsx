@@ -99,9 +99,14 @@ export function Navbar({
               className="flex items-center gap-2.5"
               aria-label="Hatsi360 home"
             >
-              <div className="flex size-9 items-center justify-center rounded-lg bg-[#0B3D2C]">
-                <span className="text-sm font-extrabold text-[#E5A020]">H</span>
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/hatsi360-mark.png"
+                alt="Hatsi360"
+                width={36}
+                height={36}
+                className="rounded-lg"
+              />
               <div className="flex flex-col">
                 <span className="font-display text-[1.0625rem] font-extrabold leading-none tracking-tight text-[#0B3D2C]">
                   Hatsi360
@@ -270,9 +275,14 @@ export function Navbar({
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-[#0B3D2C]">
-                  <span className="text-sm font-extrabold text-[#E5A020]">H</span>
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/brand/hatsi360-mark.png"
+                  alt="Hatsi360"
+                  width={32}
+                  height={32}
+                  className="rounded-lg"
+                />
                 <span className="font-display text-[0.9375rem] font-extrabold text-[#0B3D2C]">
                   Hatsi360
                 </span>

@@ -130,13 +130,13 @@ export function HatsiGlobalPreloader() {
       >
         <div className="hatsi-boot__inner">
           <div className="hatsi-boot__mark">
-            {/* The official mark, reversed for the deep green surface. */}
+            {/* The official logo for the preloader. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/hatsi360-mark-light.png"
+              src="/brand/hatsi360-mark.png"
               alt=""
-              width={56}
-              height={54}
+              width={80}
+              height={80}
               className="hatsi-boot__logo"
               decoding="async"
             />

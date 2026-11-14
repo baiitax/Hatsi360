@@ -151,10 +151,16 @@ export function HomepageHero({
 }) {
   return (
     <div className="relative overflow-hidden border-b border-gray-200 bg-white">
-      <div className="absolute inset-0 opacity-[0.02]" style={{
-        backgroundImage: `linear-gradient(#0B3D2C 1px, transparent 1px), linear-gradient(90deg, #0B3D2C 1px, transparent 1px)`,
-        backgroundSize: '40px 40px'
-      }} />
+      {/* Hero background image with overlay */}
+      <div className="absolute inset-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/hatsi360-hero.png"
+          alt=""
+          className="h-full w-full object-cover opacity-10"
+        />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-br from-white via-white/95 to-white/90" />
 
       <div className="relative px-4 py-12 lg:px-8 lg:py-16">
         <div className="mx-auto max-w-7xl">
