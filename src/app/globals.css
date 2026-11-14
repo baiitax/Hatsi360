@@ -159,6 +159,30 @@
   --color-move-down-soft: #331a18;
   --color-move-flat: #748278;
 
+  /* ------------------------------------------ semantic colour aliases --
+
+     High-level semantic tokens that map to the appropriate palette based
+     on context. These provide a consistent API for components regardless
+     of whether they're on a light or dark surface. */
+
+  --color-surface: #ffffff;
+  --color-background: #f7f8f5;
+  --color-text-primary: #202923;
+  --color-text-secondary: #59665e;
+  --color-text-muted: #68756e;
+  --color-border: #e3e9e2;
+  --color-border-strong: #cbd5cd;
+
+  /* Terminal semantic equivalents */
+
+  --color-terminal-surface-primary: #17211b;
+  --color-terminal-background: #101713;
+  --color-terminal-text-primary: #f3f6f2;
+  --color-terminal-text-secondary: #a8b5aa;
+  --color-terminal-text-muted: #748278;
+  --color-terminal-border: #2c3a31;
+  --color-terminal-border-strong: #3d4f42;
+
   /* ------------------------------------------------------ typography scale
 
      Financial data typography. The numeric roles are sized for columns of
@@ -302,6 +326,46 @@
     }
   }
 
+  /* Narrow container — for focused content like forms and articles. */
+  .container-narrow {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    max-width: 48rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-narrow {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-narrow {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Wide container — for full-width layouts and dashboards. */
+  .container-wide {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    max-width: 96rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-wide {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-wide {
+      padding-inline: 2rem;
+    }
+  }
+
   .section {
     padding-block: 3rem;
   }
@@ -309,6 +373,28 @@
   @media (min-width: 768px) {
     .section {
       padding-block: 4.5rem;
+    }
+  }
+
+  /* Compact section — for tighter spacing between related content. */
+  .section-compact {
+    padding-block: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .section-compact {
+      padding-block: 3rem;
+    }
+  }
+
+  /* Generous section — for major content breaks. */
+  .section-generous {
+    padding-block: 4rem;
+  }
+
+  @media (min-width: 768px) {
+    .section-generous {
+      padding-block: 6rem;
     }
   }
 
@@ -1108,6 +1194,113 @@
     height: 2px;
     background-color: var(--color-harvest-500);
     border-radius: 1px;
+  }
+}
+
+/* ==========================================================================
+   Hatsi360 Markets — card variants
+
+   Standardised card patterns for consistent use across all surfaces.
+   Each variant is appropriate for a specific interaction model.
+   ========================================================================== */
+
+@layer components {
+  /* Base card — the foundation for all card variants. */
+  .card {
+    background-color: var(--color-editorial-surface);
+    border: 1px solid var(--color-editorial-border);
+    border-radius: var(--radius-card);
+  }
+
+  /* Interactive card — hoverable, suggests clickability. */
+  .card-hover {
+    background-color: var(--color-editorial-surface);
+    border: 1px solid var(--color-editorial-border);
+    border-radius: var(--radius-card);
+    transition:
+      border-color 140ms cubic-bezier(0.2, 0, 0.1, 1),
+      box-shadow 140ms cubic-bezier(0.2, 0, 0.1, 1),
+      transform 140ms cubic-bezier(0.2, 0, 0.1, 1);
+  }
+
+  .card-hover:hover {
+    border-color: var(--color-harvest-400);
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-1px);
+  }
+
+  /* Metric card — for KPIs and statistics. */
+  .card-metric {
+    background-color: var(--color-editorial-surface);
+    border: 1px solid var(--color-editorial-border);
+    border-radius: var(--radius-card);
+    padding: 1.25rem;
+  }
+
+  /* Status card — for displaying verification or freshness state. */
+  .card-status {
+    background-color: var(--color-editorial-surface);
+    border: 1px solid var(--color-editorial-border);
+    border-radius: var(--radius-card);
+    padding: 1rem;
+  }
+
+  /* Elevated card — for modals and overlays. */
+  .card-elevated {
+    background-color: var(--color-editorial-surface);
+    border: 1px solid var(--color-editorial-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* Flush card — no padding, for tables and lists. */
+  .card-flush {
+    background-color: var(--color-editorial-surface);
+    border: 1px solid var(--color-editorial-border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+}
+
+/* ==========================================================================
+   Hatsi360 Markets — focus and transition utilities
+
+   Consistent focus rings and transition patterns across all interactive
+   elements.
+   ========================================================================== */
+
+@layer utilities {
+  /* Standard focus ring — visible, accessible, consistent. */
+  .focus-ring {
+    outline: 2px solid var(--color-brand-700);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  /* Focus ring for dark surfaces. */
+  .focus-ring-dark {
+    outline: 2px solid var(--color-harvest-400);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  /* Standard transitions. */
+  .transition-fast {
+    transition-property: color, background-color, border-color, opacity;
+    transition-duration: 140ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0.1, 1);
+  }
+
+  .transition-panel {
+    transition-property: transform, opacity, box-shadow;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0.1, 1);
+  }
+
+  .transition-all-fast {
+    transition-property: all;
+    transition-duration: 140ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0.1, 1);
   }
 }
 
