@@ -172,3 +172,59 @@ export type {
   HSCodeWithMappings,
   HSCodeListOptions,
 } from './classification';
+
+/* ---------------------------------------- Phase 07 Stage 3: Trade Data Engine -- */
+
+export {
+  queryTradeRecords,
+  getBilateralTrade,
+  getTopTradePartners,
+  getTradeFlowAnalytics,
+  getTradeDataStats,
+} from './flows';
+export type {
+  TradeRecord,
+  TradeRecordWithRelations,
+} from './flows';
+
+export {
+  queryTariffs,
+  getMFNTariff,
+  getAllTariffsForCode,
+  getPreferentialTariffs,
+  getTariffStats,
+  compareTariffsByCountry,
+} from './tariffs';
+
+export {
+  validateTradeRecord,
+  validateTradeRecords,
+  findDuplicates,
+  filterValidRecords,
+  deduplicateRecords,
+  faostatTradeAdapter,
+  ingestTradeData,
+  getTradeDataSources,
+  getRecentSyncLogs,
+} from './ingestion';
+export type {
+  TradeFlowType,
+  PeriodType,
+  ValuationMethod,
+  ValidationStatus,
+  TariffType,
+  RateType,
+  TradeDataSourceType,
+  SyncStatus,
+  TradeDataRecord,
+  TradeQueryParams,
+  TradeFlowSummary,
+  TariffQueryParams,
+  TariffSchedule,
+  TradeDataSource,
+  TradeDataSyncLog,
+  IngestionResult,
+  TradeDataSourceAdapter,
+  ValidationResult,
+  TradeFlowAnalytics,
+} from './ingestion';
