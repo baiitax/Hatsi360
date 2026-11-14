@@ -1,31 +1,73 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import { CommodityCard } from '@/components/data/Cards';
-import { EmptyState, Pagination } from '@/components/ui';
-import { PageHero } from '@/components/ui/PageHero';
-import { getPageImage } from '@/lib/images/registry';
 import { getDataSource } from '@/lib/data';
-import { BreadcrumbJsonLd, DatasetJsonLd } from '@/components/marketing/StructuredData';
+import { isSupabaseConfigured } from '@/lib/supabase/config';
+import {
+  getCommodityFreshness,
+  type CommodityFreshness,
+} from '@/lib/trade/queries';
+import {
+  PageContainer,
+  PageHeader,
+  SectionHeader,
+} from '@/components/terminal/TerminalShell';
+import {
+  CommodityCardSkeleton,
+  EmptyStatePanel,
+  PanelSkeleton,
+} from '@/components/feedback/TerminalFeedback';
+import {
+  DataFreshnessIndicator,
+  type FreshnessState,
+} from '@/components/market/MarketOverview';
+import { IconArrowRight } from '@/components/ui/icons';
+import type { Commodity, CommodityCategory } from '@/types/domain';
 
 export const metadata: Metadata = {
-  title: 'Commodity Catalogue',
+  title: 'Commodity Directory',
   description:
-    'The agricultural commodities Hatsi360 tracks — grains, pulses, oilseeds, tubers, spices, tree crops and more — with the markets reporting each one.',
+    'Every agricultural commodity Hatsi360 Markets tracks, with the markets reporting each one and how current the latest published observation is.',
   alternates: { canonical: '/commodities' },
 };
 
-export default async function CommoditiesPage({
+export const dynamic = 'force-dynamic';
+
+/**
+ * The commodity directory.
+ *
+ * A working register, not a gallery. Each commodity is shown with the thing a
+ * trader needs before opening it — how many observations exist, when the last
+ * one was collected, and how fresh that is — so the directory answers "is there
+ * anything here for me?" without a single click.
+ *
+ * The catalogue is complete on purpose. A commodity with no published
+ * observation is still listed, because its absence from the price record is
+ * itself information, and it is marked as such rather than hidden.
+ *
+ * The legacy `?id=` link is preserved: the old site's `commodity-detail.php`
+ * resolved to a price view, so it redirects to the price route rather than 404ing.
+ */
+export default async function CommodityDirectoryPage({
   searchParams,
 }: {
   searchParams: Promise<{ id?: string; category?: string; page?: string }>;
 }) {
   const params = await searchParams;
-  const source = await getDataSource();
-  const [commodities, categories] = await Promise.all([
-    source.listCommodities(),
-    source.listCategories(),
-  ]);
+  const configured = isSupabaseConfigured();
+  const source = configured ? await getDataSource() : null;
+
+  const [commodities, categories, freshness]: [
+    Commodity[],
+    CommodityCategory[],
+    CommodityFreshness[],
+  ] = source
+    ? await Promise.all([
+        source.listCommodities(),
+        source.listCategories(),
+        getCommodityFreshness(),
+      ])
+    : [[], [], []];
 
   // A legacy link such as commodity-detail.php?id=1 lands here with ?id=. The
   // legacy detail page was the price view, so it resolves to /prices/<slug>.
@@ -44,9 +86,14 @@ export default async function CommoditiesPage({
     : commodities;
 
   const page = Math.max(1, Number(params.page ?? '1') || 1);
-  const pageSize = 18;
+  const pageSize = 24;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const items = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  const freshnessById = new Map(
+    freshness.map((entry) => [entry.commodityId, entry]),
+  );
+  const withPrices = commodities.filter((c) => (c.observationCount ?? 0) > 0).length;
 
   const buildHref = (nextPage: number) => {
     const search = new URLSearchParams();
@@ -55,98 +102,205 @@ export default async function CommoditiesPage({
     return `/commodities?${search.toString()}`;
   };
 
-  const withPrices = commodities.filter((c) => (c.observationCount ?? 0) > 0).length;
-
   return (
-    <>
-      <PageHero
-        eyebrow="Commodity catalogue"
-        title="Commodities we track"
-        lede={
-          <>
-            Our catalogue covers {commodities.length} agricultural commodities across{' '}
-            {categories.length} categories. {withPrices} currently have published price
-            observations; the rest are listed so the catalogue is complete, and they appear in
-            price results only once a price is actually published for them.
-          </>
+    <PageContainer>
+      <PageHeader
+        title="Commodity directory"
+        description={`The catalogue of ${commodities.length} agricultural commodities Hatsi360 Markets tracks, across ${categories.length} categories. ${withPrices} of them currently carry a published price observation; the rest are listed so the register is complete, and they appear in price results only once a price is published for them.`}
+        actions={
+          <Link href="/coverage" className="terminal-action">
+            Collection coverage
+          </Link>
         }
-        breadcrumbs={[{ label: 'Commodities' }]}
-        image={getPageImage('commodity-directory.hero')}
       />
 
-      <div className="section">
-        <div className="container-page">
-          <BreadcrumbJsonLd items={[{ name: 'Commodities' }]} />
-          <DatasetJsonLd
-            name="Hatsi360 agricultural commodity catalogue"
-            description={`The catalogue of ${commodities.length} agricultural commodities tracked by Hatsi360 across ${categories.length} categories, with the markets reporting each one.`}
-            url="/commodities"
-            keywords={[
-              'agricultural commodity catalogue Nigeria',
-              'grains',
-              'pulses',
-              'oilseeds',
-              'tubers',
-              'cash crops',
-            ]}
-          />
-
-          {/* ------------------------------------------------ category filter -- */}
-          <nav aria-label="Filter by category" className="flex flex-wrap gap-2">
+      {/* ------------------------------------------------- category filter -- */}
+      <nav aria-label="Filter by category" className="flex flex-wrap gap-1.5">
+        <Link
+          href="/commodities"
+          aria-current={!activeCategory ? 'page' : undefined}
+          className="terminal-control"
+        >
+          All categories
+        </Link>
+        {categories.map((category) => {
+          const selected = activeCategory?.id === category.id;
+          const count = commodities.filter((c) => c.categoryId === category.id).length;
+          return (
             <Link
-              href="/commodities"
-              aria-current={!activeCategory ? 'page' : undefined}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                !activeCategory
-                  ? 'border-brand-700 bg-brand-700 text-white'
-                  : 'border-ink-200 bg-white text-ink-700 hover:border-brand-400 hover:text-brand-800'
-              }`}
+              key={category.id}
+              href={`/commodities?category=${category.slug}`}
+              aria-current={selected ? 'page' : undefined}
+              className="terminal-control"
             >
-              All
+              {category.name}
+              <span className="figure-num text-terminal-text-muted">{count}</span>
             </Link>
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/commodities?category=${category.slug}`}
-                aria-current={activeCategory?.id === category.id ? 'page' : undefined}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                  activeCategory?.id === category.id
-                    ? 'border-brand-700 bg-brand-700 text-white'
-                    : 'border-ink-200 bg-white text-ink-700 hover:border-brand-400 hover:text-brand-800'
-                }`}
-              >
-                {category.name}
-              </Link>
-            ))}
-          </nav>
+          );
+        })}
+      </nav>
 
-          {items.length > 0 ? (
-            <>
-              <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {items.map((commodity) => (
-                  <CommodityCard key={commodity.id} commodity={commodity} />
-                ))}
+      {!configured ? (
+        <EmptyStatePanel
+          kind="no-market-data"
+          action={{ label: 'See collection coverage', href: '/coverage' }}
+        />
+      ) : items.length === 0 ? (
+        <EmptyStatePanel
+          kind="no-commodity-results"
+          action={
+            activeCategory
+              ? { label: 'Show all categories', href: '/commodities' }
+              : undefined
+          }
+        />
+      ) : (
+        <>
+          <section aria-label="The commodity register">
+            <SectionHeader
+              title={activeCategory ? activeCategory.name : 'All commodities'}
+              count={filtered.length}
+              href="/commodities"
+            />
+            <ol className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {items.map((commodity) => {
+                const entry = freshnessById.get(commodity.id);
+                const observed = (commodity.observationCount ?? 0) > 0;
+                // The platform's own freshness classification, read rather than
+                // re-derived, so this page and the price cards agree.
+                const state: FreshnessState = entry
+                  ? entry.state === 'recently_updated' || entry.state === 'latest_verified'
+                    ? 'fresh'
+                    : entry.state === 'stale'
+                      ? 'stale'
+                      : entry.state === 'delayed'
+                        ? 'delayed'
+                        : 'today'
+                  : 'unavailable';
+                return (
+                  <li key={commodity.id}>
+                    <Link
+                      href={`/commodities/${commodity.slug}`}
+                      className="terminal-panel group flex h-full flex-col gap-2 p-3 transition-colors duration-150 ease-out hover:border-harvest-500/40 hover:bg-terminal-elevated"
+                    >
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="text-[0.9375rem] font-semibold leading-tight text-terminal-text group-hover:text-harvest-300">
+                          {commodity.name}
+                        </h3>
+                        <IconArrowRight
+                          className="size-3.5 shrink-0 text-terminal-text-muted"
+                          aria-hidden="true"
+                        />
+                      </div>
+
+                      <p className="text-[0.6875rem] leading-relaxed text-terminal-text-secondary">
+                        {commodity.categoryName ?? 'Uncategorised'}
+                        {commodity.marketCount
+                          ? ` · ${commodity.marketCount} reporting market${commodity.marketCount === 1 ? '' : 's'}`
+                          : ''}
+                      </p>
+
+                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-terminal-border pt-2">
+                        <span className="figure-num text-terminal-text-secondary">
+                          {observed ? (
+                            <>
+                              <span className="text-terminal-text">
+                                {commodity.observationCount}
+                              </span>{' '}
+                              observation{commodity.observationCount === 1 ? '' : 's'}
+                            </>
+                          ) : (
+                            <span className="text-terminal-text-muted">
+                              No published price
+                            </span>
+                          )}
+                        </span>
+                        <DataFreshnessIndicator
+                          state={state}
+                          observedAt={
+                            commodity.latestObservationAt ?? entry?.collectedAt ?? null
+                          }
+                        />
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+
+          {totalPages > 1 ? (
+            <nav aria-label="Directory pages" className="flex items-center gap-1.5">
+              {page > 1 ? (
+                <Link href={buildHref(page - 1)} rel="prev" className="terminal-control">
+                  Previous
+                </Link>
+              ) : null}
+              <span className="figure-num px-2 text-terminal-text-secondary">
+                Page {page} of {totalPages}
+              </span>
+              {page < totalPages ? (
+                <Link href={buildHref(page + 1)} rel="next" className="terminal-control">
+                  Next
+                </Link>
+              ) : null}
+            </nav>
+          ) : null}
+        </>
+      )}
+
+      {!configured ? null : (
+        <section aria-label="How to read this register">
+          <SectionHeader title="How to read this register" />
+          <div className="terminal-panel p-4">
+            <dl className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <dt className="figure-label">A commodity with no price</dt>
+                <dd className="mt-1 text-[0.75rem] leading-relaxed text-terminal-text-secondary">
+                  It is tracked but has no published observation. That is a statement
+                  about coverage, not about the market, and no figure is estimated to
+                  fill the gap.
+                </dd>
               </div>
-              <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
-            </>
-          ) : (
-            <div className="mt-8">
-              <EmptyState
-                title="No commodities in this category"
-                description="This category has no active commodities. Choose another category to continue browsing."
-                action={
-                  <Link
-                    href="/commodities"
-                    className="mt-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
-                  >
-                    All commodities
-                  </Link>
-                }
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </>
+              <div>
+                <dt className="figure-label">The observation count</dt>
+                <dd className="mt-1 text-[0.75rem] leading-relaxed text-terminal-text-secondary">
+                  How many published observations exist for the commodity across all
+                  series and markets. It is not a volume and it is not a trade count.
+                </dd>
+              </div>
+              <div>
+                <dt className="figure-label">The freshness state</dt>
+                <dd className="mt-1 text-[0.75rem] leading-relaxed text-terminal-text-secondary">
+                  Calculated from when the latest observation was collected and how
+                  often that commodity is collected. It never reflects how recently
+                  this page loaded.
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+      )}
+    </PageContainer>
+  );
+}
+
+/** The directory while its data loads. Mirrors the register it replaces. */
+export function DirectoryLoading() {
+  return (
+    <PageContainer>
+      <PageHeader
+        title="Commodity directory"
+        description="Loading the catalogue and the freshness of each commodity."
+      />
+      <PanelSkeleton lines={1} />
+      <ol className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 12 }).map((_, index) => (
+          <li key={index}>
+            <CommodityCardSkeleton />
+          </li>
+        ))}
+      </ol>
+    </PageContainer>
   );
 }

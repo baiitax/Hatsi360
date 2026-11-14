@@ -153,8 +153,15 @@ export function MainNavigation({ className = '' }: { className?: string }) {
       aria-label="Market modules"
       className={`hidden min-w-0 flex-1 items-center gap-0.5 lg:flex ${className}`}
     >
-      {MARKET_NAV.map((module) => (
-        <ModuleLink key={module.id} module={module} />
+      {MARKET_NAV.map((module, index) => (
+        <ModuleLink
+          key={module.id}
+          module={module}
+          // The trailing modules align their menu to the right edge of the bar.
+          // Anchored to the left edge, the last module's menu would run past a
+          // 1024px viewport and force the whole page to scroll sideways.
+          align={index >= MARKET_NAV.length - 2 ? 'end' : 'start'}
+        />
       ))}
     </nav>
   );
@@ -168,7 +175,13 @@ export function MainNavigation({ className = '' }: { className?: string }) {
  * keyboard and without JavaScript. The link itself is the module's landing
  * route, so a click never depends on the menu being open.
  */
-function ModuleLink({ module }: { module: (typeof MARKET_NAV)[number] }) {
+function ModuleLink({
+  module,
+  align = 'start',
+}: {
+  module: (typeof MARKET_NAV)[number];
+  align?: 'start' | 'end';
+}) {
   return (
     <div className="group/mod relative">
       <span className="flex items-center">
@@ -191,7 +204,11 @@ function ModuleLink({ module }: { module: (typeof MARKET_NAV)[number] }) {
       </span>
 
       {module.items.length > 0 ? (
-        <div className="invisible absolute left-0 top-full z-[var(--z-header)] w-60 translate-y-1 rounded-panel border border-terminal-border bg-terminal-elevated py-1.5 opacity-0 shadow-terminal-lift transition-all duration-150 group-hover/mod:visible group-hover/mod:translate-y-0 group-hover/mod:opacity-100 group-focus-within/mod:visible group-focus-within/mod:translate-y-0 group-focus-within/mod:opacity-100">
+        <div
+          className={`invisible absolute top-full z-[var(--z-header)] w-60 translate-y-1 rounded-panel border border-terminal-border bg-terminal-elevated py-1.5 opacity-0 shadow-terminal-lift transition-all duration-150 group-hover/mod:visible group-hover/mod:translate-y-0 group-hover/mod:opacity-100 group-focus-within/mod:visible group-focus-within/mod:translate-y-0 group-focus-within/mod:opacity-100 ${
+            align === 'end' ? 'right-0' : 'left-0'
+          }`}
+        >
           <p className="px-2.5 pb-1 text-[0.625rem] leading-4 text-terminal-text-muted">
             {module.summary}
           </p>
@@ -335,7 +352,9 @@ export function PageHeader({
         ) : null}
         {meta ? <div className="mt-2">{meta}</div> : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-1.5">{actions}</div> : null}
+      {actions ? (
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">{actions}</div>
+      ) : null}
     </div>
   );
 }

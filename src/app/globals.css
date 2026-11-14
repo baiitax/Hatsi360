@@ -433,9 +433,17 @@
    terminal's own transitions and to the range chart's hover state, so nothing
    in either environment moves for a reader who asked it not to.
 
-   It is deliberately folded into the loading system's block rather than added
-   as a second one: a guarantee that lives in two places is a guarantee that can
-   be broken in one of them.
+   This block is deliberately separate from the loading system's own
+   reduced-motion block above. They answer different questions: that one
+   describes what each loading component becomes when it stops moving, and this
+   one guarantees that nothing in the terminal or the editorial environment
+   transitions or animates at all. Keeping them apart means a change to one can
+   never silently change the other.
+
+   The loading system's block sits inside `@layer components`, alongside the
+   components it describes. This one cannot: a rule inside a layer is
+   subordinate to the utilities that follow it, and the guarantee here is meant
+   to win.
    ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,4 +1,3 @@
-import { buildShareMetadata } from '@/lib/metadata';
 import Link from 'next/link';
 import { getDataSource } from '@/lib/data';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
@@ -6,22 +5,24 @@ import {
   getCommodityFreshness,
   getMarketMovements,
 } from '@/lib/trade/queries';
+import { PRICE_STATE_TONES, requiresFreshnessWarning } from '@/lib/trade/freshness';
+import { buildShareMetadata } from '@/lib/metadata';
 import {
-  PRICE_STATE_TONES,
-  requiresFreshnessWarning,
-} from '@/lib/trade/freshness';
-import {
-  Change,
-  EmptyState,
-  Metric,
+  PageContainer,
   PageHeader,
-  Panel,
-  Pill,
-  Price,
-} from '@/components/trade/Primitives';
+  SectionHeader,
+} from '@/components/terminal/TerminalShell';
+import {
+  MarketOverviewCard,
+  MarketMovers,
+  type MoverRow,
+} from '@/components/market/MarketOverview';
+import { MarketWatchTable, type MarketWatchRow } from '@/components/market/MarketWatchTable';
+import { EmptyStatePanel, MarketTableSkeleton } from '@/components/feedback/TerminalFeedback';
+import { IconArrowRight, IconScale, IconTrade } from '@/components/ui/icons';
 
 export const metadata = buildShareMetadata({
-  title: 'Market overview',
+  title: 'Trade Intelligence',
   path: '/trade',
   description:
     'Which Nigerian agricultural commodities are moving, where the best verified prices were recorded, and how current the data is.',
@@ -32,320 +33,292 @@ export const dynamic = 'force-dynamic';
 /**
  * Trade Intelligence overview.
  *
- * Brief §4 asks this page to answer five questions immediately. It answers
- * them in this order, with the metric row kept deliberately short:
+ * The terminal's trade surface answers four questions immediately, in this
+ * order, and keeps the metric row deliberately short:
  *
  *   1. What is covered, and how current is it?
  *   2. Which commodities are moving?
  *   3. Where were the best prices recorded?
  *   4. How fresh is the data?
  *
- * Every figure comes from published observations. When there are none, the
- * page says so rather than showing a zero that looks like a measured fact.
+ * Every figure comes from published observations. When there are none, the page
+ * says so rather than showing a zero that reads as a measured fact.
  */
 export default async function TradeOverviewPage() {
   const configured = isSupabaseConfigured();
 
-  const [movements, freshness, commodities] = configured
+  const [movements, freshness, commodities, markets] = configured
     ? await Promise.all([
         getMarketMovements(40),
         getCommodityFreshness(),
         (await getDataSource()).listCommodities(),
+        (await getDataSource()).listMarkets(),
       ])
-    : [[], [], []];
-
-  const markets = configured ? await (await getDataSource()).listMarkets() : [];
+    : [[], [], [], []];
 
   const rising = movements.filter((m) => (m.change ?? 0) > 0).length;
   const falling = movements.filter((m) => (m.change ?? 0) < 0).length;
   const withChange = movements.filter((m) => m.change != null).length;
 
   const stale = freshness.filter((f) => requiresFreshnessWarning(f.state));
-  const recent = freshness.filter((f) => f.state === 'recently_updated');
-  const latestVerified = freshness.filter((f) => f.state === 'latest_verified');
+  const usable = freshness.filter(
+    (f) => f.state === 'recently_updated' || f.state === 'latest_verified',
+  );
 
-  const largestRise = [...movements]
-    .filter((m) => m.change != null)
-    .sort((a, b) => (b.changePercent ?? 0) - (a.changePercent ?? 0))[0];
-  const largestFall = [...movements]
-    .filter((m) => m.change != null)
-    .sort((a, b) => (a.changePercent ?? 0) - (b.changePercent ?? 0))[0];
+  /**
+   * The watch rows. Every column the brief's market table system names is
+   * present — commodity, market, price, currency, unit, price type, grade,
+   * movement, last observed, verification — and a price is never rendered
+   * without its unit beside it.
+   */
+  const watchRows: MarketWatchRow[] = movements.map((row) => ({
+    id: String(row.commodityId),
+    commodityName: row.commodityName,
+    commoditySlug: row.commoditySlug,
+    marketName: row.marketName,
+    marketSlug: null,
+    amount: row.latestAmount,
+    currencyCode: row.currencyCode,
+    unitLabel: row.unitName,
+    priceTypeLabel: row.priceType.replace(/_/g, ' '),
+    gradeName: row.gradeName,
+    changePercent: row.changePercent,
+    observedAt: row.collectedAt,
+    verificationStatus: row.verificationStatus,
+    href: `/commodities/${row.commoditySlug}`,
+  }));
+
+  const movers: MoverRow[] = movements.map((row) => ({
+    id: String(row.commodityId),
+    commodityName: row.commodityName,
+    commoditySlug: row.commoditySlug,
+    amount: row.latestAmount,
+    currencyCode: row.currencyCode,
+    unitLabel: row.unitName,
+    changePercent: row.changePercent,
+    marketName: row.marketName,
+    observedAt: row.collectedAt,
+  }));
+
+  const publishedObservations = movements.reduce((sum, m) => sum + m.observationCount, 0);
 
   return (
-    <>
+    <PageContainer>
       <PageHeader
-        title="Trade Intelligence"
-        purpose="Latest verified agricultural commodity prices across Nigerian markets, how they are moving, and where the best prices were recorded."
-        breadcrumbs={[{ label: 'Trade Intelligence' }]}
+        title="Trade intelligence"
+        description="Latest verified agricultural commodity prices across Nigerian markets, how they are moving, and where the best prices were recorded."
         actions={
-          <Link
-            href="/trade/terminal"
-            className="inline-flex min-h-[40px] items-center rounded-lg bg-brand-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
-          >
-            Open terminal
-          </Link>
+          <>
+            <Link href="/trade/best-buy" className="terminal-action">
+              <IconScale className="size-3.5" />
+              Sourcing
+            </Link>
+            <Link href="/trade/best-sell" className="terminal-action">
+              <IconScale className="size-3.5" />
+              Procurement
+            </Link>
+            <Link href="/trade/terminal" className="terminal-action">
+              <IconTrade className="size-3.5" />
+              Terminal
+            </Link>
+          </>
         }
       />
 
-      {/* ------------------------------------------------- how current is it */}
       {!configured ? (
-        <EmptyState
-          title="No market data is connected"
-          description="Trade Intelligence reads published price observations from the Hatsi360 database. Without a configured database there are no prices to show, and none are invented."
+        <EmptyStatePanel
+          kind="no-market-data"
+          action={{ label: 'See collection coverage', href: '/coverage' }}
         />
       ) : (
         <>
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <Metric
-              label="Commodities"
-              value={String(commodities.length)}
-              period="in the catalogue"
-              href="/commodities"
-            />
-            <Metric
-              label="Markets"
-              value={String(markets.length)}
-              period="under coverage"
-              href="/markets"
-            />
-            <Metric
-              label="Published prices"
-              value={String(
-                movements.reduce((sum, m) => sum + m.observationCount, 0),
-              )}
-              period="across the commodities listed below"
-            />
-            <Metric
-              label="Rising"
-              value={String(rising)}
-              period={
-                withChange > 0
-                  ? `of ${withChange} with a comparable previous price`
-                  : 'no comparable previous price yet'
-              }
-            />
-            <Metric
-              label="Falling"
-              value={String(falling)}
-              period={
-                withChange > 0
-                  ? `of ${withChange} with a comparable previous price`
-                  : 'no comparable previous price yet'
-              }
-            />
-            <Metric
-              label="Current"
-              value={`${recent.length + latestVerified.length}`}
-              period="commodities with usable data"
-              note={
-                stale.length > 0
-                  ? `${stale.length} commodity${
-                      stale.length === 1 ? '' : 's'
-                    } past the freshness threshold`
-                  : undefined
-              }
-            />
-          </dl>
+          {/* ------------------------------------------------ what is covered */}
+          <section aria-label="Coverage">
+            <dl className="grid gap-2 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <MarketOverviewCard
+                label="Commodities"
+                value={String(commodities.length)}
+                detail="in the catalogue"
+                href="/commodities"
+              />
+              <MarketOverviewCard
+                label="Markets"
+                value={String(markets.length)}
+                detail="under coverage"
+                href="/markets"
+              />
+              <MarketOverviewCard
+                label="Published prices"
+                value={String(publishedObservations)}
+                detail="across the commodities listed below"
+              />
+              <MarketOverviewCard
+                label="Rising"
+                value={String(rising)}
+                detail={
+                  withChange > 0
+                    ? `of ${withChange} with a comparable previous price`
+                    : 'no comparable previous price yet'
+                }
+              />
+              <MarketOverviewCard
+                label="Falling"
+                value={String(falling)}
+                detail={
+                  withChange > 0
+                    ? `of ${withChange} with a comparable previous price`
+                    : 'no comparable previous price yet'
+                }
+              />
+              <MarketOverviewCard
+                label="Current"
+                value={String(usable.length)}
+                detail="commodities with usable data"
+                unavailableReason={
+                  stale.length > 0
+                    ? `${stale.length} commodity${stale.length === 1 ? '' : 's'} past the freshness threshold`
+                    : undefined
+                }
+              />
+            </dl>
+          </section>
 
-          {/* ---------------------------------------------------- highlights */}
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            <Panel
-              title="Largest verified movement"
-              description="Compared with the previous observation in the same price series."
-            >
-              {largestRise || largestFall ? (
-                <ul className="space-y-3">
-                  {[largestRise, largestFall]
-                    .filter(Boolean)
-                    .map((row, index) => (
-                      <li
-                        key={`${row!.commodityId}-${index}`}
-                        className="flex items-start justify-between gap-3 border-b border-ink-100 pb-3 last:border-0 last:pb-0"
-                      >
-                        <div className="min-w-0">
-                          <Link
-                            href={`/trade/terminal?commodity=${row!.commoditySlug}`}
-                            className="text-sm font-semibold text-ink-900 hover:text-brand-700 hover:underline"
-                          >
-                            {row!.commodityName}
-                          </Link>
-                          <p className="mt-0.5 text-xs text-ink-600">
-                            {row!.marketName ?? 'Market not recorded'} ·{' '}
-                            {row!.priceType.replace(/_/g, ' ')}
-                          </p>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <Price
-                            amount={row!.latestAmount}
-                            currencySymbol={currencySymbolFor(row!.currencyCode)}
-                          />
-                          <Change
-                            amount={row!.change}
-                            percent={row!.changePercent}
-                            currencySymbol={currencySymbolFor(row!.currencyCode)}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                </ul>
-              ) : (
-                <p className="text-xs leading-relaxed text-ink-600">
-                  No commodity has two comparable published observations yet, so
-                  no movement can be calculated. A change is only shown when both
-                  prices come from the same price type, grade, unit and currency.
-                </p>
-              )}
-            </Panel>
-
-            <Panel
-              title="Data freshness"
-              description="How current each commodity's newest published price is."
-            >
-              {freshness.length === 0 ? (
-                <p className="text-xs leading-relaxed text-ink-600">
-                  No published observation exists yet, so there is no freshness to
-                  report.
-                </p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {freshness.slice(0, 8).map((row) => (
-                    <li
-                      key={row.commodityId}
-                      className="flex items-center justify-between gap-3"
-                    >
-                      <Link
-                        href={`/trade/terminal?commodity=${row.commodityId}`}
-                        className="min-w-0 truncate text-xs font-medium text-ink-800 hover:text-brand-700 hover:underline"
-                      >
-                        {row.commodityName}
-                      </Link>
-                      <span className="flex shrink-0 items-center gap-2">
-                        <span className="text-[11px] tabular-nums text-ink-500">
-                          {row.collectedAt
-                            ? new Date(row.collectedAt).toLocaleDateString('en-NG')
-                            : '—'}
-                        </span>
-                        <Pill tone={PRICE_STATE_TONES[row.state]}>{row.label}</Pill>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <p className="mt-3 border-t border-ink-100 pt-2 text-[11px] leading-relaxed text-ink-500">
-                A price is <span className="font-semibold">latest verified</span>{' '}
-                when it has been checked but is no longer current — it is still
-                the best available answer. It is{' '}
-                <span className="font-semibold">stale</span> only when it is past
-                the point of being useful.
-              </p>
-            </Panel>
+          {/* ------------------------------------------------------ movers -- */}
+          <div className="grid gap-2 lg:grid-cols-2">
+            <MarketMovers
+              direction="gainers"
+              rows={movers}
+              emptyReason="No commodity has two comparable published observations, so no rise can be calculated. A change is only shown when both prices come from the same price type, grade, unit and currency."
+            />
+            <MarketMovers
+              direction="decliners"
+              rows={movers}
+              emptyReason="No commodity has two comparable published observations, so no fall can be calculated. A change is only shown when both prices come from the same price type, grade, unit and currency."
+            />
           </div>
 
-          {/* ------------------------------------------------ movement table */}
-          <div className="mt-6">
-            <Panel
+          {/* -------------------------------------------------- movers table -- */}
+          <section aria-label="Market movement">
+            <SectionHeader
               title="Market movement"
-              description="Each commodity's latest published observation against the previous one in the same price series."
-              actions={
-                <Link
-                  href="/trade/best-buy"
-                  className="text-xs font-semibold text-brand-700 hover:underline"
-                >
-                  Buying opportunities
-                </Link>
-              }
-            >
-              {movements.length === 0 ? (
-                <EmptyState
-                  title="No published prices yet"
-                  description="Movements are calculated from published observations. Once a commodity has two comparable published prices, its movement appears here."
-                  action={{ label: 'See how prices are verified', href: '/methodology' }}
+              count={movements.length}
+              action={{ href: '/trade/best-buy', label: 'Sourcing intelligence' }}
+            />
+            {movements.length === 0 ? (
+              <EmptyStatePanel
+                kind="no-market-data"
+                action={{
+                  label: 'How a price becomes a published price',
+                  href: '/methodology',
+                }}
+              />
+            ) : (
+              <>
+                <MarketWatchTable
+                  rows={watchRows}
+                  caption={`Each commodity's latest published observation against the previous one in the same price series, ${movements.length} commodities listed.`}
                 />
-              ) : (
-                <div className="-mx-4 overflow-x-auto px-4">
-                  <table className="w-full min-w-[720px] text-sm">
+                <p className="mt-2 text-[0.6875rem] leading-relaxed text-terminal-text-muted">
+                  A movement is calculated only where both observations share a series key —
+                  the same price type, grade, unit and currency. A change in price type is
+                  never shown as a change in price.
+                </p>
+              </>
+            )}
+          </section>
+
+          {/* --------------------------------------------------- freshness -- */}
+          <section aria-label="Data freshness">
+            <SectionHeader
+              title="Data freshness"
+              count={freshness.length}
+              action={{ href: '/methodology', label: 'How freshness is classified' }}
+            />
+            {freshness.length === 0 ? (
+              <EmptyStatePanel kind="no-observations" />
+            ) : (
+              <>
+                <div className="terminal-panel overflow-x-auto">
+                  <table className="terminal-table">
+                    <caption className="sr-only">
+                      How current each commodity&rsquo;s newest published observation is. The
+                      state is calculated from the collection time and the commodity&rsquo;s
+                      configured cadence.
+                    </caption>
                     <thead>
-                      <tr className="border-b border-ink-200 text-left text-[11px] uppercase tracking-wide text-ink-500">
-                        <th scope="col" className="py-2 pr-3 font-semibold">
-                          Commodity
-                        </th>
-                        <th scope="col" className="py-2 pr-3 text-right font-semibold">
-                          Latest
-                        </th>
-                        <th scope="col" className="py-2 pr-3 text-right font-semibold">
-                          Previous
-                        </th>
-                        <th scope="col" className="py-2 pr-3 text-right font-semibold">
-                          Change
-                        </th>
-                        <th scope="col" className="py-2 pr-3 font-semibold">
-                          Market
-                        </th>
-                        <th scope="col" className="py-2 pr-3 font-semibold">
-                          Price type
-                        </th>
-                        <th scope="col" className="py-2 text-right font-semibold">
-                          Recorded
-                        </th>
+                      <tr>
+                        <th scope="col">Commodity</th>
+                        <th scope="col">State</th>
+                        <th scope="col">Observations</th>
+                        <th scope="col">Collected</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {movements.map((row) => (
-                        <tr
-                          key={row.commodityId}
-                          className="border-b border-ink-100 last:border-0"
-                        >
-                          <td className="py-2 pr-3">
-                            <Link
-                              href={`/trade/terminal?commodity=${row.commoditySlug}`}
-                              className="font-medium text-ink-900 hover:text-brand-700 hover:underline"
-                            >
+                      {freshness.slice(0, 12).map((row) => {
+                        return (
+                          <tr key={row.commodityId}>
+                            <th scope="row" className="font-medium text-terminal-text">
                               {row.commodityName}
-                            </Link>
-                          </td>
-                          <td className="py-2 pr-3 text-right">
-                            <Price
-                              amount={row.latestAmount}
-                              currencySymbol={currencySymbolFor(row.currencyCode)}
-                            />
-                          </td>
-                          <td className="py-2 pr-3 text-right">
-                            <Price
-                              amount={row.previousAmount}
-                              currencySymbol={currencySymbolFor(row.currencyCode)}
-                            />
-                          </td>
-                          <td className="py-2 pr-3 text-right">
-                            <Change
-                              amount={row.change}
-                              percent={row.changePercent}
-                              currencySymbol={currencySymbolFor(row.currencyCode)}
-                            />
-                          </td>
-                          <td className="py-2 pr-3 text-xs text-ink-700">
-                            {row.marketName ?? '—'}
-                          </td>
-                          <td className="py-2 pr-3 text-xs text-ink-600">
-                            {row.priceType.replace(/_/g, ' ')}
-                          </td>
-                          <td className="py-2 text-right text-[11px] tabular-nums text-ink-500">
-                            {new Date(row.collectedAt).toLocaleDateString('en-NG')}
-                          </td>
-                        </tr>
-                      ))}
+                            </th>
+                            <td>
+                              <span
+                                className={`inline-flex items-center rounded-pill border px-2 py-0.5 text-[0.6875rem] font-semibold ${PRICE_STATE_TONES[row.state]}`}
+                              >
+                                {row.label}
+                              </span>
+                            </td>
+                            <td className="num text-terminal-text-secondary">
+                              {row.observationCount}
+                            </td>
+                            <td className="num text-terminal-text-secondary">
+                              {row.collectedAt
+                                ? new Date(row.collectedAt).toLocaleDateString('en-NG')
+                                : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-              )}
-            </Panel>
-          </div>
+                <p className="mt-2 text-[0.6875rem] leading-relaxed text-terminal-text-muted">
+                  A price is <span className="font-semibold">latest verified</span> when it
+                  has been checked but is no longer current — it is still the best available
+                  answer. It is <span className="font-semibold">stale</span> only when it is
+                  past the point of being useful. Freshness describes when the data was
+                  collected, never when this page loaded.
+                </p>
+              </>
+            )}
+          </section>
+
+          <p className="text-[0.6875rem] leading-relaxed text-terminal-text-muted">
+            Every figure on this page is read from published observations and recomputed on
+            each request. Nothing here is cached, estimated or carried over from a previous
+            period.{' '}
+            <Link
+              href="/methodology"
+              className="inline-flex items-center gap-1 font-semibold text-harvest-300 underline decoration-terminal-border underline-offset-2"
+            >
+              How a price becomes a published price
+              <IconArrowRight className="size-3" aria-hidden="true" />
+            </Link>
+          </p>
         </>
       )}
-    </>
+    </PageContainer>
   );
 }
 
-/** The symbol for a currency code. Only NGN is used today. */
-function currencySymbolFor(code: string): string {
-  return code === 'NGN' ? '₦' : `${code} `;
+/** Trade intelligence while its data loads. */
+export function TradeLoading() {
+  return (
+    <PageContainer>
+      <PageHeader
+        title="Trade intelligence"
+        description="Reading the published observations, the movements and the freshness of each commodity."
+      />
+      <MarketTableSkeleton rows={8} />
+    </PageContainer>
+  );
 }

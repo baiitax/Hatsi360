@@ -174,7 +174,8 @@ export type EmptyStateKind =
   | 'no-watchlist'
   | 'no-alerts'
   | 'no-coverage'
-  | 'no-observations';
+  | 'no-observations'
+  | 'no-fundamentals';
 
 /**
  * The copy for every empty state the terminal can be in.
@@ -233,6 +234,12 @@ const EMPTY_STATE_COPY: Record<
     body:
       'Coverage describes which markets report which commodities, and on what schedule. The platform has not configured any yet, so it cannot claim a coverage area.',
     action: { href: '/coverage', label: 'Read the coverage report' },
+  },
+  'no-fundamentals': {
+    title: 'No field intelligence recorded yet',
+    body:
+      'Hatsi360 agents record availability, supply, demand and a written note alongside every price they collect. None has been recorded yet, so there is nothing to report — and none is estimated. The page will fill as collection agents file reports.',
+    action: { href: '/coverage', label: 'See collection coverage' },
   },
   'no-observations': {
     title: 'No observations recorded',
