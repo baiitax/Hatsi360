@@ -6,6 +6,7 @@ import { getDataSource } from '@/lib/data';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/server';
 import { EmptyState, PageHeader, Panel, Pill, Price } from '@/components/trade/Primitives';
+import { getEntitlements, hasEntitlement } from '@/lib/entitlements';
 
 export const metadata = buildShareMetadata({
   title: 'Price alerts',
@@ -64,6 +65,10 @@ export default async function TradeAlertsPage() {
     );
   }
 
+  // Check alerts entitlement
+  const entitlements = await getEntitlements();
+  const hasAlertsEntitlement = hasEntitlement(entitlements, 'alerts');
+
   const supabase = await createClient();
 
   const [alertsResult, commodities, markets] = await Promise.all([
@@ -89,6 +94,25 @@ export default async function TradeAlertsPage() {
         purpose="Thresholds that notify you when a published price crosses a level you care about."
         breadcrumbs={[{ label: 'Trade Intelligence', href: '/trade' }, { label: 'Alerts' }]}
       />
+
+      {!hasAlertsEntitlement && (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-amber-900">
+                Alerts are paused
+              </h3>
+              <p className="mt-1 text-sm text-amber-800">
+                Your subscription doesn&apos;t include price alerts. Your existing alerts are preserved but won&apos;t trigger notifications.{' '}
+                <Link href="/pricing" className="font-medium text-amber-900 underline hover:text-amber-950">
+                  Upgrade your plan
+                </Link>{' '}
+                to create new alerts and reactivate existing ones.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
