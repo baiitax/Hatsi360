@@ -504,6 +504,158 @@ export function IconPlus(props: IconProps) {
   );
 }
 
+/* ------------------------------------------------------------------ homepage -- */
+
+export function IconLeaf(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20c4 0 8.68-3.32 9-12Z" />
+      <path d="M17 8c-3 0-5.5 1.5-7 4" />
+    </IconShape>
+  );
+}
+
+export function IconShieldCheck(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M12 3L4 7v5c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V7Z" />
+      <path d="M9.5 12.5 11.5 14.5 15 10" />
+    </IconShape>
+  );
+}
+
+export function IconTrendingUp(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M3 17l6-6 4 4 8-8" />
+      <path d="M14 7h7v7" />
+    </IconShape>
+  );
+}
+
+export function IconTrendingDown(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M3 7l6 6 4-4 8 8" />
+      <path d="M14 17h7v-7" />
+    </IconShape>
+  );
+}
+
+export function IconActivity(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </IconShape>
+  );
+}
+
+export function IconZap(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8Z" />
+    </IconShape>
+  );
+}
+
+export function IconUsers(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </IconShape>
+  );
+}
+
+export function IconDatabase(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <ellipse cx="12" cy="5" rx="8" ry="3" />
+      <path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5" />
+      <path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3" />
+    </IconShape>
+  );
+}
+
+export function IconTarget(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1.5" />
+    </IconShape>
+  );
+}
+
+export function IconBriefcase(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+      <path d="M12 12v3" />
+      <path d="M3 12h18" />
+    </IconShape>
+  );
+}
+
+export function IconBookOpen(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M2 4h8a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H2Z" />
+      <path d="M22 4h-8a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h8Z" />
+    </IconShape>
+  );
+}
+
+export function IconBarChart(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M4 20V10" />
+      <path d="M9 20V4" />
+      <path d="M14 20v-6" />
+      <path d="M19 20V8" />
+    </IconShape>
+  );
+}
+
+export function IconPieChart(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+      <path d="M22 12A10 10 0 0 0 12 2v10Z" />
+    </IconShape>
+  );
+}
+
+export function IconAward(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <circle cx="12" cy="8" r="5" />
+      <path d="M9 13l-3 9 6-3 6 3-3-9" />
+    </IconShape>
+  );
+}
+
+export function IconSend(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M22 2 11 13" />
+      <path d="M22 2 15 22l-4-9-9-4Z" />
+    </IconShape>
+  );
+}
+
+export function IconCode(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M16 18l6-6-6-6" />
+      <path d="M8 6l-6 6 6 6" />
+    </IconShape>
+  );
+}
+
 /**
  * The registry, so a component can be handed an icon by name rather than by
  * import. Used by the terminal's navigation model, which carries an icon key
@@ -558,6 +710,22 @@ export const ICONS = {
   book: IconBook,
   check: IconCheck,
   plus: IconPlus,
+  leaf: IconLeaf,
+  shieldCheck: IconShieldCheck,
+  trendingUp: IconTrendingUp,
+  trendingDown: IconTrendingDown,
+  activity: IconActivity,
+  zap: IconZap,
+  users: IconUsers,
+  database: IconDatabase,
+  target: IconTarget,
+  briefcase: IconBriefcase,
+  bookOpen: IconBookOpen,
+  barChart: IconBarChart,
+  pieChart: IconPieChart,
+  award: IconAward,
+  send: IconSend,
+  code: IconCode,
 } as const;
 
 /** The name of an icon in the registry. */

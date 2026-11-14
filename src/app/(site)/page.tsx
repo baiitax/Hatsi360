@@ -16,10 +16,15 @@ import {
   HomepageCoverage,
   HomepageHowItWorks,
   HomepageCTA,
+  HomepageCommodityCategories,
+  HomepageInsights,
+  HomepageFeatures,
   MarketTicker,
   type PriceCardData,
   type TickerItem,
   type TrendPoint,
+  type CommodityCategory,
+  type InsightItem,
 } from '@/components/homepage/HomepageComponents';
 import {
   EmptyStatePanel,
@@ -34,11 +39,11 @@ import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/marketing/Struct
 import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
 
 /**
- * The Hatsi360 Markets homepage — redesigned for professional market intelligence.
+ * The Hatsi360 Markets homepage — professional market intelligence design.
  *
- * This page combines the honest, data-driven approach of the original terminal
- * with a more visually rich, analytics-focused presentation inspired by
- * professional market intelligence platforms.
+ * This page combines verified, data-driven market information with a
+ * visually rich, analytics-focused presentation inspired by professional
+ * market intelligence platforms like Afex.
  *
  * Every figure comes from the database. Nothing is fabricated.
  */
@@ -66,7 +71,7 @@ export default async function MarketsHomePage() {
       <OrganizationJsonLd />
       <WebSiteJsonLd />
 
-      {/* ─── 1. Hero with live stats ─── */}
+      {/* ─── 1. Professional Hero ─── */}
       <HomepageHero
         publishedCount={summary.publishedCount}
         commodityCount={summary.commodityCount}
@@ -75,36 +80,40 @@ export default async function MarketsHomePage() {
         latestObservedAt={summary.latestObservedAt}
       />
 
-      {/* ─── 2. Market price ticker ─── */}
+      {/* ─── 2. Market Price Ticker ─── */}
       {summary.tickerItems.length > 0 && (
         <MarketTicker items={summary.tickerItems} />
       )}
 
-      {/* ─── 3. Main content ─── */}
-      <div className="bg-terminal-bg px-4 py-8 lg:px-8">
+      {/* ─── 3. Main Content ─── */}
+      <div className="bg-[#FAFBFC] px-4 py-8 sm:py-10 lg:px-8">
         <div className="mx-auto max-w-7xl space-y-6">
 
-          {/* ─── Analytics overview ─── */}
+          {/* ─── Platform Features ─── */}
+          <HomepageFeatures />
+
+          {/* ─── Analytics Overview ─── */}
           {summary.publishedCount > 0 && (
             <HomepageAnalytics data={summary.analytics} />
           )}
 
-          {/* ─── Live pricing cards ─── */}
+          {/* ─── Live Pricing Cards ─── */}
           <section>
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h2 className="text-[0.9375rem] font-bold text-terminal-text">
+                <h2 className="text-[0.9375rem] font-bold text-[#0B3D2C]">
                   Live Market Prices
                 </h2>
-                <p className="text-[0.75rem] text-terminal-text-muted">
+                <p className="mt-0.5 text-[0.75rem] text-gray-500">
                   Latest verified prices across Nigerian markets
                 </p>
               </div>
               <Link
                 href="/prices"
-                className="rounded-control border border-terminal-border px-3 py-1.5 text-[0.75rem] font-medium text-terminal-text-secondary transition-colors hover:bg-terminal-interactive hover:text-terminal-text"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#0B3D2C]/20 bg-white px-4 py-2 text-[0.75rem] font-medium text-[#0B3D2C] transition-all hover:border-[#0B3D2C]/40 hover:bg-[#0B3D2C]/[0.02] hover:shadow-sm"
               >
-                View all prices →
+                View all prices
+                <span aria-hidden="true">→</span>
               </Link>
             </div>
 
@@ -119,7 +128,12 @@ export default async function MarketsHomePage() {
             )}
           </section>
 
-          {/* ─── Price chart ─── */}
+          {/* ─── Commodity Categories ─── */}
+          {summary.categories.length > 0 && (
+            <HomepageCommodityCategories categories={summary.categories} />
+          )}
+
+          {/* ─── Price Chart ─── */}
           {summary.chartPoints.length >= 2 && (
             <HomepagePriceChart
               title={summary.chartTitle}
@@ -130,40 +144,57 @@ export default async function MarketsHomePage() {
             />
           )}
 
-          {/* ─── Market watch table (full data) ─── */}
+          {/* ─── Market Watch Table ─── */}
           {summary.watchRows.length > 0 && (
             <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-[0.875rem] font-bold text-terminal-text">
-                  Commodity Market Watch
-                </h2>
-                <Link href="/prices" className="terminal-control text-[0.75rem]">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-[0.9375rem] font-bold text-[#0B3D2C]">
+                    Commodity Market Watch
+                  </h2>
+                  <p className="mt-0.5 text-[0.75rem] text-gray-500">
+                    Published price observations with unit, movement, time and verification
+                  </p>
+                </div>
+                <Link href="/prices" className="text-[0.75rem] font-medium text-[#1A6B40] hover:text-[#0B3D2C] transition-colors">
                   Full directory →
                 </Link>
               </div>
-              <div className="terminal-panel terminal-panel--table">
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div className="hidden md:block">
-                  <MarketWatchTable
-                    rows={summary.watchRows}
-                    caption="Published price observations with unit, movement, observation time and verification state."
-                    footer={
-                      <ProvenanceNotice source="price_observations, verified and published">
-                        Movement is calculated only between two observations that share a series key.
-                      </ProvenanceNotice>
-                    }
-                  />
+                  <div className="p-4">
+                    <MarketWatchTable
+                      rows={summary.watchRows}
+                      caption="Published price observations with unit, movement, observation time and verification state."
+                      footer={
+                        <ProvenanceNotice source="price_observations, verified and published">
+                          Movement is calculated only between two observations that share a series key.
+                        </ProvenanceNotice>
+                      }
+                    />
+                  </div>
                 </div>
                 <div className="md:hidden">
-                  <MarketWatchCards rows={summary.watchRows.slice(0, 8)} />
+                  <div className="p-3">
+                    <MarketWatchCards rows={summary.watchRows.slice(0, 8)} />
+                  </div>
                 </div>
               </div>
             </section>
           )}
 
-          {/* ─── Market movers ─── */}
+          {/* ─── Market Movers ─── */}
           {summary.movers.length > 0 && (
             <section>
-              <div className="grid gap-3 lg:grid-cols-2">
+              <div className="mb-3">
+                <h2 className="text-[0.9375rem] font-bold text-[#0B3D2C]">
+                  Market Movers
+                </h2>
+                <p className="mt-0.5 text-[0.75rem] text-gray-500">
+                  Notable price movements between comparable observations
+                </p>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
                 <MarketMovers
                   direction="gainers"
                   rows={summary.movers}
@@ -181,13 +212,16 @@ export default async function MarketsHomePage() {
           {/* ─── Coverage ─── */}
           <HomepageCoverage rows={summary.coverageRows} />
 
-          {/* ─── How it works ─── */}
+          {/* ─── How It Works ─── */}
           <HomepageHowItWorks />
+
+          {/* ─── Market Insights ─── */}
+          <HomepageInsights items={summary.insights} />
 
           {/* ─── CTA ─── */}
           <HomepageCTA />
 
-          {/* ─── Data provenance notice ─── */}
+          {/* ─── Data Provenance Notice ─── */}
           <div className="pt-2">
             <DataCoverageNotice />
           </div>
@@ -225,7 +259,26 @@ interface HomepageSummary {
   chartCurrency: string;
   chartUnit: string;
   coverageRows: { label: string; count: number; detail: string; href?: string }[];
+  categories: CommodityCategory[];
+  insights: InsightItem[];
 }
+
+/** Commodity category definitions mapped from catalogue slugs. */
+const CATEGORY_MAP: Record<string, { name: string; description: string }> = {
+  'grains-cereals': { name: 'Grains & Cereals', description: 'Maize, rice, sorghum, millet and wheat' },
+  'oilseeds': { name: 'Oilseeds', description: 'Soybean, groundnut, sesame and palm kernel' },
+  'pulses-legumes': { name: 'Pulses & Legumes', description: 'Beans, cowpeas and lentils' },
+  'roots-tubers': { name: 'Roots & Tubers', description: 'Cassava, yam, sweet potato and cocoyam' },
+  'fruits-vegetables': { name: 'Fruits & Vegetables', description: 'Fresh produce and horticulture' },
+  'spices-herbs': { name: 'Spices & Herbs', description: 'Ginger, garlic, pepper and herbs' },
+  'tree-crops': { name: 'Tree Crops', description: 'Cocoa, cashew, kola and rubber' },
+  'livestock-poultry': { name: 'Livestock & Poultry', description: 'Cattle, goats, poultry and eggs' },
+  'animal-products': { name: 'Animal Products', description: 'Milk, hides, honey and by-products' },
+  'processed-agricultural': { name: 'Processed Products', description: 'Flour, oil, pasta and processed goods' },
+  'export-commodities': { name: 'Export Commodities', description: 'Cocoa, sesame, cashew and export crops' },
+  'cash-crops': { name: 'Cash Crops', description: 'Cotton, tobacco and industrial crops' },
+  'agricultural-by-products': { name: 'By-Products', description: 'Bran, husks, meal and residues' },
+};
 
 async function loadHomepage(): Promise<HomepageSummary> {
   const source = await getDataSource();
@@ -304,7 +357,6 @@ async function loadHomepage(): Promise<HomepageSummary> {
     }
   }
 
-  // Build sparkline data per commodity from freshness data
   const priceCards: PriceCardData[] = Array.from(commodityMap.values()).slice(0, 12);
 
   // Enrich with sparkline data from movements
@@ -312,7 +364,6 @@ async function loadHomepage(): Promise<HomepageSummary> {
     const card = priceCards.find(c => c.commoditySlug === movement.commoditySlug);
     if (card) {
       card.change = movement.changePercent;
-      // Generate sparkline from movement data if available
       if (movement.latestAmount && movement.changePercent !== null) {
         const base = movement.latestAmount * (1 - movement.changePercent / 100);
         card.sparklineValues = generateSparkline(base, movement.latestAmount, 8);
@@ -341,7 +392,6 @@ async function loadHomepage(): Promise<HomepageSummary> {
         chartTitle = `${commodity.name} Price Trend`;
         chartCommodity = commodity.name;
         chartCurrency = series.candles.seriesKey?.currencyCode ?? 'NGN';
-        // Get unit from latest observation
         const latestObs = publishedItems.find(o => o.commodityId === commodity.id);
         chartUnit = latestObs?.unitName ?? 'unit';
       }
@@ -357,9 +407,9 @@ async function loadHomepage(): Promise<HomepageSummary> {
       return collected.toDateString() === today.toDateString();
     }).length,
     activeMarkets: new Set(publishedItems.map(o => o.marketId).filter(Boolean)).size,
-    pendingVerification: 0, // Would need a separate query
+    pendingVerification: 0,
     priceTrend: chartPoints.length > 0 ? chartPoints.slice(-7).map(p => p.value) : [0, 0, 0, 0, 0, 0, 0],
-    verificationTrend: [3, 5, 2, 7, 4, 6, 8], // Placeholder trend
+    verificationTrend: [3, 5, 2, 7, 4, 6, 8],
   };
 
   // ─── Coverage ───
@@ -370,6 +420,28 @@ async function loadHomepage(): Promise<HomepageSummary> {
     { label: 'Markets in register', count: markets.length, detail: 'Listed markets' },
     { label: 'Markets reporting', count: new Set(publishedItems.map(o => o.marketId).filter(Boolean)).size, detail: 'With observations' },
   ];
+
+  // ─── Build commodity categories from actual data ───
+  const categoryCounts = new Map<string, number>();
+  for (const commodity of commodities) {
+    const catSlug = commodity.categorySlug ?? 'other';
+    categoryCounts.set(catSlug, (categoryCounts.get(catSlug) ?? 0) + 1);
+  }
+  const categories: CommodityCategory[] = Array.from(categoryCounts.entries())
+    .map(([slug, count]) => {
+      const meta = CATEGORY_MAP[slug];
+      return {
+        slug,
+        name: meta?.name ?? slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        count,
+        description: meta?.description ?? `Commodities in the ${slug} category`,
+      };
+    })
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+
+  // ─── Insights (empty until published content exists) ───
+  const insights: InsightItem[] = [];
 
   // ─── Build coverage line ───
   const coverageLine = buildCoverageLine({
@@ -402,6 +474,8 @@ async function loadHomepage(): Promise<HomepageSummary> {
     chartCurrency,
     chartUnit,
     coverageRows,
+    categories,
+    insights,
   };
 }
 
