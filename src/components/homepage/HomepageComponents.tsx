@@ -174,8 +174,13 @@ export function HomepageHero({
               </div>
 
               <h1 className="font-display text-3xl font-extrabold tracking-tight text-[#0B3D2C] sm:text-4xl lg:text-5xl">
-                African Agricultural
-                <span className="block text-[#E5A020]">Market Intelligence</span>
+                <div className="flex items-baseline">
+                  <span className="text-[#0B3D2C]">HATSI</span>
+                  <span className="text-[#E5A020]">360</span>
+                </div>
+                <span className="block text-[1.5rem] font-bold text-[#0B3D2C]/80 sm:text-[1.75rem] lg:text-[2rem]">
+                  African Agricultural Market Intelligence
+                </span>
               </h1>
 
               <p className="mt-4 max-w-lg text-[0.9375rem] leading-relaxed text-gray-600">

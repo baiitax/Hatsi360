@@ -53,6 +53,9 @@ export function SiteFooter() {
             the markets of {BRAND.operatingMarket}. Every published figure carries the market,
             the unit, the collection time and the verification behind it.
           </p>
+          <p className="mt-3 text-xs font-semibold uppercase tracking-widest text-[#0B3D2C]/50">
+            Powered by Pluck Agro
+          </p>
           <div className="mt-5 flex flex-col gap-2 text-sm text-ink-600">
             <a href={CONTACT.phoneHref} className="hover:text-brand-700">
               {CONTACT.phone}

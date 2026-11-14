@@ -103,16 +103,21 @@ export function Navbar({
               <img
                 src="/brand/hatsi360-mark.png"
                 alt="Hatsi360"
-                width={36}
-                height={36}
+                width={40}
+                height={40}
                 className="rounded-lg"
               />
               <div className="flex flex-col">
-                <span className="font-display text-[1.0625rem] font-extrabold leading-none tracking-tight text-[#0B3D2C]">
-                  Hatsi360
-                </span>
-                <span className="text-[0.5625rem] font-medium uppercase tracking-widest text-gray-500">
-                  Market Intelligence
+                <div className="flex items-baseline leading-none">
+                  <span className="font-display text-[1.125rem] font-extrabold tracking-tight text-[#0B3D2C]">
+                    HATSI
+                  </span>
+                  <span className="font-display text-[1.125rem] font-extrabold tracking-tight text-[#E5A020]">
+                    360
+                  </span>
+                </div>
+                <span className="text-[0.5rem] font-semibold uppercase tracking-widest text-[#0B3D2C]/60">
+                  Agricultural Market Intelligence
                 </span>
               </div>
             </Link>
@@ -183,12 +188,12 @@ export function Navbar({
               {/* Search - Desktop */}
               <button
                 type="button"
-                aria-label="Search commodities"
+                aria-label="Search commodities and markets"
                 className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[0.8125rem] text-gray-500 transition-colors hover:border-[#0B3D2C]/30 hover:bg-white lg:flex"
                 onClick={() => window.location.href = '/prices'}
               >
                 <IconSearch className="size-3.5" />
-                <span className="text-gray-400">Search markets...</span>
+                <span className="text-gray-400">Search commodities & markets...</span>
                 <span className="ml-2 rounded bg-gray-200 px-1.5 py-0.5 text-[0.625rem] font-medium text-gray-500">
                   ⌘K
                 </span>
@@ -283,9 +288,19 @@ export function Navbar({
                   height={32}
                   className="rounded-lg"
                 />
-                <span className="font-display text-[0.9375rem] font-extrabold text-[#0B3D2C]">
-                  Hatsi360
-                </span>
+                <div className="flex flex-col">
+                  <div className="flex items-baseline leading-none">
+                    <span className="font-display text-[0.9375rem] font-extrabold tracking-tight text-[#0B3D2C]">
+                      HATSI
+                    </span>
+                    <span className="font-display text-[0.9375rem] font-extrabold tracking-tight text-[#E5A020]">
+                      360
+                    </span>
+                  </div>
+                  <span className="text-[0.4375rem] font-semibold uppercase tracking-widest text-[#0B3D2C]/60">
+                    Agricultural Market Intelligence
+                  </span>
+                </div>
               </div>
               <button
                 type="button"
@@ -341,7 +356,7 @@ export function Navbar({
                   Sign In
                 </Link>
               )}
-              <p className="mt-3 text-center text-[0.625rem] uppercase tracking-wider text-gray-400">
+              <p className="mt-3 text-center text-[0.5625rem] font-semibold uppercase tracking-widest text-[#0B3D2C]/40">
                 Powered by Pluck Agro
               </p>
             </div>

@@ -168,9 +168,12 @@ export function HatsiGlobalPreloader() {
             </svg>
           </div>
 
-          <p className="hatsi-boot__title">{BRAND.name}</p>
+          <div className="flex items-baseline justify-center gap-0">
+            <span className="font-display text-2xl font-extrabold tracking-tight text-[#0B3D2C]">HATSI</span>
+            <span className="font-display text-2xl font-extrabold tracking-tight text-[#E5A020]">360</span>
+          </div>
           <p className="hatsi-boot__message" data-boot-message>
-            Connecting to agricultural intelligence&hellip;
+            Agricultural Market Intelligence
           </p>
           <div className="hatsi-boot__bar" aria-hidden="true">
             <span className="hatsi-boot__bar-fill" />
