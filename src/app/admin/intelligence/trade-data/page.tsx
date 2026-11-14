@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui';
 import { getTradeDataStats } from '@/lib/trade/flows';
@@ -19,6 +20,19 @@ export default async function TradeDataAdminPage() {
         title="Trade Data"
         lede="International trade records, data sources, and sync status"
       />
+
+      {/* Quick Link to Trade Intelligence */}
+      <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+        <Link
+          href="/admin/intelligence/trade-intelligence"
+          className="text-sm font-medium text-blue-700 hover:text-blue-900"
+        >
+          📊 View Global Trade Intelligence Dashboard →
+        </Link>
+        <p className="mt-1 text-xs text-blue-600">
+          Interactive analytics, partner profiles, and commodity breakdowns
+        </p>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
