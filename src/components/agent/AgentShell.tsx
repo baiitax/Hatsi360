@@ -6,6 +6,13 @@ import { BRAND } from '@/lib/brand';
 import { NotificationCenter } from '@/components/site/navigation';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import {
+  IconHome,
+  IconCheck,
+  IconPlus,
+  IconList,
+  IconUser,
+} from '@/components/ui/icons';
 
 /**
  * Hatsi360 — the market agent shell.
@@ -14,12 +21,14 @@ import { useEffect, useState, type ReactNode } from 'react';
  * touch targets, a bottom navigation bar that stays within thumb reach, and
  * as little typing as the work allows. The agent app is used on a phone, in
  * the sun, on a weak network.
+ *
+ * Phase B: Replaced emoji icons with proper SVG icons, enhanced brand identity.
  */
 
 export interface AgentNavItem {
   href: string;
   label: string;
-  icon: string;
+  icon: string; // Kept for backwards compatibility, but now uses SVG mapping
 }
 
 export interface AgentShellProps {
@@ -29,6 +38,18 @@ export interface AgentShellProps {
   /** Tasks that are due today. The label says so, rather than implying a sync. */
   dueCount: number;
   children: ReactNode;
+}
+
+/** Map emoji icons to proper SVG components for professional appearance */
+function getIconComponent(emoji: string) {
+  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    '⌂': IconHome,
+    '☑': IconCheck,
+    '＋': IconPlus,
+    '≡': IconList,
+    '☺': IconUser,
+  };
+  return iconMap[emoji] || IconHome;
 }
 
 export function AgentShell({
@@ -57,28 +78,37 @@ export function AgentShell({
 
   return (
     <div className="flex min-h-screen flex-col bg-ink-50">
-      <header className="sticky top-0 z-20 border-b border-ink-200 bg-white">
-        <div className="flex items-center gap-3 px-4 py-3">
+      {/* Enhanced header with better brand presentation */}
+      <header className="sticky top-0 z-20 border-b border-ink-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3">
           <Link
             href="/agent/home"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2.5"
             aria-label={`${BRAND.name} ${BRAND.surfaces.fieldApp}`}
           >
-            <BrandMark size={36} />
-            <span className="text-sm font-bold leading-tight text-brand-900">
-              {BRAND.name}
-              <span className="block text-[11px] font-medium uppercase tracking-wide text-brand-600">
-                Field
+            <BrandMark size={40} tone="light" />
+            <div className="flex flex-col">
+              <span className="text-sm font-bold leading-tight text-brand-900">
+                {BRAND.name}
               </span>
-            </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">
+                Field Operations
+              </span>
+            </div>
           </Link>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {!online ? (
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-900">
+              <span className="inline-flex items-center gap-1 rounded-full border border-warning-200 bg-warning-50 px-2.5 py-1 text-[11px] font-semibold text-warning-700">
+                <span className="size-1.5 rounded-full bg-warning-500" />
                 Offline
               </span>
-            ) : null}
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
+                <span className="size-1.5 rounded-full bg-brand-500" />
+                Online
+              </span>
+            )}
             <NotificationCenter
               href="/agent/notifications"
               unreadCount={unreadCount}
@@ -87,45 +117,53 @@ export function AgentShell({
             />
           </div>
         </div>
+
+        {/* Due today indicator */}
+        {dueCount > 0 && (
+          <div className="border-t border-warning-100 bg-warning-50/50 px-4 py-1.5">
+            <p className="text-center text-[11px] font-semibold text-warning-700">
+              {dueCount} task{dueCount === 1 ? '' : 's'} due today
+            </p>
+          </div>
+        )}
       </header>
 
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-4">{children}</main>
+      {/* Main content with better spacing */}
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-28 pt-5">{children}</main>
 
+      {/* Enhanced bottom navigation with SVG icons */}
       <nav
         aria-label="Agent sections"
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-ink-200 bg-white/98 backdrop-blur"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-ink-200 bg-white/98 backdrop-blur-md"
       >
         <ul className="mx-auto grid max-w-lg grid-cols-5">
           {items.map((item) => {
             const active = isActive(item.href);
+            const IconComponent = getIconComponent(item.icon);
+
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex flex-col items-center gap-0.5 px-2 py-2.5 text-[11px] font-semibold ${
-                    active ? 'text-brand-700' : 'text-ink-500'
+                  className={`flex flex-col items-center gap-1 px-2 py-3 transition-colors ${
+                    active
+                      ? 'text-brand-700'
+                      : 'text-ink-500 hover:text-ink-700'
                   }`}
                 >
-                  <span aria-hidden="true" className="text-lg leading-none">
-                    {item.icon}
+                  <IconComponent
+                    className={`h-5 w-5 ${active ? 'text-brand-700' : 'text-ink-500'}`}
+                  />
+                  <span className={`text-[10px] font-semibold ${active ? 'text-brand-700' : 'text-ink-500'}`}>
+                    {item.label}
                   </span>
-                  {item.label}
                 </Link>
               </li>
             );
           })}
         </ul>
       </nav>
-
-      <footer className="mx-auto w-full max-w-lg px-4 pb-6 text-center text-[11px] text-ink-400">
-        Signed in as {userName}
-        {dueCount > 0 ? (
-          <span className="ml-1 font-semibold text-amber-700">
-            · {dueCount} task(s) due today
-          </span>
-        ) : null}
-      </footer>
     </div>
   );
 }

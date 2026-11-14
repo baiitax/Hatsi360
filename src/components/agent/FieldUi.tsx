@@ -53,11 +53,13 @@ export function FieldStat({
   label,
   tone = 'default',
   href,
+  icon,
 }: {
   value: number | string;
   label: string;
   tone?: 'default' | 'warning' | 'good';
   href?: string;
+  icon?: string;
 }) {
   const toneClass =
     tone === 'warning'
@@ -68,6 +70,7 @@ export function FieldStat({
 
   const body = (
     <>
+      {icon && <p className="mb-1 text-base leading-none">{icon}</p>}
       <p className={`text-2xl font-bold tabular-nums ${toneClass}`}>{value}</p>
       <p className="mt-0.5 text-[11px] font-medium leading-tight text-ink-500">{label}</p>
     </>
@@ -77,7 +80,7 @@ export function FieldStat({
     return (
       <Link
         href={href}
-        className="block rounded-xl border border-ink-200 bg-white px-3 py-3 text-center transition-colors hover:border-brand-300"
+        className="block rounded-xl border border-ink-200 bg-white px-3 py-3 text-center transition-all hover:border-brand-300 hover:shadow-md"
       >
         {body}
       </Link>
