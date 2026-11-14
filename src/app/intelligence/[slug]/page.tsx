@@ -44,7 +44,7 @@ export default async function CommodityIntelligencePage({ params }: Props) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container-page py-8">
       <IntelligencePage slug={params.slug} />
     </div>
   );

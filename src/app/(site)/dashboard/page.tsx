@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PageHero } from '@/components/ui/PageHero';
 import { getProfile, getSession, isStaffRole } from '@/lib/auth';
 import { getEntitlements, hasEntitlement } from '@/lib/entitlements';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
@@ -21,12 +20,20 @@ export default async function DashboardPage() {
   if (!session || !profile) {
     return (
       <>
-        <PageHero
-          eyebrow="Workspace"
-          title="Sign in to your Hatsi360 workspace"
-          lede="Save the commodities and markets you follow, set price alerts, and manage your API keys."
-          breadcrumbs={[{ label: 'Dashboard' }]}
-        />
+        {/* Terminal-native header — no editorial hero in the dark shell */}
+        <div className="terminal-rail border-b border-terminal-border px-3 py-4 lg:px-4">
+          <div className="container-page">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-terminal-muted">
+              Workspace
+            </p>
+            <h1 className="mt-1 font-display text-xl font-bold tracking-tight text-terminal-text">
+              Sign in to your workspace
+            </h1>
+            <p className="mt-1 max-w-2xl text-[0.8125rem] text-terminal-muted">
+              Save the commodities and markets you follow, set price alerts, and manage your API keys.
+            </p>
+          </div>
+        </div>
         <div className="section">
           <div className="container-page max-w-md">
             <div className="card p-6 sm:p-8">
@@ -135,12 +142,20 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <PageHero
-        eyebrow="Workspace"
-        title={`Welcome back, ${profile.fullName ?? profile.email}`}
-        lede="Your watchlists, alerts, reports and API keys — plus the public price tools, which stay free."
-        breadcrumbs={[{ label: 'Dashboard' }]}
-      />
+      {/* Terminal-native header — no editorial hero in the dark shell */}
+      <div className="terminal-rail border-b border-terminal-border px-3 py-4 lg:px-4">
+        <div className="container-page">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-terminal-muted">
+            Workspace
+          </p>
+          <h1 className="mt-1 font-display text-xl font-bold tracking-tight text-terminal-text">
+            Welcome back, {profile.fullName ?? profile.email}
+          </h1>
+          <p className="mt-1 max-w-2xl text-[0.8125rem] text-terminal-muted">
+            Your watchlists, alerts, reports and API keys — plus the public price tools, which stay free.
+          </p>
+        </div>
+      </div>
 
       <div className="section">
         <div className="container-page space-y-8">
