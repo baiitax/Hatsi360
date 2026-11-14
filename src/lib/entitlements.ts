@@ -185,3 +185,137 @@ export function rateLimitFor(
   if (options.hasApiEntitlement) return 600;
   return options.anonymousLimit;
 }
+
+// ── Centralized Entitlement Helpers (Phase 08A Stage 6) ────────────────────
+
+/**
+ * Error thrown when a user lacks the required entitlement.
+ */
+export class EntitlementError extends Error {
+  constructor(
+    public readonly requiredKey: EntitlementKey,
+    public readonly currentTier: EntitlementSet['tier'],
+    message?: string,
+  ) {
+    super(
+      message ||
+        `This feature requires the '${requiredKey}' entitlement. Your current tier is '${currentTier || 'none'}'.`,
+    );
+    this.name = 'EntitlementError';
+  }
+}
+
+/**
+ * Require a specific entitlement, throwing if the user doesn't have it.
+ *
+ * Use this in server actions and API routes to enforce entitlements with
+ * a clear error message. This is the "fail-loud" pattern — it tells the
+ * user exactly what they need to upgrade to.
+ *
+ * @example
+ * ```ts
+ * // In a server action:
+ * await requireEntitlement('alerts');
+ * // If user doesn't have 'alerts', throws EntitlementError
+ *
+ * // Continue with alert creation...
+ * ```
+ */
+export async function requireEntitlement(
+  key: EntitlementKey,
+  options?: { message?: string },
+): Promise<EntitlementSet> {
+  const entitlements = await getEntitlements();
+
+  if (!hasEntitlement(entitlements, key)) {
+    throw new EntitlementError(key, entitlements.tier, options?.message);
+  }
+
+  return entitlements;
+}
+
+/**
+ * Check an entitlement and return a result object instead of throwing.
+ *
+ * Use this in page components where you want to conditionally render
+ * content based on entitlement, rather than blocking the entire page.
+ *
+ * @example
+ * ```ts
+ * // In a page component:
+ * const { hasIt, entitlements } = await checkEntitlement('watchlists');
+ *
+ * if (!hasIt) {
+ *   return <UpgradePrompt feature="watchlists" />;
+ * }
+ *
+ * return <WatchlistUI />;
+ * ```
+ */
+export async function checkEntitlement(
+  key: EntitlementKey,
+): Promise<{ hasIt: boolean; entitlements: EntitlementSet }> {
+  const entitlements = await getEntitlements();
+  return {
+    hasIt: hasEntitlement(entitlements, key),
+    entitlements,
+  };
+}
+
+/**
+ * Execute a function only if the user has the required entitlement.
+ *
+ * This is a wrapper pattern that combines entitlement checking with
+ * execution. If the user lacks the entitlement, the function returns
+ * a fallback value instead of executing.
+ *
+ * @example
+ * ```ts
+ * // In a server action:
+ * const result = await withEntitlement('exports', async () => {
+ *   return await runExpensiveExport();
+ * }, { fallback: { error: 'Upgrade required' } });
+ * ```
+ */
+export async function withEntitlement<T, F = null>(
+  key: EntitlementKey,
+  fn: (entitlements: EntitlementSet) => Promise<T>,
+  options?: { fallback?: F },
+): Promise<T | F> {
+  const entitlements = await getEntitlements();
+
+  if (!hasEntitlement(entitlements, key)) {
+    return (options?.fallback ?? null) as F;
+  }
+
+  return fn(entitlements);
+}
+
+/**
+ * Human-readable names for entitlement keys.
+ *
+ * Use these in UI messages and error prompts.
+ */
+export const ENTITLEMENT_LABELS: Record<EntitlementKey, string> = {
+  watchlists: 'Saved commodities & markets',
+  alerts: 'Price alerts',
+  exports: 'Report exports',
+  reports: 'Premium reports',
+  api: 'API access',
+  bulk: 'Bulk data operations',
+};
+
+/**
+ * Minimum tier required for each entitlement.
+ *
+ * Use this in upgrade prompts to tell users which tier they need.
+ */
+export const ENTITLEMENT_MIN_TIER: Record<EntitlementKey, string> = {
+  watchlists: 'Professional',
+  alerts: 'Professional',
+  exports: 'Professional',
+  reports: 'Professional',
+  api: 'Enterprise',
+  bulk: 'Enterprise',
+};
+

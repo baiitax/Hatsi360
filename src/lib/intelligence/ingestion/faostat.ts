@@ -13,7 +13,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
-import { getEntitlements, hasEntitlement } from '@/lib/entitlements';
+import { getEntitlements, hasEntitlement, type EntitlementSet } from '@/lib/entitlements';
 import type { IngestionResult, IngestionContext } from '../types';
 
 // ── FAOSTAT Configuration ───────────────────────────────────────────────────
