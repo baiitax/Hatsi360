@@ -37,6 +37,7 @@ import {
 } from '@/components/market/MarketOverview';
 import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/marketing/StructuredData';
 import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
+import { ProfessionalMarketWatch } from '@/components/homepage/ProfessionalMarketWatch';
 
 /**
  * The Hatsi360 Markets homepage — professional market intelligence design.
@@ -144,43 +145,14 @@ export default async function MarketsHomePage() {
             />
           )}
 
-          {/* ─── Market Watch Table ─── */}
+          {/* ─── Professional Market Watch ─── */}
           {summary.watchRows.length > 0 && (
-            <section>
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 className="text-[0.9375rem] font-bold text-[#0B3D2C]">
-                    Commodity Market Watch
-                  </h2>
-                  <p className="mt-0.5 text-[0.75rem] text-gray-500">
-                    Published price observations with unit, movement, time and verification
-                  </p>
-                </div>
-                <Link href="/prices" className="text-[0.75rem] font-medium text-[#1A6B40] hover:text-[#0B3D2C] transition-colors">
-                  Full directory →
-                </Link>
-              </div>
-              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div className="hidden md:block">
-                  <div className="p-4">
-                    <MarketWatchTable
-                      rows={summary.watchRows}
-                      caption="Published price observations with unit, movement, observation time and verification state."
-                      footer={
-                        <ProvenanceNotice source="price_observations, verified and published">
-                          Movement is calculated only between two observations that share a series key.
-                        </ProvenanceNotice>
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="md:hidden">
-                  <div className="p-3">
-                    <MarketWatchCards rows={summary.watchRows.slice(0, 8)} />
-                  </div>
-                </div>
-              </div>
-            </section>
+            <ProfessionalMarketWatch
+              rows={summary.watchRows.slice(0, 12)}
+              title="Commodity Market Watch"
+              subtitle="Published price observations with unit, movement, time and verification"
+              onShowAll="/prices"
+            />
           )}
 
           {/* ─── Market Movers ─── */}
