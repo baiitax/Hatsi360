@@ -751,6 +751,32 @@ export async function listReferenceData() {
 export async function listExportJobs(limit = 50) {
   if (!isSupabaseConfigured()) return [];
   const supabase = await createClient();
+  
+  // Check if user has exports entitlement
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  
+  const { data: entitlements } = await supabase
+    .from('entitlements')
+    .select('feature')
+    .eq('user_id', user.id);
+  
+  const hasExportsEntitlement = entitlements?.some(e => e.feature === 'exports') || false;
+  
+  // Staff and admins can always see export jobs
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  
+  const isStaffOrAdmin = profile?.role === 'staff' || profile?.role === 'admin';
+  
+  // Only return export jobs if user has entitlement or is staff/admin
+  if (!hasExportsEntitlement && !isStaffOrAdmin) {
+    return [];
+  }
+  
   const { data } = await supabase
     .from('export_jobs')
     .select('*')

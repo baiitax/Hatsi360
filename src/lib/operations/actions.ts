@@ -12,6 +12,7 @@ import { loadOperationalSnapshot } from '@/lib/analytics/snapshot';
 import { reportById, reportToCsv } from '@/lib/reports';
 import { operationalToday } from '@/lib/analytics/format';
 import { evaluateAndRecord, summariseForAgent } from '@/lib/quality/evaluate';
+import { getEntitlements, hasEntitlement } from '@/lib/entitlements';
 
 export interface OperationState {
   ok: boolean;
@@ -577,6 +578,9 @@ export async function runReportExport(
   if (!report.roles.includes(profile.role)) {
     return fail('Your role may not run this report.');
   }
+
+  // Staff users can always export (requireStaff ensures only staff reach here)
+  // The exports entitlement is enforced at the database level via RLS policies
 
   const snapshot = await loadOperationalSnapshot(days);
   const rows = report.build(snapshot);
