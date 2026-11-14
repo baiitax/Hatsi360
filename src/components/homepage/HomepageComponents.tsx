@@ -171,56 +171,60 @@ export function HomepageHero({
   latestObservedAt: string | null;
 }) {
   return (
-    <div className="relative overflow-hidden border-b border-gray-200 bg-white">
-      {/* Background image */}
+    <div className="relative overflow-hidden border-b border-gray-200 bg-[#0B3D2C]">
+      {/* Professional hero background image */}
       <div className="absolute inset-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/hatsi360-hero.png"
           alt=""
-          className="h-full w-full object-cover opacity-[0.06]"
+          className="h-full w-full object-cover"
+          loading="eager"
         />
       </div>
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white via-white/97 to-[#0B3D2C]/[0.02]" />
-      {/* Decorative grid */}
+
+      {/* Gradient overlays for readability and depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0B3D2C]/75 via-[#0B3D2C]/55 to-[#0B3D2C]/85" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B3D2C]/90 via-transparent to-[#0B3D2C]/40" />
+
+      {/* Decorative grid pattern */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.04]"
         style={{
-          backgroundImage: `linear-gradient(#0B3D2C 1px, transparent 1px), linear-gradient(90deg, #0B3D2C 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(#E5A020 1px, transparent 1px), linear-gradient(90deg, #E5A020 1px, transparent 1px)`,
           backgroundSize: '48px 48px',
         }}
       />
 
-      <div className="relative px-4 py-14 sm:py-16 lg:px-8 lg:py-20 xl:py-24">
+      <div className="relative px-4 py-16 sm:py-20 lg:px-8 lg:py-28 xl:py-32">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-12 lg:items-center">
             {/* Left Column */}
             <div className="lg:col-span-7">
               {/* Badge */}
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#0B3D2C]/15 bg-[#0B3D2C]/[0.04] px-4 py-1.5 shadow-sm">
+              <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-sm">
                 <span className="relative flex size-2">
                   <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#4CAF50] opacity-75" />
                   <span className="relative inline-flex size-2 rounded-full bg-[#4CAF50]" />
                 </span>
-                <span className="text-[0.6875rem] font-semibold text-[#0B3D2C]/80">
+                <span className="text-[0.6875rem] font-semibold text-white/90">
                   Live Market Intelligence Platform
                 </span>
               </div>
 
               {/* Headline */}
-              <h1 className="font-display text-[2rem] font-extrabold tracking-tight text-[#0B3D2C] sm:text-[2.5rem] lg:text-[3.25rem] xl:text-[3.5rem]">
-                <div className="flex items-baseline flex-wrap gap-x-1">
-                  <span className="text-[#0B3D2C]">HATSI</span>
+              <h1 className="font-display text-[2.25rem] font-extrabold tracking-tight text-white sm:text-[3rem] lg:text-[3.75rem] xl:text-[4rem]">
+                <div className="flex items-baseline flex-wrap gap-x-2">
+                  <span className="text-white">HATSI</span>
                   <span className="text-[#E5A020]">360</span>
                 </div>
-                <span className="mt-2 block text-[1.25rem] font-bold text-[#0B3D2C]/70 sm:text-[1.5rem] lg:text-[1.75rem]">
+                <span className="mt-3 block text-[1.25rem] font-bold text-white/80 sm:text-[1.5rem] lg:text-[1.75rem]">
                   African Agricultural Market Intelligence
                 </span>
               </h1>
 
               {/* Subtitle */}
-              <p className="mt-5 max-w-xl text-[0.9375rem] leading-relaxed text-gray-600 sm:text-[1.0625rem]">
+              <p className="mt-6 max-w-xl text-[0.9375rem] leading-relaxed text-white/75 sm:text-[1.0625rem]">
                 Verified commodity prices collected in the field, analysed for
                 sourcing, procurement and trade decisions. Every figure traces
                 back to a person, a market and a moment.
@@ -230,36 +234,36 @@ export function HomepageHero({
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/prices"
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#E5A020] px-6 py-3 text-[0.8125rem] font-semibold text-white shadow-md shadow-[#E5A020]/20 transition-all hover:bg-[#C88A15] hover:shadow-lg hover:shadow-[#E5A020]/30"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#E5A020] px-6 py-3 text-[0.8125rem] font-semibold text-white shadow-lg shadow-black/20 transition-all hover:bg-[#C88A15] hover:shadow-xl hover:shadow-black/30"
                 >
                   Explore Prices
                   <IconArrowRight className="size-4" />
                 </Link>
                 <Link
                   href="/trade/terminal"
-                  className="inline-flex items-center gap-2 rounded-lg border border-[#0B3D2C]/20 bg-white px-6 py-3 text-[0.8125rem] font-semibold text-[#0B3D2C] transition-all hover:border-[#0B3D2C]/40 hover:bg-[#0B3D2C]/[0.02] hover:shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 py-3 text-[0.8125rem] font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20"
                 >
                   Trade Terminal
                 </Link>
                 <Link
                   href="/commodities"
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-6 py-3 text-[0.8125rem] font-semibold text-gray-700 transition-all hover:border-[#0B3D2C]/30 hover:bg-gray-50"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-6 py-3 text-[0.8125rem] font-semibold text-white/90 transition-all hover:bg-white/10"
                 >
                   Commodities
                 </Link>
               </div>
 
               {/* Trust Indicators */}
-              <div className="mt-8 flex flex-wrap gap-6 border-t border-gray-100 pt-6">
-                <div className="flex items-center gap-2 text-[0.75rem] text-gray-500">
-                  <IconShieldCheck className="size-4 text-[#1A6B40]" />
+              <div className="mt-10 flex flex-wrap gap-6 border-t border-white/10 pt-6">
+                <div className="flex items-center gap-2 text-[0.75rem] text-white/60">
+                  <IconShieldCheck className="size-4 text-[#4CAF50]" />
                   <span>Verified Data</span>
                 </div>
-                <div className="flex items-center gap-2 text-[0.75rem] text-gray-500">
-                  <IconLeaf className="size-4 text-[#1A6B40]" />
+                <div className="flex items-center gap-2 text-[0.75rem] text-white/60">
+                  <IconLeaf className="size-4 text-[#4CAF50]" />
                   <span>Field Collected</span>
                 </div>
-                <div className="flex items-center gap-2 text-[0.75rem] text-gray-500">
+                <div className="flex items-center gap-2 text-[0.75rem] text-white/60">
                   <IconActivity className="size-4 text-[#E5A020]" />
                   <span>Real-Time Updates</span>
                 </div>
@@ -269,51 +273,51 @@ export function HomepageHero({
             {/* Right Column: Dashboard Preview Card */}
             <div className="lg:col-span-5">
               <div className="relative">
-                {/* Glow effect */}
-                <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-[#0B3D2C]/5 via-[#E5A020]/5 to-[#1A6B40]/5 blur-xl" />
+                {/* Glow effect behind card */}
+                <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-[#E5A020]/20 via-[#0B3D2C]/20 to-[#4CAF50]/20 blur-2xl" />
 
-                <div className="relative rounded-2xl border border-gray-200 bg-white/95 p-5 shadow-xl backdrop-blur-sm">
+                <div className="relative rounded-2xl border border-white/10 bg-[#0B3D2C]/60 p-6 shadow-2xl backdrop-blur-md">
                   {/* Card Header */}
-                  <div className="mb-4 flex items-center justify-between">
+                  <div className="mb-5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5">
                         <span className="size-2 rounded-full bg-red-400" />
                         <span className="size-2 rounded-full bg-[#E5A020]" />
                         <span className="size-2 rounded-full bg-[#4CAF50]" />
                       </div>
-                      <span className="ml-2 text-[0.6875rem] font-semibold text-gray-400">Market Dashboard</span>
+                      <span className="ml-2 text-[0.6875rem] font-semibold text-white/60">Market Dashboard</span>
                     </div>
-                    <span className="text-[0.625rem] text-gray-400">
+                    <span className="text-[0.625rem] text-white/50">
                       {latestObservedAt ? `Updated ${formatRelative(latestObservedAt)}` : 'Live'}
                     </span>
                   </div>
 
                   {/* KPI Row */}
-                  <div className="mb-4 grid grid-cols-3 gap-3">
+                  <div className="mb-5 grid grid-cols-3 gap-3">
                     <DashboardKPI value={publishedCount.toLocaleString()} label="Published" icon="📊" accent />
                     <DashboardKPI value={commodityCount.toLocaleString()} label="Commodities" icon="🌾" accent />
                     <DashboardKPI value={marketCount.toLocaleString()} label="Markets" icon="🏪" accent />
                   </div>
 
                   {/* Mini Chart */}
-                  <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-3">
+                  <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-[0.6875rem] font-semibold text-[#0B3D2C]/70">Platform Activity</span>
-                      <span className="flex items-center gap-1 text-[0.625rem] text-[#1A6B40]">
+                      <span className="text-[0.6875rem] font-semibold text-white/70">Platform Activity</span>
+                      <span className="flex items-center gap-1 text-[0.625rem] text-[#4CAF50]">
                         <IconTrendingUp className="size-3" /> Growing
                       </span>
                     </div>
                     <svg viewBox="0 0 200 60" className="w-full" preserveAspectRatio="none">
                       <defs>
                         <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#1A6B40" stopOpacity="0.2" />
-                          <stop offset="100%" stopColor="#1A6B40" stopOpacity="0" />
+                          <stop offset="0%" stopColor="#4CAF50" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#4CAF50" stopOpacity="0" />
                         </linearGradient>
                       </defs>
                       <path
                         d="M 0 50 Q 25 45 40 42 T 80 35 T 120 28 T 160 20 T 200 12"
                         fill="none"
-                        stroke="#1A6B40"
+                        stroke="#4CAF50"
                         strokeWidth="2"
                       />
                       <path
@@ -324,7 +328,7 @@ export function HomepageHero({
                   </div>
 
                   {/* Coverage line */}
-                  <p className="mt-3 text-[0.625rem] leading-relaxed text-gray-500">{coverageLine}</p>
+                  <p className="mt-4 text-[0.625rem] leading-relaxed text-white/50">{coverageLine}</p>
                 </div>
               </div>
             </div>
@@ -337,12 +341,12 @@ export function HomepageHero({
 
 function DashboardKPI({ value, label, icon, accent }: { value: string; label: string; icon: string; accent?: boolean }) {
   return (
-    <div className="rounded-lg border border-gray-100 bg-white p-2.5 text-center shadow-sm">
+    <div className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-center">
       <div className="mb-1 text-lg">{icon}</div>
-      <div className={`figure-num text-lg font-extrabold tracking-tight ${accent ? 'text-[#E5A020]' : 'text-[#0B3D2C]'}`}>
+      <div className={`figure-num text-lg font-extrabold tracking-tight ${accent ? 'text-[#E5A020]' : 'text-white'}`}>
         {value}
       </div>
-      <div className="text-[0.5625rem] font-medium text-gray-500">{label}</div>
+      <div className="text-[0.5625rem] font-medium text-white/60">{label}</div>
     </div>
   );
 }
