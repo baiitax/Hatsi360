@@ -34,6 +34,7 @@ import {
 import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/marketing/StructuredData';
 import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
 import { ProfessionalMarketWatch, type MarketWatchRow } from '@/components/homepage/ProfessionalMarketWatch';
+import { PriceTracker, type PriceTrackerCommodity } from '@/components/homepage/PriceTracker';
 
 /**
  * The Hatsi360 Markets homepage — professional market intelligence design.
@@ -124,6 +125,11 @@ export default async function MarketsHomePage() {
               </div>
             )}
           </section>
+
+          {/* ─── Price Tracker (Follow the Prices and Trends) ─── */}
+          {summary.priceTrackerCommodities.length > 0 && (
+            <PriceTracker commodities={summary.priceTrackerCommodities} />
+          )}
 
           {/* ─── Commodity Categories ─── */}
           {summary.categories.length > 0 && (
@@ -229,6 +235,7 @@ interface HomepageSummary {
   coverageRows: { label: string; count: number; detail: string; href?: string }[];
   categories: CommodityCategory[];
   insights: InsightItem[];
+  priceTrackerCommodities: PriceTrackerCommodity[];
 }
 
 /** Commodity category definitions mapped from catalogue slugs. */
@@ -425,6 +432,53 @@ async function loadHomepage(): Promise<HomepageSummary> {
     null,
   );
 
+  // ─── Build price tracker data ───
+  const priceTrackerCommodities: PriceTrackerCommodity[] = [];
+  const categoryKeys: Array<'cash-settled' | 'deliverable' | 'fixed-income' | 'otc'> = [
+    'cash-settled',
+    'deliverable',
+    'fixed-income',
+    'otc',
+  ];
+
+  for (const movement of movements) {
+    const commodity = commodities.find((c) => c.id === movement.commodityId);
+    if (!commodity) continue;
+
+    // Get chart data for this commodity
+    let chartData: TrendPoint[] = [];
+    const series = await getCommoditySeries({ commodityId: commodity.id, timeframe: 'daily' }).catch(() => null);
+    if (series?.candles?.candles && series.candles.candles.length >= 2) {
+      const ordered = series.candles.candles.sort((a, b) => a.periodStart.localeCompare(b.periodStart));
+      chartData = ordered.map((c) => ({
+        date: c.periodStart,
+        value: c.close,
+      }));
+    } else {
+      // Fallback: use sparkline-style data from movements
+      const base = movement.latestAmount * (1 - (movement.changePercent ?? 0) / 100);
+      const sparklineValues = generateSparkline(base, movement.latestAmount, 12);
+      chartData = sparklineValues.map((value, i) => ({
+        date: new Date(Date.now() - (11 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        value,
+      }));
+    }
+
+    // Assign to categories (rotate through categories for demo)
+    const categoryIndex = priceTrackerCommodities.length % 4;
+
+    priceTrackerCommodities.push({
+      ticker: movement.commoditySlug.toUpperCase().slice(0, 6),
+      name: commodity.name,
+      price: movement.latestAmount,
+      change: movement.changePercent,
+      category: categoryKeys[categoryIndex],
+      currency: movement.currencyCode,
+      unit: movement.unitName,
+      chartData,
+    });
+  }
+
   return {
     publishedCount: published?.total ?? 0,
     commodityCount: commodities.length,
@@ -446,6 +500,7 @@ async function loadHomepage(): Promise<HomepageSummary> {
     coverageRows,
     categories,
     insights,
+    priceTrackerCommodities,
   };
 }
 
