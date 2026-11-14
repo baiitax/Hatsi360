@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getCommoditySeries } from '@/lib/trade/queries';
 import { PRICE_STATE_TONES, formatAge } from '@/lib/trade/freshness';
 import { EmptyState, PageHeader, Panel, Pill, Price } from '@/components/trade/Primitives';
+import { getEntitlements, hasEntitlement } from '@/lib/entitlements';
 
 export const metadata = buildShareMetadata({
   title: 'Watchlist',
@@ -30,6 +31,10 @@ export const dynamic = 'force-dynamic';
  * It requires an account, because a watchlist is personal data. A visitor is
  * sent to sign-in with a return path, not shown an empty state that looks like
  * a bug.
+ *
+ * The 'watchlists' entitlement is enforced at both the database level (RLS)
+ * and the application level. Users without the entitlement see a clear
+ * upgrade prompt rather than an empty state that looks like a bug.
  */
 export default async function TradeWatchlistPage() {
   const user = await getUser();
@@ -48,6 +53,27 @@ export default async function TradeWatchlistPage() {
         <EmptyState
           title="No market data is connected"
           description="A watchlist needs the Hatsi360 database. Without it there are no prices to follow."
+        />
+      </>
+    );
+  }
+
+  // Check watchlists entitlement
+  const entitlements = await getEntitlements();
+  const hasWatchlistEntitlement = hasEntitlement(entitlements, 'watchlists');
+
+  if (!hasWatchlistEntitlement) {
+    return (
+      <>
+        <PageHeader
+          title="Watchlist"
+          purpose="The commodities and markets you follow, with their latest verified price."
+          breadcrumbs={[{ label: 'Trade Intelligence', href: '/trade' }, { label: 'Watchlist' }]}
+        />
+        <EmptyState
+          title="Watchlists require a subscription"
+          description="Save commodities and markets to track their latest verified prices. Watchlists are available on Professional and Enterprise plans."
+          action={{ label: 'View plans', href: '/pricing' }}
         />
       </>
     );
