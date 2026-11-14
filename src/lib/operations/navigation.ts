@@ -102,6 +102,12 @@ export const ADMIN_NAV: NavGroup[] = [
         roles: ['market_supervisor', 'admin', 'super_admin'],
       },
       {
+        href: '/admin/coverage',
+        label: 'Market data operations',
+        icon: '◉',
+        roles: ['market_supervisor', 'analyst', 'admin', 'super_admin'],
+      },
+      {
         href: '/admin/assignments',
         label: 'Agent assignments',
         icon: '⇄',

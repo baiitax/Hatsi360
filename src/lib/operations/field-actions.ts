@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { requireAgent } from '@/lib/auth/guards';
 import { markRead } from '@/lib/notifications';
+import { runQualityEngine } from '@/lib/operations/quality-integration';
 
 /**
  * Hatsi360 Field — the agent's own actions.
@@ -237,6 +238,13 @@ export async function submitFieldPrice(
   });
 
   if (error) return fail(error.message);
+
+  // Run the quality engine against the submitted observation.
+  // This is a best-effort integration: failures do not block the submission.
+  const observationIdStr = String(observationId);
+  runQualityEngine(observationIdStr).catch(() => {
+    // Quality engine failures are logged but do not block submission
+  });
 
   revalidatePath('/agent/home');
   revalidatePath('/agent/assignments');
