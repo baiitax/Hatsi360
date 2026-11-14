@@ -1119,3 +1119,15 @@
    movement gets none of it — including the boot curtain's sweep and the
    skeleton's shimmer.
    ========================================================================== */
+
+/* ─── Market ticker scroll animation ─── */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes ticker {
+    0%, 100% { transform: translateX(0); }
+  }
+}
