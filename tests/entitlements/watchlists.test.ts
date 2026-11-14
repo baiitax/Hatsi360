@@ -7,21 +7,21 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import { createServiceRoleClient } from '@/lib/supabase/admin';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Test configuration
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key';
 
 describe('Watchlist Entitlement Enforcement', () => {
-  let serviceClient: ReturnType<typeof createServiceRoleClient>;
+  let serviceClient: ReturnType<typeof createAdminClient>;
   let testUser1Id: string;
   let testUser2Id: string;
   let testUser1Client: ReturnType<typeof createClient>;
   let testUser2Client: ReturnType<typeof createClient>;
 
   beforeEach(async () => {
-    serviceClient = createServiceRoleClient();
+    serviceClient = createAdminClient();
 
     // Create test users (these would need to be created in your test setup)
     // For now, we'll use placeholder UUIDs
@@ -48,12 +48,12 @@ describe('Watchlist Entitlement Enforcement', () => {
 
   afterEach(async () => {
     // Cleanup test data
-    await serviceClient.from('saved_commodities').delete().eq('user_id', testUser1Id);
-    await serviceClient.from('saved_commodities').delete().eq('user_id', testUser2Id);
-    await serviceClient.from('saved_markets').delete().eq('user_id', testUser1Id);
-    await serviceClient.from('saved_markets').delete().eq('user_id', testUser2Id);
-    await serviceClient.from('customer_subscriptions').delete().eq('user_id', testUser1Id);
-    await serviceClient.from('customer_subscriptions').delete().eq('user_id', testUser2Id);
+    await serviceClient.from('saved_commodities').delete().match({ user_id: testUser1Id });
+    await serviceClient.from('saved_commodities').delete().match({ user_id: testUser2Id });
+    await serviceClient.from('saved_markets').delete().match({ user_id: testUser1Id });
+    await serviceClient.from('saved_markets').delete().match({ user_id: testUser2Id });
+    await serviceClient.from('customer_subscriptions').delete().match({ user_id: testUser1Id });
+    await serviceClient.from('customer_subscriptions').delete().match({ user_id: testUser2Id });
   });
 
   describe('Database-level enforcement (RLS)', () => {
@@ -72,11 +72,11 @@ describe('Watchlist Entitlement Enforcement', () => {
         user_id: testUser1Id,
         commodity_id: 1,
         note: 'Test commodity',
-      }).select();
+      } as any).select();
 
       expect(error).toBeNull();
       expect(data).toHaveLength(1);
-      expect(data?.[0].user_id).toBe(testUser1Id);
+      expect((data?.[0] as any).user_id).toBe(testUser1Id);
     });
 
     it('prevents users without watchlists entitlement from inserting saved commodities', async () => {
@@ -85,7 +85,7 @@ describe('Watchlist Entitlement Enforcement', () => {
         user_id: testUser2Id,
         commodity_id: 1,
         note: 'Test commodity',
-      });
+      } as any);
 
       // RLS should block this
       expect(error).not.toBeNull();
@@ -106,7 +106,7 @@ describe('Watchlist Entitlement Enforcement', () => {
         user_id: testUser1Id,
         commodity_id: 1,
         note: 'User1 commodity',
-      });
+      } as any);
 
       // Grant entitlement to user2
       await serviceClient.from('customer_subscriptions').insert({
@@ -147,7 +147,7 @@ describe('Watchlist Entitlement Enforcement', () => {
         user_id: testUser1Id,
         commodity_id: 1,
         note: 'Test commodity',
-      });
+      } as any);
 
       expect(error).not.toBeNull();
       expect(error?.message).toMatch(/new row violates row-level security/i);
@@ -182,7 +182,7 @@ describe('Watchlist Entitlement Enforcement', () => {
         user_id: testUser1Id,
         commodity_id: 1,
         note: 'Test commodity',
-      });
+      } as any);
 
       // User should see their data
       const { data, error } = await testUser1Client
@@ -211,7 +211,7 @@ describe('Watchlist Entitlement Enforcement', () => {
         user_id: testUser1Id,
         market_id: 1,
         note: 'Test market',
-      }).select();
+      } as any).select();
 
       expect(error).toBeNull();
       expect(data).toHaveLength(1);
@@ -221,7 +221,7 @@ describe('Watchlist Entitlement Enforcement', () => {
         user_id: testUser2Id,
         market_id: 1,
         note: 'Test market',
-      });
+      } as any);
 
       expect(error2).not.toBeNull();
       expect(error2?.message).toMatch(/new row violates row-level security/i);
