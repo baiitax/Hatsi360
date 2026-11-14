@@ -14,13 +14,26 @@
 export const BRAND = {
   /** The product name. Never a legacy name in customer-facing copy. */
   name: 'Hatsi360',
+  /**
+   * The product name as the market terminal presents it.
+   *
+   * `name` stays `Hatsi360` because it is the name in the URLs, the footer,
+   * the structured data and the logo artwork. `productName` is the *terminal's*
+   * name — the wordmark a trader sees in the header bar. The two are never
+   * mixed: nothing renders `Hatsi360` where it means the terminal, and
+   * nothing renders `Hatsi360 Markets` where it means the company.
+   */
+  productName: 'Hatsi360 Markets',
   /** The product category — what the product is. */
-  category: 'Agricultural Market Intelligence',
+  category: 'African Agricultural Market Intelligence',
   /** The category line shown under the wordmark. */
-  descriptor: 'Agricultural Market Intelligence',
+  descriptor: 'African Agricultural Market Intelligence',
   /** The longer descriptor used on brand assets and in partner material. */
   commodityDescriptor: 'Agricultural Commodity Intelligence',
-  /** The strapline. */
+  /**
+   * The tagline. Three clauses, in the order a user acts: know what was
+   * harvested, understand what the market is doing, then trade.
+   */
   tagline: 'Know the harvest. Understand the market. Trade with confidence.',
   /** The corporate endorsement. Subordinate to the product brand. */
   endorsement: 'Powered by Pluck Agro',
@@ -146,6 +159,147 @@ export const SECONDARY_NAV: NavLink[] = [
   { href: '/api-docs', label: 'API', description: 'Programmatic market data access' },
   { href: '/faq', label: 'FAQs', description: 'Common questions' },
   { href: '/contact', label: 'Contact', description: 'Business enquiries and support' },
+];
+
+/* ------------------------------------------------- the terminal's modules -- */
+
+/**
+ * The six modules of the Hatsi360 Markets terminal.
+ *
+ * This is the product's primary information architecture, and it is
+ * deliberately different from `PRIMARY_NAV`. `PRIMARY_NAV` is the *site*
+ * vocabulary — it answers "what is on this website" and is what the footer,
+ * the sitemap and the mobile index use. `MARKET_NAV` is the *terminal*
+ * vocabulary — it answers "what do I open to work the market this morning",
+ * and it is what the header bar uses.
+ *
+ * Two rules govern every entry:
+ *
+ *  1. **A module only links to a route that exists.** Anything the platform
+ *     does not yet serve is listed under `planned` — named, so the roadmap is
+ *     visible — and is never rendered as a link. `tests/brand/brand.test.ts`
+ *     asserts this by walking `src/app`.
+ *  2. **A module never promises a destination it cannot fill.** "Weather and
+ *     Rainfall" is a real part of fundamental intelligence; the platform has
+ *     no weather data, so it appears in the documentation and in `planned`,
+ *     and nowhere in the interface.
+ */
+export interface MarketModule {
+  id: string;
+  /** The label in the header bar. Upper case, one word where possible. */
+  label: string;
+  /** The module's landing route. Always a real, existing route. */
+  href: string;
+  /** One line explaining what the module is for. */
+  summary: string;
+  /** The destinations inside the module. Every one is a real route. */
+  items: NavLink[];
+  /**
+   * Named destinations the platform intends to serve and does not yet.
+   * These are documentation, never navigation.
+   */
+  planned?: string[];
+}
+
+export const MARKET_NAV: MarketModule[] = [
+  {
+    id: 'markets',
+    label: 'Markets',
+    href: '/markets',
+    summary: 'The market register, the live watch and the movers.',
+    items: [
+      { href: '/markets', label: 'Market Overview', description: 'Every market under coverage' },
+      { href: '/prices', label: 'Live Market Watch', description: 'Eligible current price observations' },
+      { href: '/prices', label: 'Market Movers', description: 'Movement between comparable observations' },
+      { href: '/compare', label: 'Market Comparisons', description: 'The same commodity across markets' },
+      { href: '/coverage', label: 'Regional Market Activity', description: 'Where collection actually happens' },
+    ],
+    planned: ['Market activity heatmap', 'Market operating hours'],
+  },
+  {
+    id: 'commodities',
+    label: 'Commodities',
+    href: '/commodities',
+    summary: 'The commodity catalogue, its grades and its history.',
+    items: [
+      { href: '/commodities', label: 'Commodity Directory', description: 'The full catalogue' },
+      { href: '/commodities', label: 'Commodity Profiles', description: 'Grades, units and reporting markets' },
+      { href: '/prices', label: 'Historical Prices', description: 'The published record for a commodity' },
+    ],
+    planned: ['Grades and specifications detail', 'Variety directory'],
+  },
+  {
+    id: 'trade',
+    label: 'Trade',
+    href: '/trade',
+    summary: 'Where the verified offers and the spread actually are.',
+    items: [
+      { href: '/trade', label: 'Trade Overview', description: 'The market terminal' },
+      { href: '/trade/best-buy', label: 'Sourcing Intelligence', description: 'The lowest verified observation' },
+      { href: '/trade/best-sell', label: 'Procurement Intelligence', description: 'The highest verified observation' },
+    ],
+    planned: ['Market spread monitor', 'Export offers'],
+  },
+  {
+    id: 'charts',
+    label: 'Charts',
+    href: '/charts',
+    summary: 'The chart workspace: history, comparison and context.',
+    items: [
+      { href: '/charts', label: 'Price Charts', description: 'The chart workspace' },
+      { href: '/prices', label: 'Historical Analysis', description: 'The published record, as a table' },
+      { href: '/compare', label: 'Market Comparisons', description: 'Two markets, one commodity' },
+    ],
+    planned: ['Technical indicators', 'Model-generated projections'],
+  },
+  {
+    id: 'fundamentals',
+    label: 'Fundamentals',
+    href: '/trade/fundamentals',
+    summary: 'The supply, demand and seasonal picture behind a price.',
+    items: [
+      { href: '/trade/fundamentals', label: 'Fundamental Overview', description: 'What the fundamentals surface reports today' },
+      { href: '/coverage', label: 'Collection Coverage', description: 'What the platform actually observes' },
+    ],
+    planned: [
+      'Supply and demand',
+      'Seasonal intelligence',
+      'Weather and rainfall',
+      'Production intelligence',
+      'Trade policy',
+      'FX and logistics factors',
+    ],
+  },
+  {
+    id: 'research',
+    label: 'Research',
+    href: '/insights',
+    summary: 'Market briefs, reports and the archive.',
+    items: [
+      { href: '/insights', label: 'Market Briefs', description: 'Short-form market commentary' },
+      { href: '/reports', label: 'Research Reports', description: 'Published market intelligence' },
+    ],
+    planned: ['Daily market brief', 'Weekly reports', 'Monthly outlook', 'Export intelligence'],
+  },
+];
+
+/** Every route the terminal's modules link to, flattened and de-duplicated. */
+export const MARKET_NAV_ROUTES: string[] = Array.from(
+  new Set(MARKET_NAV.flatMap((module) => [module.href, ...module.items.map((item) => item.href)])),
+);
+
+/**
+ * The destinations a signed-in market user reaches from the account menu.
+ *
+ * Only `/dashboard`, `/trade/watchlist` and `/trade/alerts` exist today, so
+ * only those three are listed. Preferences and saved searches are named in
+ * `planned` and are not rendered as links.
+ */
+export const ACCOUNT_NAV: NavLink[] = [
+  { href: '/dashboard', label: 'User Workspace', description: 'Your watchlists, alerts and access' },
+  { href: '/trade/watchlist', label: 'Watchlists', description: 'The commodities and markets you follow' },
+  { href: '/trade/alerts', label: 'Alerts', description: 'The price movements you asked to be told about' },
+  { href: '/login', label: 'Sign in', description: 'Access the workspace' },
 ];
 
 export const LEGAL_NAV: NavLink[] = [
@@ -443,7 +597,117 @@ export const DESIGN_TOKENS: Record<string, string> = {
   'error-700': '#A63E39',
   'info-500': '#3478B8',
   'info-700': '#2C628F',
+  /* ------------------------------------------ dark market terminal layer -- */
+  'terminal-bg': '#101713',
+  'terminal-surface': '#17211B',
+  'terminal-elevated': '#1C2921',
+  'terminal-interactive': '#24332A',
+  'terminal-border': '#2C3A31',
+  'terminal-text': '#F3F6F2',
+  'terminal-text-secondary': '#A8B5AA',
+  'terminal-text-muted': '#748278',
+  /* ------------------------------------------- light editorial layer ----- */
+  'editorial-bg': '#F7F8F5',
+  'editorial-surface': '#FFFFFF',
+  'editorial-soft': '#F0F3EE',
+  'editorial-text': '#202923',
+  'editorial-text-secondary': '#59665E',
+  'editorial-border': '#E3E9E2',
+  /* ------------------------------------------- market movement semantics -- */
+  'move-up': '#2F8F57',
+  'move-up-soft': '#14301F',
+  'move-down': '#D0584F',
+  'move-down-soft': '#331A18',
+  'move-flat': '#748278',
 };
+
+/**
+ * The typography scale.
+ *
+ * The numeric roles exist because a terminal is mostly numbers. A price that
+ * is set in the body size is either too small to read across a desk or too
+ * large to fit twenty to a row, so the scale has its own figures: `figure`
+ * for a table cell, `figure-lg` for a panel headline, `figure-xl` for the one
+ * number a panel exists to show.
+ *
+ * The values are mirrored in `src/app/globals.css` under the `--text-*`
+ * namespace and asserted by `tests/brand/brand.test.ts`.
+ */
+export const TYPE_SCALE = {
+  micro: { size: '0.625rem', lineHeight: '0.875rem', tracking: '0.06em' },
+  metadata: { size: '0.6875rem', lineHeight: '1rem', tracking: '0' },
+  label: { size: '0.75rem', lineHeight: '1.125rem', tracking: '0' },
+  'body-sm': { size: '0.8125rem', lineHeight: '1.25rem', tracking: '0' },
+  figure: { size: '0.9375rem', lineHeight: '1.375rem', tracking: '-0.01em' },
+  'figure-lg': { size: '1.25rem', lineHeight: '1.5rem', tracking: '-0.015em' },
+  'figure-xl': { size: '1.75rem', lineHeight: '2rem', tracking: '-0.02em' },
+} as const;
+
+/** A typography role and what it is for. */
+export interface TypeRole {
+  role: string;
+  usage: string;
+  /** The scale entry the role uses. */
+  scale: keyof typeof TYPE_SCALE | 'display' | 'h1' | 'h2' | 'h3' | 'body';
+  family: 'sans' | 'display';
+  weight: string;
+  /** Numeric roles must render tabular figures. */
+  tabular: boolean;
+}
+
+/**
+ * The typography roles the terminal is built from.
+ *
+ * Two families, both self-hosted by `next/font` at build time so that no
+ * third-party font request ever reaches a field agent's phone:
+ *
+ *  - **Inter** carries the interface and every number. Its tabular figures are
+ *    what keep a column of prices aligned while the digits change.
+ *  - **Manrope** carries the editorial voice — page titles, section headings
+ *    and anything read rather than scanned.
+ */
+export const TYPE_ROLES: TypeRole[] = [
+  { role: 'Display', usage: 'The one figure a panel exists to show', scale: 'figure-xl', family: 'display', weight: '700', tabular: true },
+  { role: 'H1', usage: 'Page title', scale: 'h1', family: 'display', weight: '700', tabular: false },
+  { role: 'H2', usage: 'Main section heading', scale: 'h2', family: 'display', weight: '700', tabular: false },
+  { role: 'H3', usage: 'Card and panel heading', scale: 'h3', family: 'display', weight: '600', tabular: false },
+  { role: 'Body', usage: 'General information', scale: 'body', family: 'sans', weight: '400', tabular: false },
+  { role: 'Secondary', usage: 'Supporting description', scale: 'body-sm', family: 'sans', weight: '400', tabular: false },
+  { role: 'Label', usage: 'Filters and form labels', scale: 'label', family: 'sans', weight: '500', tabular: false },
+  { role: 'Metadata', usage: 'Timestamps, sources, units', scale: 'metadata', family: 'sans', weight: '400', tabular: false },
+  { role: 'Numeric', usage: 'Commodity prices and statistics', scale: 'figure', family: 'sans', weight: '600', tabular: true },
+  { role: 'Micro-label', usage: 'Compact table metadata and column heads', scale: 'micro', family: 'sans', weight: '600', tabular: false },
+];
+
+/**
+ * The motion vocabulary.
+ *
+ * A terminal is read repeatedly all day, so nothing moves for longer than the
+ * wait it represents. Three durations, one easing curve, and every one of them
+ * disabled under `prefers-reduced-motion: reduce` by the block at the foot of
+ * `src/app/globals.css`.
+ */
+export const MOTION = {
+  instant: '90ms',
+  fast: '140ms',
+  panel: '200ms',
+  ease: 'cubic-bezier(0.2, 0, 0.1, 1)',
+} as const;
+
+/**
+ * The named z-index layers.
+ *
+ * Nothing in the application may pick a number. A header that sits above a
+ * drawer that sits above a modal is a decision, and it is made once, here.
+ */
+export const Z_LAYERS = {
+  sticky: 20,
+  header: 40,
+  drawer: 60,
+  modal: 70,
+  tooltip: 80,
+  boot: 200,
+} as const;
 
 /* --------------------------------------------------------------- helpers -- */
 

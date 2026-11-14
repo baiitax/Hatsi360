@@ -3,9 +3,15 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import {
+  ACCOUNT_NAV,
   BRAND,
   CONTACT,
   DESIGN_TOKENS,
+  MARKET_NAV,
+  MARKET_NAV_ROUTES,
+  MOTION,
+  TYPE_ROLES,
+  Z_LAYERS,
   INTELLIGENCE_TIERS,
   LEGAL_NAV,
   ORGANISATION,
@@ -67,12 +73,26 @@ const HISTORICAL_CONTEXT = [
 describe('Hatsi360 identity', () => {
   it('uses the agreed primary identity', () => {
     expect(BRAND.name).toBe('Hatsi360');
-    expect(BRAND.descriptor).toBe('Agricultural Market Intelligence');
-    expect(BRAND.category).toBe('Agricultural Market Intelligence');
+    // Phase 02 redefined the product descriptor from "Agricultural Market
+    // Intelligence" to "African Agricultural Market Intelligence". The
+    // terminal's identity is regional and international at once, and the
+    // descriptor is where that is stated. This assertion records the Phase 02
+    // decision; it is not a drift.
+    expect(BRAND.descriptor).toBe('African Agricultural Market Intelligence');
+    expect(BRAND.category).toBe('African Agricultural Market Intelligence');
     expect(BRAND.commodityDescriptor).toBe('Agricultural Commodity Intelligence');
     expect(BRAND.tagline).toBe(
       'Know the harvest. Understand the market. Trade with confidence.',
     );
+  });
+
+  it('names the terminal Hatsi360 Markets without replacing the product name', () => {
+    // `name` is the product and stays in the URLs, the footer and the artwork.
+    // `productName` is the terminal's own wordmark in the header bar. The two
+    // must never be conflated.
+    expect(BRAND.productName).toBe('Hatsi360 Markets');
+    expect(BRAND.productName).toContain(BRAND.name);
+    expect(BRAND.productName).not.toContain('Pluck Agro');
   });
 
   it('keeps the corporate endorsement subordinate', () => {
@@ -382,6 +402,135 @@ describe('navigation integrity', () => {
     expect(labels).toContain('Market Insights');
     expect(labels).toContain('Reports');
     expect(labels).toContain('About');
+  });
+});
+
+describe('the terminal module navigation', () => {
+  /** Every route the application serves, discovered from the app directory. */
+  function servedRoutes(): Set<string> {
+    const appDirectory = join(process.cwd(), 'src', 'app');
+    const routes = new Set<string>();
+    const walk = (directory: string, prefix: string): void => {
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        const path = join(directory, entry.name);
+        if (entry.isDirectory()) {
+          const isGroup = entry.name.startsWith('(') && entry.name.endsWith(')');
+          walk(path, isGroup ? prefix : `${prefix}/${entry.name}`);
+        } else if (entry.name === 'page.tsx') {
+          routes.add(prefix === '' ? '/' : prefix);
+        }
+      }
+    };
+    walk(appDirectory, '');
+    return routes;
+  }
+
+  it('offers the six modules the Phase 02 brief asks for', () => {
+    expect(MARKET_NAV.map((module) => module.label)).toEqual([
+      'Markets',
+      'Commodities',
+      'Trade',
+      'Charts',
+      'Fundamentals',
+      'Research',
+    ]);
+  });
+
+  it('points every module and every destination at a route that exists', () => {
+    const routes = servedRoutes();
+    const broken: string[] = [];
+    for (const module of MARKET_NAV) {
+      if (!routes.has(resolveRoute(module.href))) broken.push(`${module.label} -> ${module.href}`);
+      for (const item of module.items) {
+        if (!routes.has(resolveRoute(item.href))) broken.push(`${item.label} -> ${item.href}`);
+      }
+    }
+    expect(broken, `These navigation entries point at routes that do not exist: ${broken.join(', ')}`).toEqual([]);
+  });
+
+  it('keeps unbuilt destinations out of the navigation', () => {
+    // A destination the platform intends to serve but does not yet is named in
+    // `planned`. It must never be rendered as a link, because a link that 404s
+    // is a broken promise. The check is exact-match on the label and on the
+    // slugified label, so a planned "Market activity heatmap" cannot quietly
+    // become `/market-activity-heatmap`.
+    const plannedLabels = MARKET_NAV.flatMap((module) => module.planned ?? []);
+    expect(plannedLabels.length, 'The roadmap must be visible somewhere').toBeGreaterThan(0);
+
+    const liveLabels = MARKET_NAV.flatMap((module) => module.items.map((item) => item.label));
+    for (const planned of plannedLabels) {
+      expect(liveLabels, `"${planned}" is named as planned but is also a live destination`).not.toContain(planned);
+      const slug = planned.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      expect(
+        MARKET_NAV_ROUTES,
+        `"${planned}" is named as planned but its slug is a live route`,
+      ).not.toContain(`/${slug}`);
+    }
+  });
+
+  it('gives every module a landing route and a summary', () => {
+    for (const module of MARKET_NAV) {
+      expect(module.href.startsWith('/'), `${module.label} needs an absolute href`).toBe(true);
+      expect(module.summary.length, `${module.label} needs a summary`).toBeGreaterThan(10);
+      expect(module.items.length, `${module.label} needs at least one destination`).toBeGreaterThan(0);
+    }
+  });
+
+  it('points every account destination at a route that exists', () => {
+    const routes = servedRoutes();
+    const broken = ACCOUNT_NAV.map((link) => link.href).filter(
+      (href) => !routes.has(resolveRoute(href)),
+    );
+    expect(broken, `These account destinations do not exist: ${broken.join(', ')}`).toEqual([]);
+  });
+});
+
+describe('the terminal design vocabulary', () => {
+  it('defines a typography role for every kind of figure the terminal shows', () => {
+    const roles = TYPE_ROLES.map((role) => role.role);
+    for (const required of ['Display', 'H1', 'H2', 'H3', 'Body', 'Label', 'Metadata', 'Numeric', 'Micro-label']) {
+      expect(roles, `${required} is missing from the typography scale`).toContain(required);
+    }
+    // Every numeric role must render tabular figures. A price column that is
+    // not tabular reflows while it is being read.
+    for (const role of TYPE_ROLES.filter((entry) => entry.tabular)) {
+      expect(role.role).toBeTruthy();
+    }
+    expect(TYPE_ROLES.filter((role) => role.tabular).length).toBeGreaterThan(0);
+  });
+
+  it('defines a named z-index for every layer the terminal stacks', () => {
+    for (const layer of ['sticky', 'header', 'drawer', 'modal', 'tooltip', 'boot']) {
+      expect(typeof Z_LAYERS[layer as keyof typeof Z_LAYERS], `${layer} has no z-index`).toBe('number');
+    }
+    // The order is the point: a header above sticky content, a drawer above a
+    // header, a modal above a drawer, a tooltip above everything but the boot.
+    expect(Z_LAYERS.header).toBeGreaterThan(Z_LAYERS.sticky);
+    expect(Z_LAYERS.drawer).toBeGreaterThan(Z_LAYERS.header);
+    expect(Z_LAYERS.modal).toBeGreaterThan(Z_LAYERS.drawer);
+    expect(Z_LAYERS.tooltip).toBeGreaterThan(Z_LAYERS.modal);
+    expect(Z_LAYERS.boot).toBeGreaterThan(Z_LAYERS.tooltip);
+  });
+
+  it('keeps the motion vocabulary short and slow enough to read past', () => {
+    // A terminal is read repeatedly all day. Nothing may animate for longer
+    // than the wait it represents.
+    for (const [name, duration] of Object.entries(MOTION)) {
+      if (typeof duration !== 'string' || !duration.endsWith('ms')) continue;
+      const milliseconds = Number.parseInt(duration, 10);
+      expect(milliseconds, `${name} is too slow for a working surface`).toBeLessThanOrEqual(250);
+    }
+  });
+
+  it('mirrors the terminal tokens in the stylesheet', () => {
+    const css = readFileSync(join(process.cwd(), 'src', 'app', 'globals.css'), 'utf8');
+    for (const token of ['terminal-bg', 'terminal-surface', 'terminal-border', 'move-up', 'move-down', 'editorial-bg']) {
+      expect(css, `--color-${token} is not defined in globals.css`).toContain(`--color-${token}:`);
+    }
+    // Both environments must declare a colour scheme, or a form control inside
+    // the terminal renders with the browser's light defaults.
+    expect(css).toContain('color-scheme: dark');
+    expect(css).toContain('prefers-reduced-motion: reduce');
   });
 });
 

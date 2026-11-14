@@ -2,7 +2,7 @@
   "name": "pluck-live",
   "version": "1.0.0",
   "private": true,
-  "description": "Pluck Live — agricultural commodity price transparency & market intelligence platform for Pluck Agro.",
+  "description": "Pluck Live \u2014 agricultural commodity price transparency & market intelligence platform for Pluck Agro.",
   "engines": {
     "node": ">=22.0.0"
   },
@@ -10,7 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -41,6 +41,8 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.2",
     "jsdom": "^27.4.0",
     "pg": "^8.23.1",
     "playwright": "^1.65.0",

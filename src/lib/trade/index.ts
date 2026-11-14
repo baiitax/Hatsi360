@@ -96,3 +96,32 @@ export type {
   SpreadResult,
   CostAssessment,
 } from './opportunities';
+
+/* ------------------------------------------------------------- queries -- */
+
+/**
+ * The database-backed trade queries.
+ *
+ * These are the only functions in this folder that touch the database, and they
+ * live apart from the pure logic above so the rules can be tested without one.
+ * Every public surface — the terminal header, the market watch, the movers, the
+ * chart workspace — reads through them rather than writing its own query, so
+ * the comparability rules are applied in exactly one place.
+ */
+export {
+  getCommoditySeries,
+  getCommodityOpportunities,
+  getMarketMovements,
+  getCommodityFreshness,
+  getCommoditySeriesOptions,
+  getFundamentalSignals,
+} from './queries';
+export type {
+  CommoditySeriesRequest,
+  CommoditySeriesResult,
+  MarketComparisonResult,
+  MovementRow,
+  CommodityFreshness,
+  SeriesOption,
+  FundamentalSignal,
+} from './queries';

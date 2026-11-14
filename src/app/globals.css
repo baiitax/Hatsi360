@@ -111,6 +111,123 @@
 
   --radius-card: 0.875rem;
 
+  /* ======================================================================
+     Hatsi360 Markets — the terminal layer
+
+     Two environments, one brand. Environment A is the dark market terminal,
+     where a trader or analyst spends the working day. Environment B is the
+     light editorial surface, where research is read. Both are defined here so
+     that a colour can only be chosen once.
+
+     Every value below is mirrored in `src/lib/brand.ts` and asserted there by
+     `tests/brand/brand.test.ts`, so the stylesheet and the documentation
+     cannot drift apart.
+     ====================================================================== */
+
+  /* ---------------------------------------------- dark terminal palette -- */
+
+  --color-terminal-bg: #101713;
+  --color-terminal-surface: #17211b;
+  --color-terminal-elevated: #1c2921;
+  --color-terminal-interactive: #24332a;
+  --color-terminal-border: #2c3a31;
+  --color-terminal-text: #f3f6f2;
+  --color-terminal-text-secondary: #a8b5aa;
+  --color-terminal-text-muted: #748278;
+
+  /* --------------------------------------------- light editorial palette -- */
+
+  --color-editorial-bg: #f7f8f5;
+  --color-editorial-surface: #ffffff;
+  --color-editorial-soft: #f0f3ee;
+  --color-editorial-text: #202923;
+  --color-editorial-text-secondary: #59665e;
+  --color-editorial-border: #e3e9e2;
+
+  /* -------------------------------------------------- movement semantics --
+
+     A movement colour never carries the meaning on its own. Every component
+     that uses one also renders a sign, an arrow and a value, so the reading
+     survives colour blindness, greyscale printing and a screen reader.
+     `move-up` and `move-down` are *directions*, not judgements: a rising
+     farmgate price is good for a seller and bad for a buyer, and the
+     interface must not imply otherwise. */
+
+  --color-move-up: #2f8f57;
+  --color-move-up-soft: #14301f;
+  --color-move-down: #d0584f;
+  --color-move-down-soft: #331a18;
+  --color-move-flat: #748278;
+
+  /* ------------------------------------------------------ typography scale
+
+     Financial data typography. The numeric roles are sized for columns of
+     prices rather than for prose, and every one of them pairs with
+     `font-variant-numeric: tabular-nums` in the component layer so a
+     changing figure never reflows the row it sits in. */
+
+  --text-micro: 0.625rem;
+  --text-micro--line-height: 0.875rem;
+  --text-micro--letter-spacing: 0.06em;
+  --text-metadata: 0.6875rem;
+  --text-metadata--line-height: 1rem;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.125rem;
+  --text-body-sm: 0.8125rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-figure: 0.9375rem;
+  --text-figure--line-height: 1.375rem;
+  --text-figure-lg: 1.25rem;
+  --text-figure-lg--line-height: 1.5rem;
+  --text-figure-xl: 1.75rem;
+  --text-figure-xl--line-height: 2rem;
+
+  /* ------------------------------------------------------- spacing scale --
+
+     The terminal runs on a tighter vertical rhythm than the marketing pages.
+     These are the panel, gutter and row tokens; the general spacing scale
+     stays Tailwind's own. */
+
+  --spacing-terminal-gutter: 1rem;
+  --spacing-terminal-panel: 1rem;
+  --spacing-terminal-row: 0.5rem;
+
+  /* --------------------------------------------------------------- radius */
+
+  --radius-panel: 0.625rem;
+  --radius-control: 0.375rem;
+  --radius-pill: 999px;
+
+  /* --------------------------------------------------------------- shadows
+
+     On a dark surface a shadow reads as depth, not as dirt. The terminal
+     shadows are therefore deeper and softer than the editorial ones. */
+
+  --shadow-terminal: 0 1px 0 rgb(0 0 0 / 0.3), 0 8px 24px -16px rgb(0 0 0 / 0.6);
+  --shadow-terminal-lift: 0 2px 6px rgb(0 0 0 / 0.35), 0 20px 44px -24px rgb(0 0 0 / 0.7);
+
+  /* ---------------------------------------------------------------- motion
+
+     Fast, not flashy. A terminal is read repeatedly all day, so nothing
+     moves for longer than the wait it represents. Every one of these is
+     disabled by the reduced-motion block at the foot of this file. */
+
+  --ease-terminal: cubic-bezier(0.2, 0, 0.1, 1);
+  --duration-instant: 90ms;
+  --duration-fast: 140ms;
+  --duration-panel: 200ms;
+
+  /* --------------------------------------------------------------- z-index
+
+     Named, so nothing has to guess whether 40 or 50 is above a drawer. */
+
+  --z-sticky: 20;
+  --z-header: 40;
+  --z-drawer: 60;
+  --z-modal: 70;
+  --z-tooltip: 80;
+  --z-boot: 200;
+
   --shadow-soft: 0 1px 2px rgb(18 59 42 / 0.04), 0 8px 24px -12px rgb(18 59 42 / 0.14);
   --shadow-lift: 0 2px 4px rgb(18 59 42 / 0.06), 0 18px 40px -20px rgb(18 59 42 / 0.24);
 }
@@ -304,6 +421,31 @@
       transition-duration: 0.001ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+/* ==========================================================================
+   Hatsi360 Markets — reduced motion
+
+   The terminal and the editorial environment are quiet by design, and every
+   rule above already disables motion for a reader who has asked their
+   operating system for less. The block below extends the same guarantee to the
+   terminal's own transitions and to the range chart's hover state, so nothing
+   in either environment moves for a reader who asked it not to.
+
+   It is deliberately folded into the loading system's block rather than added
+   as a second one: a guarantee that lives in two places is a guarantee that can
+   be broken in one of them.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal,
+  .terminal *,
+  .editorial,
+  .editorial * {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 
@@ -653,3 +795,319 @@
     }
   }
 }
+
+/* ==========================================================================
+   Hatsi360 Markets — the terminal application shell
+
+   Environment A. The dark market terminal is the primary product surface:
+   the markets homepage, the commodity watch, the price monitor, the charts,
+   the trade intelligence and the customer workspace.
+
+   The classes here are the *shell* only — surfaces, rails, rules and the
+   header. Every piece of content inside them is a component that declares its
+   own semantics, so a panel never has to know what it is holding.
+   ========================================================================== */
+
+@layer components {
+  /*
+   * The terminal canvas.
+   *
+   * `color-scheme: dark` is set here rather than on `:root`, because the
+   * editorial surfaces, the Control Centre and the Field App all stay light
+   * and only the terminal inverts. Getting this from the element rather than
+   * from a media query is what lets one application carry both environments.
+   */
+  .terminal {
+    color-scheme: dark;
+    background-color: var(--color-terminal-bg);
+    color: var(--color-terminal-text);
+  }
+
+  /* A panel is the unit of the terminal. One border, one radius, one fill. */
+  .terminal-panel {
+    background-color: var(--color-terminal-surface);
+    border: 1px solid var(--color-terminal-border);
+    border-radius: var(--radius-panel);
+  }
+
+  .terminal-panel--elevated {
+    background-color: var(--color-terminal-elevated);
+  }
+
+  /* The panel that holds a table: no padding, because the table owns its own. */
+  .terminal-panel--table {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* The header rail. Frosted, so a scrolling table reads through it. */
+  .terminal-rail {
+    background-color: color-mix(in srgb, var(--color-terminal-bg) 88%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--color-terminal-border);
+  }
+
+  /* A hairline. The terminal separates with rules, not with gaps. */
+  .terminal-rule {
+    border-color: var(--color-terminal-border);
+  }
+
+  /* ---------------------------------------------------------- tabular data */
+
+  /*
+   * Every figure in the terminal.
+   *
+   * `font-variant-numeric: tabular-nums` is what keeps a column of prices
+   * aligned while the digits change, and `font-feature-settings: 'tnum' 1`
+   * is the belt-and-braces form for engines that ignore the shorthand. The
+   * letter-spacing is tightened because Inter's default is loose for a
+   * 15px figure.
+   */
+  .figure-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'zero' 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* The micro-label that sits above a figure: a column head, a unit, a source. */
+  .figure-label {
+    font-size: var(--text-micro);
+    line-height: var(--text-micro--line-height);
+    letter-spacing: var(--text-micro--letter-spacing);
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--color-terminal-text-muted);
+  }
+
+  /* ------------------------------------------------------- market movement */
+
+  /*
+   * The three movement tones. Each is a *pair*: a text colour and a soft
+   * background, so a badge can be filled without a second declaration. The
+   * arrow and the sign are rendered by the component, never by the CSS.
+   */
+  .move-up {
+    color: var(--color-move-up);
+  }
+
+  .move-down {
+    color: var(--color-move-down);
+  }
+
+  .move-flat {
+    color: var(--color-move-flat);
+  }
+
+  .move-chip-up {
+    color: var(--color-move-up);
+    background-color: var(--color-move-up-soft);
+  }
+
+  .move-chip-down {
+    color: var(--color-move-down);
+    background-color: var(--color-move-down-soft);
+  }
+
+  .move-chip-flat {
+    color: var(--color-terminal-text-secondary);
+    background-color: var(--color-terminal-elevated);
+  }
+
+  /* ------------------------------------------------------ terminal controls */
+
+  /*
+   * The terminal's own control set. These are deliberately quiet: a terminal
+   * has a hundred controls on screen and a loud one would be unreadable.
+   */
+  .terminal-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: 1.875rem;
+    padding-inline: 0.625rem;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-terminal-border);
+    background-color: var(--color-terminal-surface);
+    color: var(--color-terminal-text-secondary);
+    font-size: var(--text-label);
+    font-weight: 500;
+    white-space: nowrap;
+    transition:
+      background-color var(--duration-fast) var(--ease-terminal),
+      color var(--duration-fast) var(--ease-terminal),
+      border-color var(--duration-fast) var(--ease-terminal);
+  }
+
+  .terminal-control:hover {
+    background-color: var(--color-terminal-interactive);
+    color: var(--color-terminal-text);
+  }
+
+  .terminal-control[aria-pressed='true'],
+  .terminal-control[data-selected='true'] {
+    background-color: var(--color-terminal-interactive);
+    border-color: color-mix(in srgb, var(--color-harvest-500) 55%, var(--color-terminal-border));
+    color: var(--color-terminal-text);
+  }
+
+  .terminal-control:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* The primary action on a dark surface. */
+  .terminal-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    height: 1.875rem;
+    padding-inline: 0.75rem;
+    border-radius: var(--radius-control);
+    background-color: var(--color-brand-600);
+    color: #ffffff;
+    font-size: var(--text-label);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color var(--duration-fast) var(--ease-terminal);
+  }
+
+  .terminal-action:hover {
+    background-color: var(--color-brand-500);
+  }
+
+  .terminal-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ------------------------------------------------------- terminal tables */
+
+  /*
+   * A market table is the terminal's most important surface.
+   *
+   * Rows are 2.25rem — tall enough for a 44px touch target on mobile after
+   * padding, short enough that twenty of them fit above the fold on a laptop.
+   * The header is sticky because a watch table is read while it scrolls.
+   */
+  .terminal-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--text-body-sm);
+  }
+
+  .terminal-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    background-color: var(--color-terminal-elevated);
+    color: var(--color-terminal-text-muted);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    letter-spacing: var(--text-micro--letter-spacing);
+    text-transform: uppercase;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--color-terminal-border);
+    white-space: nowrap;
+  }
+
+  .terminal-table tbody td {
+    padding: 0.4375rem 0.75rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-terminal-border) 55%, transparent);
+    vertical-align: middle;
+  }
+
+  .terminal-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .terminal-table tbody tr:hover td {
+    background-color: color-mix(in srgb, var(--color-terminal-interactive) 60%, transparent);
+  }
+
+  /* A numeric column. Right-aligned and tabular, always. */
+  .terminal-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+}
+
+/* ==========================================================================
+   Hatsi360 Markets — the editorial environment
+
+   Environment B. Research, market briefs, fundamental analysis and the
+   institutional pages. Warm, quiet, and built for a long read rather than for
+   a working day. It shares every token with the terminal; only the surface
+   values change.
+   ========================================================================== */
+
+@layer components {
+  .editorial {
+    background-color: var(--color-editorial-bg);
+    color: var(--color-editorial-text);
+  }
+
+  .editorial-panel {
+    background-color: var(--color-editorial-surface);
+    border: 1px solid var(--color-editorial-border);
+    border-radius: var(--radius-card);
+  }
+
+  /* The reading measure. 68 characters is where a long line stops scanning. */
+  .editorial-prose {
+    max-width: 42rem;
+    line-height: 1.7;
+    color: var(--color-editorial-text-secondary);
+  }
+
+  .editorial-prose h2 {
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    letter-spacing: -0.015em;
+    color: var(--color-editorial-text);
+  }
+
+  .editorial-prose h3 {
+    margin-top: 1.75rem;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    color: var(--color-editorial-text);
+  }
+
+  .editorial-prose p {
+    margin-bottom: 1.125rem;
+  }
+
+  .editorial-prose ul {
+    margin-bottom: 1.125rem;
+    padding-left: 1.25rem;
+    list-style-type: disc;
+  }
+
+  .editorial-prose li {
+    margin-bottom: 0.375rem;
+  }
+
+  /* The editorial accent rule — a short gold line under a section heading. */
+  .editorial-accent {
+    width: 2.5rem;
+    height: 2px;
+    background-color: var(--color-harvest-500);
+    border-radius: 1px;
+  }
+}
+
+/* ==========================================================================
+   Hatsi360 Markets — reduced motion
+
+   The design system's motion is deliberately minimal, and every one of these
+   rules exists so that a person who has asked their operating system for less
+   movement gets none of it — including the boot curtain's sweep and the
+   skeleton's shimmer.
+   ========================================================================== */

@@ -125,9 +125,15 @@ export function DataFreshnessIndicator({
 export function VerificationBadge({
   status,
   className = '',
+  surface = 'light',
 }: {
   status: VerificationStatus;
   className?: string;
+  /**
+   * `terminal` renders the badge on the dark market terminal, where the light
+   * palette's tinted fills would be the only pale thing on screen.
+   */
+  surface?: 'light' | 'terminal';
 }) {
   const meta = VERIFICATION_STATUS_META[status];
   const tone =
@@ -141,12 +147,25 @@ export function VerificationBadge({
             ? 'bg-harvest-100 text-harvest-700 border-harvest-200'
             : 'bg-ink-100 text-ink-600 border-ink-200';
 
+  const terminalTone =
+    status === 'verified'
+      ? 'border-success-700/40 bg-success-700/15 text-success-700'
+      : status === 'pending_verification'
+        ? 'border-info-700/40 bg-info-700/15 text-info-700'
+        : status === 'rejected'
+          ? 'border-error-700/40 bg-error-700/15 text-error-700'
+          : status === 'correction_requested'
+            ? 'border-harvest-500/40 bg-harvest-500/15 text-harvest-300'
+            : 'border-terminal-border bg-terminal-elevated text-terminal-text-secondary';
+
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${tone} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-0.5 text-xs font-semibold ${
+        surface === 'terminal' ? terminalTone : tone
+      } ${className}`}
       title={meta.description}
     >
-      <span aria-hidden="true" className="size-1.5 rounded-full bg-current opacity-70" />
+      <span aria-hidden="true" className="size-1.5 rounded-pill bg-current opacity-70" />
       {meta.label}
     </span>
   );

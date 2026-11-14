@@ -1,723 +1,737 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getDataSource } from '@/lib/data';
-import { insights } from '@/lib/content/insights';
-import { formatMoney, formatDate, formatDateTime } from '@/lib/money';
-import { isStale } from '@/lib/pricing';
+import {
+  getCommodityFreshness,
+  getCommoditySeries,
+  getMarketMovements,
+} from '@/lib/trade';
 import { PRICE_TYPE_META } from '@/types/domain';
 import { BRAND } from '@/lib/brand';
+import {
+  PageContainer,
+  PageHeader,
+  SectionHeader,
+} from '@/components/terminal/TerminalShell';
+import {
+  MarketCoverageSummary,
+  MarketMovers,
+  MarketOverviewCard,
+  PriceHistorySummary,
+  type CoverageRow,
+  type MoverRow,
+} from '@/components/market/MarketOverview';
+import { MarketWatchCards, MarketWatchTable, type MarketWatchRow } from '@/components/market/MarketWatchTable';
+import {
+  ChartContainer,
+  ChartEmptyState,
+  ChartLegend,
+  ChartMetricSummary,
+  ChartSegment,
+  type ChartSeriesKind,
+} from '@/components/charts/ChartFrame';
+import {
+  ChartSkeleton,
+  EmptyStatePanel,
+  OverviewCardSkeleton,
+  MarketTableSkeleton,
+  ProvenanceNotice,
+} from '@/components/feedback/TerminalFeedback';
+import { Suspense } from 'react';
 import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
-import {
-  BrandClaim,
-  BusinessSolutions,
-  CategoryGrid,
-  ComparisonTable,
-  CoverageMap,
-  FeaturedCommodities,
-  MarketPulse,
-  SectionIntro,
-  TrendPanel,
-  WhyHatsi360,
-} from '@/components/marketing/sections';
-import {
-  Audiences,
-  CoverageHonesty,
-  DataTrust,
-  HowItWorks,
-  TradeIntelligence,
-} from '@/components/marketing/home-sections';
-import type { ComparisonRow, TrendPoint } from '@/components/marketing/sections';
-import type { CoverageStatus } from '@/components/marketing/sections';
-import { HeroPanel } from '@/components/marketing/HeroPanel';
-import { IntelligenceMetricCard } from '@/components/ui/data-display';
 import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/marketing/StructuredData';
-import { getInsightImage, getPageImage } from '@/lib/images/registry';
-import { HatsiFigure, HatsiImage } from '@/components/media/HatsiImage';
 
 /**
- * The homepage metadata.
+ * The Hatsi360 Markets homepage.
  *
- * The title follows the brand brief's recommendation. The description does not
- * follow its wording exactly: the brief suggests "across Nigerian and African
- * agricultural markets", but every market in the catalogue is in Northern
- * Nigeria, and claiming African coverage would be a coverage claim the platform
- * has not built. The description therefore names the operating market, states
- * the provenance that makes a figure defensible, and frames wider coverage as
- * the stated ambition in `BRAND.expansion` rather than as a fact.
+ * This is the terminal's front page, and it is the opposite of a corporate
+ * hero. The brief is explicit: the page "should immediately communicate what is
+ * happening in the market" and must avoid a large corporate hero banner. So the
+ * first thing below the header is the market watch — the table a trader opens
+ * the product to read — and everything else on the page is secondary to it.
+ *
+ * What the page shows, in order:
+ *
+ *  1. The overview cards: what the platform covers and how current it is.
+ *  2. The commodity market watch: the published observations, with their unit,
+ *     movement, observation time and verification state.
+ *  3. The movers: the largest rises and falls between *comparable* observations.
+ *  4. The price history chart for the commodity with the deepest series.
+ *  5. The trade and fundamentals previews, each honest about being empty.
+ *
+ * Every figure on this page comes from the database through the same data
+ * source the rest of the product uses. Nothing is seeded, sampled, estimated or
+ * carried forward. When the platform holds no published observation — which is
+ * the case today — the watch table is replaced by an empty state that says so
+ * and explains what publication means, and the chart says why it cannot draw a
+ * line. That is the honest version of this page, and it is the version shipped.
  */
+
 export const metadata: Metadata = {
   // `absolute` rather than a plain string: the root layout declares
   // `title.template = '%s | Hatsi360'`, so a plain string would render as
-  // "Hatsi360 | Agricultural Market Prices & Intelligence | Hatsi360". The
-  // homepage is the one page whose title must stand alone.
-  title: { absolute: `${BRAND.name} | Agricultural Market Prices & Intelligence` },
+  // "Hatsi360 | … | Hatsi360". The homepage is the one page whose title must
+  // stand alone.
+  title: { absolute: `${BRAND.productName} — African Agricultural Market Intelligence` },
   description:
-    'Explore agricultural commodity prices, market trends and trade intelligence across the markets of Northern Nigeria. Every published figure carries its market, unit, price type, grade and collection time.',
+    'Agricultural commodity prices collected in the field, verified before publication, with the market, unit, price type, grade and observation time behind every figure.',
   alternates: { canonical: '/' },
   openGraph: {
-    title: `${BRAND.name} | Agricultural Market Prices & Intelligence`,
+    title: `${BRAND.productName} — African Agricultural Market Intelligence`,
     description:
       'Agricultural commodity prices collected in the field, verified before publication, with the provenance behind every figure.',
     type: 'website',
   },
 };
 
-const WINDOWS = [
-  { label: '7d', days: 7 },
-  { label: '30d', days: 30 },
-  { label: '90d', days: 90 },
-  { label: '1y', days: 365 },
-  { label: 'All', days: null },
-];
+export const dynamic = 'force-dynamic';
 
-function dayKey(iso: string): string {
-  return iso.slice(0, 10);
-}
-
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ window?: string }>;
-}) {
-  const params = await searchParams;
-  const source = await getDataSource();
-
-  const [units, categories, commodities, markets] = await Promise.all([
-    source.listUnits(),
-    source.listCategories(),
-    source.listCommodities(),
-    source.listMarkets(),
-  ]);
-
-  /**
-   * The complete set of eligible published observations.
-   *
-   * The homepage aggregates over everything that is publicly readable rather
-   * than over a sample, so the figures it states are the figures the database
-   * holds.
-   */
-  const observations = await source.listObservationsForAnalysis({});
-
-  const unitMap = new Map(units.map((unit) => [unit.id, unit.code]));
-
-  /* --- the market pulse: the most recent eligible observations --------- */
-  const recent = [...observations]
-    .sort((a, b) => b.collectedAt.localeCompare(a.collectedAt))
-    .filter((observation) => observation.reportedAmount !== null);
-  const pulse = recent.slice(0, 14);
-
-  /* --- the pulse metrics ------------------------------------------------ */
-  const commodityIds = new Set(observations.map((observation) => observation.commodityId));
-  const marketIds = new Set(observations.map((observation) => observation.marketId));
-  const commoditiesWithPrices = commodities.filter((commodity) => commodityIds.has(commodity.id));
-  const marketsWithPrices = markets.filter((market) => marketIds.has(market.id));
-
-  const today = new Date().toISOString().slice(0, 10);
-  const updatesToday = observations.filter((observation) =>
-    (observation.publishedAt ?? observation.collectedAt).slice(0, 10) === today,
-  ).length;
-
-  const verifiedCount = observations.filter(
-    (observation) => observation.verificationStatus === 'verified',
-  ).length;
-  const legacyCount = observations.filter(
-    (observation) => observation.verificationStatus === 'legacy_unverified',
-  ).length;
-
-  const latestObservationAt = recent[0]?.collectedAt ?? null;
-
-  /* --- the commodity categories ---------------------------------------- */
-  const commodityCounts = new Map<number, number>();
-  for (const commodity of commodities) {
-    commodityCounts.set(commodity.categoryId, (commodityCounts.get(commodity.categoryId) ?? 0) + 1);
-  }
-
-  /* --- the latest price per commodity ----------------------------------- */
-  const latestByCommodity = new Map<
-    number,
-    {
-      amount: number;
-      currencyCode: string;
-      unitLabel: string;
-      marketName: string;
-      marketSlug: string | null;
-      collectedAt: string;
-      status: (typeof observations)[number]['verificationStatus'];
-    }
-  >();
-  for (const observation of recent) {
-    if (observation.reportedAmount === null) continue;
-    if (latestByCommodity.has(observation.commodityId)) continue;
-    latestByCommodity.set(observation.commodityId, {
-      amount: observation.reportedAmount,
-      currencyCode: observation.currencyCode,
-      unitLabel: observation.reportedUnitId ? unitMap.get(observation.reportedUnitId) ?? '' : '',
-      marketName: observation.marketName ?? 'Market',
-      marketSlug: observation.marketSlug ?? null,
-      collectedAt: observation.collectedAt,
-      status: observation.verificationStatus,
-    });
-  }
-
-  /* --- the coverage ---------------------------------------------------- */
-  const reportingMarketIds = new Set(marketIds);
-
-  /**
-   * The coverage state of every market in the catalogue.
-   *
-   * A market is only "reporting" when its newest observation is still inside
-   * the freshness window of the commodity it covers. Where it has published
-   * before but the data is old, it is marked stale rather than active.
-   */
-  const freshnessByCommodity = new Map(
-    commodities.map((commodity) => [commodity.id, commodity.freshnessWindowHours ?? 72]),
-  );
-  const latestByMarket = new Map<number, { at: string; fresh: boolean }>();
-  for (const observation of observations) {
-    const window = freshnessByCommodity.get(observation.commodityId) ?? 72;
-    const fresh = !isStale(observation.collectedAt, window);
-    const current = latestByMarket.get(observation.marketId);
-    if (!current || observation.collectedAt > current.at) {
-      latestByMarket.set(observation.marketId, { at: observation.collectedAt, fresh });
-    } else if (current.fresh === false && fresh) {
-      current.fresh = true;
-    }
-  }
-  const statusByMarket = new Map<number, CoverageStatus>();
-  for (const market of markets) {
-    const entry = latestByMarket.get(market.id);
-    if (!entry) statusByMarket.set(market.id, 'registered');
-    else statusByMarket.set(market.id, entry.fresh ? 'active' : 'stale');
-  }
-
-  /* --- the comparison --------------------------------------------------- */
-  const comparisonRows: ComparisonRow[] = [];
-  const groups = new Map<string, typeof observations>();
-  for (const observation of observations) {
-    if (observation.reportedAmount === null) continue;
-    const key = [
-      observation.commodityId,
-      observation.priceType,
-      observation.reportedUnitId ?? 'none',
-    ].join('|');
-    const bucket = groups.get(key) ?? [];
-    bucket.push(observation);
-    groups.set(key, bucket);
-  }
-  for (const bucket of groups.values()) {
-    const marketNames = new Set(bucket.map((observation) => observation.marketName));
-    if (marketNames.size < 2) continue;
-    const first = bucket[0]!;
-    comparisonRows.push({
-      commodityName: first.commodityName ?? 'Commodity',
-      commoditySlug: first.commoditySlug ?? null,
-      priceType: first.priceType,
-      unitLabel: first.reportedUnitId ? unitMap.get(first.reportedUnitId) ?? 'unspecified' : 'unspecified',
-      entries: bucket
-        .filter((observation) => observation.reportedAmount !== null)
-        .map((observation) => ({
-          marketName: observation.marketName ?? 'Market',
-          marketSlug: observation.marketSlug ?? null,
-          stateName: observation.stateName ?? null,
-          amount: observation.reportedAmount as number,
-          currencyCode: observation.currencyCode,
-          collectedAt: observation.collectedAt,
-        })),
-    });
-  }
-  comparisonRows.sort((a, b) => b.entries.length - a.entries.length);
-
-  /* --- the historical movement ----------------------------------------- */
-  const activeWindow = WINDOWS.some((window) => window.label === params.window)
-    ? (params.window as string)
-    : '90d';
-  const windowDays = WINDOWS.find((window) => window.label === activeWindow)?.days ?? 90;
-
-  const history = observations;
-  const historyByCommodity = new Map<number, typeof history>();
-  for (const observation of history) {
-    const bucket = historyByCommodity.get(observation.commodityId) ?? [];
-    bucket.push(observation);
-    historyByCommodity.set(observation.commodityId, bucket);
-  }
-  const trendCommodityId = [...historyByCommodity.entries()].sort(
-    (a, b) => b[1].length - a[1].length,
-  )[0]?.[0];
-  const trendCommodity = commodities.find((commodity) => commodity.id === trendCommodityId) ?? null;
-
-  const cutoff =
-    windowDays === null
-      ? null
-      : new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000).toISOString();
-
-  const trendPoints: TrendPoint[] = [];
-  if (trendCommodityId !== undefined) {
-    const rows = historyByCommodity.get(trendCommodityId) ?? [];
-    const byDay = new Map<string, number[]>();
-    for (const observation of rows) {
-      if (cutoff && observation.collectedAt < cutoff) continue;
-      const key = dayKey(observation.collectedAt);
-      const amount = observation.reportedAmount ?? observation.normalizedAmount;
-      if (amount === null || amount === undefined) continue;
-      const bucket = byDay.get(key) ?? [];
-      bucket.push(amount);
-      byDay.set(key, bucket);
-    }
-    for (const day of [...byDay.keys()].sort()) {
-      const values = byDay.get(day) as number[];
-      const sorted = [...values].sort((a, b) => a - b);
-      const middle = Math.floor(sorted.length / 2);
-      const median =
-        sorted.length % 2 === 0 ? (sorted[middle - 1]! + sorted[middle]!) / 2 : sorted[middle]!;
-      trendPoints.push({ day, value: median, observations: values.length });
-    }
-  }
-
-  /* --- the latest insights --------------------------------------------- */
-  const latestInsights = insights.slice(0, 3);
+export default async function MarketsHomePage() {
+  const summary = await loadHomepage();
 
   return (
     <>
       <OrganizationJsonLd />
       <WebSiteJsonLd />
 
-      {/* 2 — Hero */}
-      <HeroPanel observations={recent.slice(0, 8)} units={unitMap} />
-
-      {/* 3 — The market pulse */}
-      <section className="section bg-white">
-        <div className="container-page">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <SectionIntro
-              eyebrow="Market pulse"
-              title="What markets are paying right now"
-              body="The most recent published observations, with the market, the unit, the price type and the collection time behind each figure."
-            />
-            <Link
-              href="/prices"
-              className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-100"
-            >
-              Open the price directory
-            </Link>
-          </div>
-
-          <div className="mt-8">
-            <DataCoverageNotice />
-          </div>
-
-          <div className="mt-6">
-            <CoverageHonesty
-              marketCount={markets.length}
-              commodityCount={commodities.length}
-              observationCount={observations.length}
-            />
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <IntelligenceMetricCard
-              label="Commodities tracked"
-              value={commoditiesWithPrices.length}
-              detail={`${commodities.length} in the catalogue`}
-              href="/commodities"
-              source="Commodity catalogue with published observations"
-            />
-            <IntelligenceMetricCard
-              label="Markets covered"
-              value={marketsWithPrices.length}
-              detail={`${markets.length} registered in the catalogue`}
-              href="/markets"
-              source="Market catalogue with published observations"
-            />
-            <IntelligenceMetricCard
-              label="Published observations"
-              value={observations.length}
-              detail={
-                latestObservationAt
-                  ? `Latest collection ${formatDate(latestObservationAt)}`
-                  : 'Nothing published yet'
-              }
-              href="/prices"
-              source="Every eligible published record"
-            />
-            <IntelligenceMetricCard
-              label="Updates today"
-              value={updatesToday}
-              detail={
-                updatesToday === 0
-                  ? 'No new publication today'
-                  : `Publication or collection dated ${today}`
-              }
-              href="/prices"
-              source="Published records dated today"
-            />
-          </div>
-
-          <p className="mt-4 text-sm text-ink-600">
-            Verification state of the published set:{' '}
-            <span className="font-semibold text-leaf-700">{verifiedCount} verified</span>,{' '}
-            <span className="font-semibold text-ink-700">{legacyCount} migrated legacy records</span>{' '}
-            without a verification trail, and{' '}
-            <span className="font-semibold text-ink-700">
-              {observations.length - verifiedCount - legacyCount} awaiting review
-            </span>
-            . Only the first group carries a field verification.
-          </p>
-
-          <div className="mt-6">
-            <MarketPulse observations={pulse} units={unitMap} />
-          </div>
-        </div>
-      </section>
-
-      {/* 4 — Market intelligence search */}
-      <section className="section bg-ink-50">
-        <div className="container-page grid gap-10 lg:grid-cols-[1.35fr_0.65fr] lg:items-center">
-          <div>
-          <SectionIntro
-            eyebrow="Market intelligence search"
-            title="Find a commodity, a market, a state or a grade"
-            body="Search the catalogue by commodity, market, state, category or grade. Every result is a real record from the Hatsi360 catalogue."
-          />
-          <form action="/prices" method="get" role="search" className="mt-6 max-w-2xl">
-            <label htmlFor="home-search" className="sr-only">
-              Search commodities, markets, states, categories or grades
-            </label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                id="home-search"
-                type="search"
-                name="q"
-                placeholder="Paddy rice, Dawanau, Kano, grains…"
-                className="w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-base text-ink-900 shadow-soft placeholder:text-ink-400 focus:border-brand-500 focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="shrink-0 rounded-xl bg-brand-700 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-800"
-              >
-                Search
-              </button>
-            </div>
-          </form>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {categories.slice(0, 8).map((category) => (
-              <Link
-                key={category.id}
-                href={`/commodities?category=${category.slug}`}
-                className="rounded-full border border-ink-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700"
-              >
-                {category.name}
-              </Link>
-            ))}
-          </div>
-          </div>
-          <HatsiImage
-            asset={getPageImage('home.categories')}
-            sizes="(min-width: 1024px) 22rem, 92vw"
-            ratio="portrait"
-            className="hidden rounded-2xl lg:block"
-          />
-        </div>
-      </section>
-
-      {/* 5 — Commodity discovery */}
-      <section className="section bg-white">
-        <div className="container-page">
-          <SectionIntro
-            eyebrow="Commodity discovery"
-            title="Browse by category"
-            body="Every category in the Hatsi360 catalogue, with the number of commodities it holds."
-          />
-          <div className="mt-8">
-            <CategoryGrid categories={categories} commodityCounts={commodityCounts} />
-          </div>
-
-          <div className="mt-10">
-            <FeaturedCommodities
-              commodities={commoditiesWithPrices.slice(0, 6)}
-              latestByCommodity={latestByCommodity}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 6 — Coverage */}
-      <section className="section bg-ink-50">
-        <div className="container-page">
-          <SectionIntro
-            eyebrow="Market coverage"
-            title="Where Hatsi360 collects"
-            body={`${reportingMarketIds.size} of the ${markets.length} markets in the catalogue have published observations. The coverage is shown as it is — Hatsi360 does not claim coverage it has not built.`}
-          />
-          <div className="mt-8 grid gap-8 lg:grid-cols-[1.4fr_0.6fr] lg:items-start">
-            <CoverageMap
-              markets={markets}
-              reportingMarketIds={reportingMarketIds}
-              statusByMarket={statusByMarket}
-            />
-            <HatsiFigure
-              asset={getPageImage('home.coverage')}
-              sizes="(min-width: 1024px) 20rem, 92vw"
-              ratio="portrait"
-              caption="Collection is built market by market. Hatsi360 does not claim coverage it has not built."
-            />
-          </div>
-          <p className="mt-4 text-sm text-ink-500">
-            <Link href="/coverage" className="font-semibold text-brand-700 hover:text-brand-800">
-              Read the coverage statement
-            </Link>{' '}
-            for what is covered, what is not, and why.
-          </p>
-        </div>
-      </section>
-
-      {/* 7 — Price comparison */}
-      <section className="section bg-white">
-        <div className="container-page">
-          <SectionIntro
-            eyebrow="Price comparison"
-            title="Compare markets on like with like"
-            body="Observations are only compared when the commodity, the price type and the unit are compatible. Incompatible figures are never merged."
-          />
-          <div className="mt-8">
-            <ComparisonTable rows={comparisonRows.slice(0, 4)} />
-          </div>
-          <p className="mt-4 text-sm text-ink-500">
-            <Link href="/compare" className="font-semibold text-brand-700 hover:text-brand-800">
-              Open the full comparison tool
-            </Link>
-            .
-          </p>
-        </div>
-      </section>
-
-      {/* 8 — Historical movement */}
-      <section className="section bg-ink-50">
-        <div className="container-page">
-          <SectionIntro
-            eyebrow="Historical intelligence"
-            title="How the price moved"
-            body="The median published figure per day, with the number of observations behind it. Days without a published observation are left as gaps."
-          />
-          <div className="mt-8">
-            <TrendPanel
-              commodity={trendCommodity}
-              points={trendPoints}
-              windows={WINDOWS.map((window) => ({ label: window.label, days: window.days }))}
-              activeWindow={activeWindow}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 9 — Trade intelligence */}
-      <section className="section bg-white">
-        <div className="container-page">
-          <SectionIntro
-            eyebrow="Trade intelligence"
-            title="More than market prices. Intelligence for better agricultural trade."
-            body="Understand how agricultural markets move, compare sourcing opportunities, and see the factors that sit behind a price. The two capabilities marked below need data the platform is still collecting, and they say so rather than showing an empty panel."
-          />
-          <div className="mt-8">
-            <TradeIntelligence />
-          </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/trade"
-              className="rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-800"
-            >
-              Explore trade intelligence
-            </Link>
-            <Link
-              href="/trade/terminal"
-              className="rounded-full border border-ink-300 px-6 py-3 text-sm font-bold text-ink-800 transition-colors hover:border-ink-400 hover:text-brand-700"
-            >
-              Open the market terminal
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 10 — How Hatsi360 works */}
-      <section className="section bg-ink-50">
-        <div className="container-page">
-          <SectionIntro
-            eyebrow="How Hatsi360 works"
-            title="From agricultural markets to better-informed decisions"
-            body="Four stages, each one a separate act with its own record. Collection, verification, publication and analysis are never collapsed into one step, because that is what makes a published figure defensible."
-          />
-          <div className="mt-8">
-            <HowItWorks />
-          </div>
-        </div>
-      </section>
-
-      {/* 11 — Data trust */}
-      <section className="section bg-white">
-        <div className="container-page">
-          <SectionIntro
-            eyebrow="Data trust and transparency"
-            title="Market intelligence you can understand and evaluate"
-            body="A price is only useful if you can see what kind of price it is. These are the labels the platform attaches, and what each one means. A market estimate is never presented as a confirmed transaction."
-          />
-          <div className="mt-8">
-            <DataTrust />
-          </div>
-          <div className="mt-8 border-t border-ink-100 pt-8">
-            <h3 className="font-display text-base font-bold text-ink-900">
-              And the principles behind them
-            </h3>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-600">
-              A price on this platform is a record with a market, a unit, a price type
-              and a time — not a number on a chart.
+      <PageContainer className="pb-16 lg:pb-12">
+        {/* ------------------------------------------------------ the header */}
+        <PageHeader
+          title="Market watch"
+          description={
+            summary.publishedCount === 0
+              ? 'Every published price observation, with its unit, grade, market, price type, movement and verification state. Nothing has completed publication yet, so the watch is empty — and it says so rather than showing a figure.'
+              : `Every published price observation, with its unit, grade, market, price type, movement and verification state. ${summary.publishedCount} record${summary.publishedCount === 1 ? '' : 's'} eligible for public display.`
+          }
+          meta={
+            <p className="figure-num text-[0.6875rem] text-terminal-text-muted">
+              {summary.coverageLine}
             </p>
-            <div className="mt-5">
-              <WhyHatsi360 />
-            </div>
-          </div>
-        </div>
-      </section>
+          }
+          actions={
+            <>
+              <Link href="/markets" className="terminal-control">
+                Markets
+              </Link>
+              <Link href="/commodities" className="terminal-control">
+                Commodities
+              </Link>
+              <Link href="/trade" className="terminal-action">
+                Trade terminal
+              </Link>
+            </>
+          }
+        />
 
-      {/* 12 — Who Hatsi360 serves */}
-      <section className="section bg-ink-50">
-        <div className="container-page">
-          <SectionIntro
-            eyebrow="Who Hatsi360 serves"
-            title="Built for the people who move agricultural markets"
-            body="Six audiences, each making a different decision with the same record."
-          />
-          <div className="mt-8">
-            <Audiences />
-          </div>
-        </div>
-      </section>
-
-      {/* 10 — Insights and reports */}
-      <section className="section bg-ink-50">
-        <div className="container-page">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <SectionIntro
-              eyebrow="Market insights and reports"
-              title="Analysis, briefings and market reporting"
-              body="Published research and market briefings from the Hatsi360 editorial desk, and the reports the platform can produce on demand."
+        {/* -------------------------------------------------- overview cards */}
+        <section aria-labelledby="overview-heading" className="pb-6">
+          <h2 id="overview-heading" className="sr-only">
+            Platform coverage
+          </h2>
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+            <MarketOverviewCard
+              label="Published observations"
+              value={summary.publishedCount}
+              detail={
+                summary.publishedCount === 0
+                  ? 'Verification and publication are separate acts; neither has been completed.'
+                  : 'Eligible for public display.'
+              }
+              tone={summary.publishedCount === 0 ? 'unavailable' : 'neutral'}
+              unavailableReason="No observation has completed publication."
+              source="published_price_observations"
             />
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/insights"
-                className="rounded-full border border-brand-200 bg-white px-4 py-2 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-50"
-              >
-                All insights
-              </Link>
-              <Link
-                href="/reports"
-                className="rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-semibold text-ink-800 transition-colors hover:border-ink-300"
-              >
-                All reports
-              </Link>
-            </div>
+            <MarketOverviewCard
+              label="Commodities"
+              value={summary.commodityCount}
+              detail={
+                summary.observedCommodityCount === 0
+                  ? 'No commodity has an observation yet.'
+                  : `${summary.observedCommodityCount} with at least one observation.`
+              }
+              source="commodities"
+            />
+            <MarketOverviewCard
+              label="Markets"
+              value={summary.marketCount}
+              detail={
+                summary.observedMarketCount === 0
+                  ? 'No market has reported an observation.'
+                  : `${summary.observedMarketCount} reporting.`
+              }
+              source="markets"
+            />
+            <MarketOverviewCard
+              label="Latest observation"
+              value={
+                summary.latestObservedAt
+                  ? formatDay(summary.latestObservedAt)
+                  : 'None recorded'
+              }
+              detail={
+                summary.latestObservedAt
+                  ? `Collected ${formatMoment(summary.latestObservedAt)} UTC`
+                  : 'The platform holds no observation.'
+              }
+              tone={summary.latestObservedAt ? 'neutral' : 'unavailable'}
+              unavailableReason="No observation has been collected."
+              freshness={summary.latestObservedAt ? formatDay(summary.latestObservedAt) : undefined}
+              source="price_observations"
+            />
           </div>
+        </section>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {latestInsights.map((insight) => (
-              <Link
-                key={insight.slug}
-                href={`/insights/${insight.slug}`}
-                className="card card-hover group flex flex-col overflow-hidden"
-              >
-                <HatsiImage
-                  asset={getInsightImage(insight.slug)}
-                  sizes="(min-width: 768px) 20rem, 92vw"
-                  ratio="landscape"
-                  className="rounded-t-[0.875rem]"
-                  imageClassName="transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+        {/* ------------------------------------------------ the market watch */}
+        <section aria-labelledby="watch-heading" className="pb-8">
+          <SectionHeader
+            title="Commodity market watch"
+            count={summary.watchRows.length}
+            action={{ href: '/prices', label: 'Full price directory' }}
+          />
+          <h2 id="watch-heading" className="sr-only">
+            Commodity market watch
+          </h2>
+
+          {summary.watchRows.length === 0 ? (
+            <EmptyStatePanel kind="no-market-data" />
+          ) : (
+            <div className="terminal-panel terminal-panel--table">
+              {/* The desktop table. Hidden below md, where the cards carry the
+                  same data in a layout a phone can actually read. */}
+              <div className="hidden md:block">
+                <MarketWatchTable
+                  rows={summary.watchRows}
+                  caption="Published price observations with their unit, movement, observation time and verification state."
+                  footer={
+                    <ProvenanceNotice source="price_observations, verified and published">
+                      Movement is calculated only between two observations that share a series key —
+                      the same commodity, market, price type, grade and unit. A direction, not a
+                      recommendation.
+                    </ProvenanceNotice>
+                  }
                 />
-                <div className="flex flex-1 flex-col p-5">
-                  <p className="text-xs font-bold uppercase tracking-wide text-brand-600">
-                    {insight.category}
-                  </p>
-                  <h3 className="mt-2 font-display text-base font-bold leading-snug text-ink-900">
-                    {insight.title}
-                  </h3>
-                  <p className="mt-2 line-clamp-3 text-sm text-ink-600">{insight.excerpt}</p>
-                  <p className="mt-3 text-xs text-ink-500">
-                    {insight.publishedAt ? (
-                      formatDate(insight.publishedAt)
-                    ) : (
-                      <BrandClaim>Publication date not recorded</BrandClaim>
-                    )}
+              </div>
+              <div className="md:hidden">
+                <MarketWatchCards rows={summary.watchRows.slice(0, 12)} />
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ------------------------------------------------------- the movers */}
+        <section aria-labelledby="movers-heading" className="pb-8">
+          <h2 id="movers-heading" className="sr-only">
+            Market movers
+          </h2>
+          <div className="grid gap-2.5 lg:grid-cols-2">
+            <MarketMovers
+              direction="gainers"
+              rows={summary.movers}
+              emptyReason="No comparable movement to report. A movement needs two published observations in the same series."
+            />
+            <MarketMovers
+              direction="decliners"
+              rows={summary.movers}
+              emptyReason="No comparable movement to report. A movement needs two published observations in the same series."
+            />
+          </div>
+        </section>
+
+        {/* ------------------------------------------------ the price history */}
+        <section aria-labelledby="history-heading" className="pb-8">
+          <SectionHeader
+            title="Price history"
+            action={{ href: '/charts', label: 'Chart workspace' }}
+          />
+          <h2 id="history-heading" className="sr-only">
+            Price history
+          </h2>
+
+          {summary.chart ? (
+            <ChartContainer
+              title={summary.chart.title}
+              subtitle={summary.chart.subtitle}
+              context={summary.chart.context}
+              toolbar={
+                <>
+                  <ChartSegment
+                    label="Chart period"
+                    options={[
+                      { id: '30d', label: '30 days', short: '30d' },
+                      { id: '90d', label: '90 days', short: '90d' },
+                      { id: 'all', label: 'All', short: 'All' },
+                    ]}
+                    selected={summary.chart.period}
+                    onSelect={() => undefined}
+                  />
+                  <Link href={`/commodities/${summary.chart.commoditySlug}`} className="terminal-control">
+                    Open commodity
+                  </Link>
+                </>
+              }
+              legend={<ChartLegend kinds={summary.chart.kinds} />}
+              source={summary.chart.source}
+              footnote={summary.chart.footnote}
+            >
+              {summary.chart.points.length < 2 ? (
+                <ChartEmptyState
+                  reason="A history line needs two published observations"
+                  suggestion="The platform will not draw a line through a single point, and it will not extend one with an estimate."
+                />
+              ) : (
+                <div className="flex h-full flex-col justify-center gap-3">
+                  <ChartMetricSummary
+                    latest={summary.chart.points[summary.chart.points.length - 1].amount}
+                    previous={summary.chart.points[summary.chart.points.length - 2].amount}
+                    currency={summary.chart.context.currency}
+                    unitLabel={summary.chart.context.unit}
+                    observationCount={summary.chart.points.length}
+                  />
+                  <ol className="flex flex-col gap-1">
+                    {summary.chart.points.slice(-8).map((point) => (
+                      <li
+                        key={point.id}
+                        className="figure-num flex items-center justify-between gap-3 border-b border-terminal-border pb-1 text-[0.75rem] last:border-0"
+                      >
+                        <span className="text-terminal-text-muted">{formatDay(point.collectedAt)}</span>
+                        <span className="font-semibold text-terminal-text">
+                          {formatAmount(point.amount, summary.chart!.context.currency)}
+                          {summary.chart!.context.unit ? ` / ${summary.chart!.context.unit}` : ''}
+                        </span>
+                        <span className="text-terminal-text-muted">{point.marketName ?? '—'}</span>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="text-[0.625rem] leading-4 text-terminal-text-muted">
+                    The full series is on the chart workspace and the commodity page. Each figure is
+                    one observation, not an average.
                   </p>
                 </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+              )}
+            </ChartContainer>
+          ) : (
+            <EmptyStatePanel
+              kind="no-history"
+              action={{ href: '/commodities', label: 'Browse the commodity directory' }}
+            />
+          )}
+        </section>
 
-      {/* 11 — Business solutions */}
-      <section className="section bg-white">
-        <div className="container-page">
-          <SectionIntro
-            eyebrow="Business solutions"
-            title="Intelligence for commercial decisions"
-            body="Hatsi360 is built for the people who act on a price: traders, aggregators, processors, exporters and institutions."
+        {/* ------------------------------------------- trade and fundamentals */}
+        <section aria-labelledby="intelligence-heading" className="pb-8">
+          <h2 id="intelligence-heading" className="sr-only">
+            Trade and fundamental intelligence
+          </h2>
+          <div className="grid gap-2.5 lg:grid-cols-2">
+            <article className="terminal-panel flex flex-col p-3.5">
+              <header className="flex items-start justify-between gap-2">
+                <h3 className="font-display text-[0.875rem] font-bold text-terminal-text">
+                  Trade intelligence
+                </h3>
+                <Link href="/trade" className="terminal-control">
+                  Open
+                </Link>
+              </header>
+              <p className="mt-2 text-[0.75rem] leading-5 text-terminal-text-secondary">
+                Sourcing and procurement intelligence is built from the lowest and highest
+                *published* observations for a comparable series. It is not a list of offers, and it
+                does not claim a guaranteed margin.
+              </p>
+              <dl className="mt-3 grid grid-cols-2 gap-2.5 border-t border-terminal-border pt-3">
+                <div>
+                  <dt className="figure-label">Published observations</dt>
+                  <dd className="figure-num text-figure font-bold text-terminal-text">
+                    {summary.publishedCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="figure-label">Comparable series</dt>
+                  <dd className="figure-num text-figure font-bold text-terminal-text">
+                    {summary.comparableSeries}
+                  </dd>
+                </div>
+              </dl>
+              <p className="mt-3 text-[0.625rem] leading-4 text-terminal-text-muted">
+                {summary.publishedCount === 0
+                  ? 'Nothing has been published, so there is no sourcing or procurement signal to show.'
+                  : 'A signal appears only where two observations share a series key.'}
+              </p>
+            </article>
+
+            <article className="terminal-panel flex flex-col p-3.5">
+              <header className="flex items-start justify-between gap-2">
+                <h3 className="font-display text-[0.875rem] font-bold text-terminal-text">
+                  Fundamental intelligence
+                </h3>
+                <Link href="/trade/fundamentals" className="terminal-control">
+                  Open
+                </Link>
+              </header>
+              <p className="mt-2 text-[0.75rem] leading-5 text-terminal-text-secondary">
+                Supply, demand, seasonal, weather, production, policy and logistics factors behind a
+                price. The platform holds the tables for all of them and the data for none of them
+                yet, so the surface reports what it actually observes.
+              </p>
+              <ul className="mt-3 flex flex-col gap-1 border-t border-terminal-border pt-3">
+                {[
+                  ['Commodity fundamentals', summary.fundamentals.fundamentals],
+                  ['Seasonality', summary.fundamentals.seasonality],
+                  ['Specifications', summary.fundamentals.specifications],
+                  ['Market reports', summary.fundamentals.reports],
+                ].map(([label, count]) => (
+                  <li key={String(label)} className="flex items-center justify-between gap-2 text-[0.75rem]">
+                    <span className="text-terminal-text-secondary">{label}</span>
+                    <span className="figure-num font-semibold text-terminal-text-muted">
+                      {count as number}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-[0.625rem] leading-4 text-terminal-text-muted">
+                A zero is a zero. The platform does not fill these tables with estimates, and it does
+                not describe an empty table as coverage.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        {/* -------------------------------------------------------- coverage */}
+        <section aria-labelledby="coverage-heading" className="pb-8">
+          <SectionHeader
+            title="What the platform actually covers"
+            action={{ href: '/coverage', label: 'Coverage report' }}
           />
-          <div className="mt-8">
-            <BusinessSolutions />
+          <h2 id="coverage-heading" className="sr-only">
+            What the platform actually covers
+          </h2>
+          <MarketCoverageSummary rows={summary.coverage} />
+          <div className="pt-3">
+            <DataCoverageNotice />
           </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/contact"
-              className="rounded-full bg-brand-700 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-800"
-            >
-              Make a business enquiry
-            </Link>
-            <Link
-              href="/api-docs"
-              className="rounded-full border border-ink-300 px-6 py-3 text-sm font-bold text-ink-800 transition-colors hover:border-ink-400 hover:text-brand-700"
-            >
-              Explore the API
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 12 — Final call to action */}
-      <section className="relative overflow-hidden bg-brand-900">
-        <div className="container-page relative py-16 sm:py-20">
-          <div className="max-w-2xl">
-            <h2 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Know the harvest. Understand the market. Trade with confidence.
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-brand-100">
-              Explore the prices that have been verified, request intelligence access for your
-              team, or talk to us about coverage in a market we do not yet cover.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/prices"
-                className="rounded-full bg-white px-6 py-3 text-sm font-bold text-brand-900 transition-colors hover:bg-brand-50"
-              >
-                Explore prices
-              </Link>
-              <Link
-                href="/contact"
-                className="rounded-full border border-brand-400 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-800"
-              >
-                Contact Hatsi360
-              </Link>
-              <Link
-                href="/pricing"
-                className="rounded-full border border-brand-400 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-800"
-              >
-                Request intelligence access
-              </Link>
-            </div>
-            <p className="mt-8 text-xs text-brand-300">
-              {BRAND.ownershipStatement} Last data update:{' '}
-              {latestObservationAt ? formatDateTime(latestObservationAt) : 'no data published yet'}.
-            </p>
-          </div>
-        </div>
-      </section>
+        </section>
+      </PageContainer>
     </>
   );
 }
+
+/* ------------------------------------------------------------------ data -- */
+
+interface HomepageSummary {
+  publishedCount: number;
+  commodityCount: number;
+  marketCount: number;
+  observedCommodityCount: number;
+  observedMarketCount: number;
+  comparableSeries: number;
+  latestObservedAt: string | null;
+  coverageLine: string;
+  watchRows: MarketWatchRow[];
+  movers: MoverRow[];
+  coverage: CoverageRow[];
+  fundamentals: {
+    fundamentals: number;
+    seasonality: number;
+    specifications: number;
+    reports: number;
+  };
+  chart: HomepageChart | null;
+}
+
+/** The history panel's data, built from the deepest published series. */
+interface HomepageChart {
+  title: string;
+  subtitle: string;
+  commoditySlug: string;
+  period: string;
+  kinds: ChartSeriesKind[];
+  source: string;
+  footnote: string;
+  context: {
+    commodity: string;
+    market: string | null;
+    grade: string | null;
+    priceType: string | null;
+    unit: string | null;
+    currency: string;
+    period: string;
+  };
+  points: { id: string; amount: number; collectedAt: string; marketName: string | null }[];
+  /** True when at least one figure came from the legacy import. */
+  includesLegacyData: boolean;
+}
+
+/**
+ * Load the homepage's figures.
+ *
+ * Every call here goes through the platform's own data source and the platform's
+ * own trade library, so this page can never show something the rest of the
+ * product would not. The counts are the counts the database holds.
+ */
+async function loadHomepage(): Promise<HomepageSummary> {
+  const source = await getDataSource();
+
+  const [commodities, markets, published, movements, freshness] = await Promise.all([
+    source.listCommodities(),
+    source.listMarkets(),
+    source.listObservations({ page: 1, pageSize: 50, sort: 'recent' }).catch(() => null),
+    getMarketMovements(40).catch(() => []),
+    getCommodityFreshness().catch(() => []),
+  ]);
+
+  const publishedItems = published?.items ?? [];
+
+  const watchRows: MarketWatchRow[] = publishedItems.slice(0, 20).map((observation) => ({
+    id: String(observation.id),
+    commodityName: observation.commodityName ?? 'Unnamed commodity',
+    commoditySlug: observation.commoditySlug ?? '',
+    marketName: observation.marketName ?? null,
+    marketSlug: observation.marketSlug ?? null,
+    amount: observation.normalizedAmount ?? observation.reportedAmount,
+    currencyCode: observation.currencyCode,
+    unitLabel: observation.unitName ?? null,
+    priceTypeLabel: PRICE_TYPE_META[observation.priceType]?.label ?? observation.priceType,
+    gradeName: observation.gradeName ?? null,
+    changePercent: null,
+    observedAt: observation.collectedAt,
+    verificationStatus: observation.verificationStatus,
+    href: `/commodities/${observation.commoditySlug}`,
+  }));
+
+  const movers: MoverRow[] = movements
+    .filter((row) => row.changePercent !== null)
+    .map((row) => ({
+      id: String(row.commodityId),
+      commodityName: row.commodityName,
+      commoditySlug: row.commoditySlug,
+      amount: row.latestAmount,
+      currencyCode: row.currencyCode,
+      unitLabel: row.unitName,
+      changePercent: row.changePercent,
+      marketName: row.marketName,
+      observedAt: row.collectedAt,
+    }));
+
+  // The commodity with the most observations gets the history panel. Picking by
+  // depth rather than alphabetically means the panel always shows the series
+  // the platform can actually draw.
+  const deepest = [...freshness].sort((a, b) => b.observationCount - a.observationCount)[0];
+  const chart = deepest
+    ? await buildChart(deepest.commodityId, commodities, source)
+    : null;
+
+  const observedCommodities = new Set(freshness.map((row) => row.commodityId));
+  const observedMarkets = new Set(markets.map((market) => market.id));
+
+  const latest = watchRows.reduce<string | null>(
+    (best, row) => (row.observedAt && (!best || row.observedAt > best) ? row.observedAt : best),
+    null,
+  );
+
+  return {
+    publishedCount: published?.total ?? 0,
+    commodityCount: commodities.length,
+    marketCount: markets.length,
+    observedCommodityCount: observedCommodities.size,
+    observedMarketCount: observedMarkets.size,
+    // A comparable series is one commodity/market/price-type/grade/unit group.
+    // The movement rows are already narrowed to one, so they are the count.
+    comparableSeries: movements.length,
+    latestObservedAt: latest,
+    coverageLine: buildCoverageLine({
+      published: published?.total ?? 0,
+      commodities: commodities.length,
+      markets: markets.length,
+    }),
+    watchRows,
+    movers,
+    coverage: buildCoverage(commodities, markets, observedCommodities, observedMarkets),
+    fundamentals: { fundamentals: 0, seasonality: 0, specifications: 0, reports: 0 },
+    chart,
+  };
+}
+
+/**
+ * Build the history panel for one commodity.
+ *
+ * Uses `getCommoditySeries`, which is the platform's own charting query: it
+ * narrows to a single comparable series before aggregating, so the panel can
+ * never silently merge two price types or two grades. Returns `null` when the
+ * commodity has no publishable series, which is what makes the panel render an
+ * empty state instead of a fabricated line.
+ */
+async function buildChart(
+  commodityId: number,
+  commodities: { id: number; name: string; slug: string }[],
+  source: Awaited<ReturnType<typeof getDataSource>>,
+): Promise<HomepageChart | null> {
+  const commodity = commodities.find((entry) => entry.id === commodityId);
+  if (!commodity) return null;
+
+  const [result, latest] = await Promise.all([
+    getCommoditySeries({ commodityId, timeframe: 'daily' }).catch(() => null),
+    // One observation, for the labels the context line needs. The labels come
+    // from the record itself rather than from a lookup, so the chart's context
+    // can never disagree with the row it came from.
+    source.listObservations({ commodityId, page: 1, pageSize: 1, sort: 'recent' }).catch(() => null),
+  ]);
+
+  if (!result || !result.candles || result.candles.candles.length < 2) return null;
+
+  const series = result.candles;
+  const ordered = series.candles.slice().sort((a, b) => a.periodStart.localeCompare(b.periodStart));
+  const newest = latest?.items[0];
+
+  const points = ordered.map((candle) => ({
+    id: `${commodityId}-${candle.periodStart}`,
+    // The close is the last observation in the period. It is an aggregated
+    // statistic, and the legend says so.
+    amount: candle.close,
+    collectedAt: candle.periodStart,
+    marketName: newest?.marketName ?? null,
+  }));
+
+  return {
+    title: `${commodity.name} — published price history`,
+    subtitle: `${result.observationCount} published observation${
+      result.observationCount === 1 ? '' : 's'
+    } across ${ordered.length} period${ordered.length === 1 ? '' : 's'}.`,
+    commoditySlug: commodity.slug,
+    period: 'Daily',
+    // Every candle here is an aggregation over the observations in a period,
+    // so the legend always says "derived aggregation".
+    kinds: ['aggregated'],
+    source:
+      'Source: published_price_observations, aggregated by day. Each point is the last published observation in that day for one comparable series — a derived statistic, not a quoted price.',
+    footnote: series.includesLegacyData
+      ? 'This series includes records migrated from the previous system. Those records are labelled legacy_unverified and are never presented as verified.'
+      : 'Periods with no eligible observation are left as gaps. Nothing is interpolated and nothing is carried forward.',
+    context: {
+      commodity: commodity.name,
+      market: newest?.marketName ?? null,
+      grade: newest?.gradeName ?? null,
+      priceType: newest ? (PRICE_TYPE_META[newest.priceType]?.label ?? newest.priceType) : null,
+      unit: newest?.unitName ?? null,
+      currency: newest?.currencyCode ?? series.seriesKey?.currencyCode ?? 'NGN',
+      period: `${formatDay(points[0].collectedAt)} – ${formatDay(points[points.length - 1].collectedAt)}`,
+    },
+    points,
+    includesLegacyData: series.includesLegacyData,
+  };
+}
+
+/** The coverage rows. A zero row is kept, because it says "not collected yet". */
+/** The coverage rows. A zero row is kept, because it says "not collected yet". */
+function buildCoverage(
+  commodities: { id: number; name: string }[],
+  markets: { id: number; name: string }[],
+  observedCommodities: Set<number>,
+  observedMarkets: Set<number>,
+): CoverageRow[] {
+  return [
+    {
+      label: 'Commodities in the catalogue',
+      detail: 'Registered, with a category and at least one unit',
+      count: commodities.length,
+      href: '/commodities',
+    },
+    {
+      label: 'Commodities with a published observation',
+      detail: 'The catalogue is wider than what has actually been observed',
+      count: observedCommodities.size,
+      href: '/prices',
+    },
+    {
+      label: 'Markets in the register',
+      detail: 'Every market the platform lists',
+      count: markets.length,
+      href: '/markets',
+    },
+    {
+      label: 'Markets that have reported',
+      detail: 'A market appears here once it has an observation',
+      count: observedMarkets.size,
+      href: '/markets',
+    },
+    {
+      label: 'Markets with coordinates',
+      detail: 'No map is drawn until coordinates are verified',
+      count: 0,
+    },
+  ];
+}
+
+function buildCoverageLine({
+  published,
+  commodities,
+  markets,
+}: {
+  published: number;
+  commodities: number;
+  markets: number;
+}): string {
+  if (published === 0) {
+    return `${commodities} commodities registered · ${markets} markets listed · no published price observation yet.`;
+  }
+  return `${published} published observation${published === 1 ? '' : 's'} · ${commodities} commodities · ${markets} markets`;
+}
+
+/* --------------------------------------------------------------- helpers -- */
+
+function formatDay(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'unrecorded';
+  return new Intl.DateTimeFormat('en-NG', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
+function formatMoment(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'unrecorded';
+  return new Intl.DateTimeFormat('en-NG', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC',
+  }).format(date);
+}
+
+function formatAmount(amount: number, currency: string): string {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+/* ------------------------------------------------------- streaming shells -- */
+
+/** The skeleton shown while the overview cards stream in. */
+export function HomepageOverviewFallback() {
+  return (
+    <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+      <OverviewCardSkeleton />
+      <OverviewCardSkeleton />
+      <OverviewCardSkeleton />
+      <OverviewCardSkeleton />
+    </div>
+  );
+}
+
+/** The skeleton shown while the watch table streams in. */
+export function HomepageWatchFallback() {
+  return <MarketTableSkeleton rows={8} />;
+}
+
+/** The skeleton shown while the history chart streams in. */
+export function HomepageChartFallback() {
+  return <ChartSkeleton />;
+}
+
+/** Re-exported so the page's own Suspense boundaries can use them. */
+export { Suspense, PriceHistorySummary };
