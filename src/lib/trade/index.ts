@@ -125,3 +125,50 @@ export type {
   SeriesOption,
   FundamentalSignal,
 } from './queries';
+
+/* ---------------------------------------- Phase 07: Geographic & Classification -- */
+
+export {
+  getCountries,
+  getCountryByCode,
+  getCountryByISO2,
+  getCountryWithBlocs,
+  getTradeBlocs,
+  getTradeBlocByCode,
+  getBlocsForCountry,
+  getRegionSummaries,
+  getContinentList,
+  getSubregionList,
+} from './geographic';
+export type {
+  Country,
+  TradeBloc,
+  TradeBlocMembership,
+  TradeBlocWithMembers,
+  CountryWithBlocs,
+  RegionSummary,
+  CountryListOptions,
+} from './geographic';
+
+export {
+  getCurrentRevision,
+  getAllRevisions,
+  getHSCodes,
+  getHSCodeById,
+  getHSCodeByCode,
+  getHSTree,
+  getCommodityHSMappings,
+  getHSCodeForCommodity,
+  getCommoditiesForHSCode,
+  searchHSCodes,
+  getChapterCount,
+  getClassificationStats,
+} from './classification';
+export type {
+  HSRevision,
+  HSCode,
+  HSCodeWithChildren,
+  CommodityHSMapping,
+  HSCodeWithMappings,
+  HSCodeListOptions,
+} from './classification';
