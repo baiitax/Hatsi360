@@ -7,6 +7,7 @@ import {
   getCommodityFreshness,
   type CommodityFreshness,
 } from '@/lib/trade/queries';
+import { getIntelligenceOverviewsBySlug } from '@/lib/intelligence/commodity-intelligence';
 import {
   PageContainer,
   PageHeader,
@@ -21,6 +22,7 @@ import {
   DataFreshnessIndicator,
   type FreshnessState,
 } from '@/components/market/MarketOverview';
+import { IntelligenceIndicator } from '@/components/intelligence/IntelligenceIndicators';
 import { IconArrowRight } from '@/components/ui/icons';
 import type { Commodity, CommodityCategory } from '@/types/domain';
 
@@ -68,6 +70,10 @@ export default async function CommodityDirectoryPage({
         getCommodityFreshness(),
       ])
     : [[], [], []];
+
+  const intelligenceBySlug = source
+    ? await getIntelligenceOverviewsBySlug()
+    : new Map();
 
   // A legacy link such as commodity-detail.php?id=1 lands here with ?id=. The
   // legacy detail page was the price view, so it resolves to /prices/<slug>.
@@ -165,6 +171,7 @@ export default async function CommodityDirectoryPage({
             <ol className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {items.map((commodity) => {
                 const entry = freshnessById.get(commodity.id);
+                const intelligence = intelligenceBySlug.get(commodity.slug) ?? null;
                 const observed = (commodity.observationCount ?? 0) > 0;
                 // The platform's own freshness classification, read rather than
                 // re-derived, so this page and the price cards agree.
@@ -187,6 +194,11 @@ export default async function CommodityDirectoryPage({
                         <h3 className="text-[0.9375rem] font-semibold leading-tight text-terminal-text group-hover:text-harvest-300">
                           {commodity.name}
                         </h3>
+                        {intelligence ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-harvest-500/10 px-1.5 py-0.5 text-[0.5625rem] font-medium text-harvest-400">
+                            Intel
+                          </span>
+                        ) : null}
                         <IconArrowRight
                           className="size-3.5 shrink-0 text-terminal-text-muted"
                           aria-hidden="true"
@@ -222,6 +234,16 @@ export default async function CommodityDirectoryPage({
                           }
                         />
                       </div>
+
+                      {intelligence && (
+                        <div className="border-t border-terminal-border pt-2 text-[0.625rem] text-terminal-text-muted">
+                          <span className="text-harvest-400">
+                            {intelligence.latestProductionMt
+                              ? `${intelligence.selfSufficiencyPercent !== null ? `Self-sufficiency: ${intelligence.selfSufficiencyPercent.toFixed(0)}%` : 'Production data available'}`
+                              : `${intelligence.totalEvidenceRecords} evidence records`}
+                          </span>
+                        </div>
+                      )}
                     </Link>
                   </li>
                 );

@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { getDataSource } from '@/lib/data';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { getMarketMovements, getCommoditySeriesOptions } from '@/lib/trade/queries';
+import { getCommodityIntelligenceOverview, getCommodityFundamentals } from '@/lib/intelligence/commodity-intelligence';
 import { PRICE_RANGES } from '@/components/data/CommodityPriceView';
 import { PageContainer, PageHeader, SectionHeader } from '@/components/terminal/TerminalShell';
 import { MarketOverviewCard } from '@/components/market/MarketOverview';
@@ -11,6 +12,8 @@ import { PriceMovementIndicator } from '@/components/market/PriceDisplay';
 import { VerificationBadge } from '@/components/ui/data-display';
 import { EmptyStatePanel, PanelSkeleton } from '@/components/feedback/TerminalFeedback';
 import { IconArrowRight, IconCharts, IconTable } from '@/components/ui/icons';
+import { IntelligenceOverviewPanel, FundamentalSignalsPanel } from '@/components/intelligence/IntelligencePanels';
+import { IntelligenceBadge } from '@/components/intelligence/IntelligenceIndicators';
 import { formatMoney } from '@/lib/money';
 import type { Commodity, PriceObservation } from '@/types/domain';
 
@@ -77,12 +80,14 @@ export default async function CommodityProfilePage({
 
   const windowed = applyRange(observations, range.days);
 
-  const [seriesOptions, movements] = isSupabaseConfigured()
+  const [seriesOptions, movements, intelligence, fundamentals] = isSupabaseConfigured()
     ? await Promise.all([
         getCommoditySeriesOptions(commodity.id),
         getMarketMovements(200),
+        getCommodityIntelligenceOverview(commodity.slug),
+        getCommodityFundamentals(commodity.id, 10),
       ])
-    : [[], []];
+    : [[], [], null, []];
 
   const movement = movements.find((m) => m.commodityId === commodity.id) ?? null;
 
@@ -154,6 +159,19 @@ export default async function CommodityProfilePage({
               />
             </dl>
           </section>
+
+          {/* ─── Intelligence Overview ─── */}
+          <IntelligenceOverviewPanel
+            intelligence={intelligence}
+            commoditySlug={commodity.slug}
+            commodityName={commodity.name}
+          />
+
+          {/* ─── Fundamental Signals ─── */}
+          <FundamentalSignalsPanel
+            signals={fundamentals}
+            commodityName={commodity.name}
+          />
 
           {/* ------------------------------------------------------ movement -- */}
           {movement ? (
