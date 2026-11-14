@@ -1,10 +1,10 @@
 {
-  "name": "pluck-live",
+  "name": "hatsi360",
   "version": "1.0.0",
   "private": true,
-  "description": "Pluck Live \u2014 agricultural commodity price transparency & market intelligence platform for Pluck Agro.",
+  "description": "Hatsi360 Markets — African Agricultural Market Intelligence and B2B Trading Infrastructure.",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "dev": "next dev",
@@ -40,6 +40,8 @@
     "@types/pg": "^8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.2",
+    "@typescript-eslint/parser": "^8.72.2",
     "@vitejs/plugin-react": "^6.1.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.2",

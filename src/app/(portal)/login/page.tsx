@@ -165,17 +165,15 @@ export default async function LoginPage({
           {/*
             The demo accounts.
 
-            These are visible unconditionally. That is a deliberate decision the
-            requester made after being shown the exposure: anyone who can open
-            this page can sign in as an administrator. It is recorded, with the
-            removal command, in docs/HATSI360_DEMO_ACCOUNTS.md.
-
-            The accounts are created by scripts/manage_demo_users.mjs. If that
-            script has not been run, the panel still renders — and a sign-in
-            attempt fails with the same "invalid credentials" error a real
-            wrong password produces, which is honest rather than confusing.
+            Gated behind NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS=true so they never
+            appear on a production deployment unless explicitly enabled. The
+            exposure was P0: anyone who can open the login page could sign in
+            as an administrator and mutate the live database. The panel only
+            renders when the operator has deliberately opted in.
           */}
-          <DemoAccountsPanel next={next || undefined} />
+          {process.env.NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS === 'true' ? (
+            <DemoAccountsPanel next={next || undefined} />
+          ) : null}
 
           {/*
             Access, stated plainly.
