@@ -13,6 +13,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { getEntitlements, hasEntitlement } from '@/lib/entitlements';
 import type { IngestionResult, IngestionContext } from '../types';
 
 // ── FAOSTAT Configuration ───────────────────────────────────────────────────
@@ -145,6 +146,18 @@ const ISO_TO_M49: Record<string, string> = {
 export async function ingestFAOSTATProduction(
   context: IngestionContext
 ): Promise<IngestionResult> {
+  // Check bulk entitlement before performing large-scale data ingestion
+  const entitlements = await getEntitlements();
+  if (!hasEntitlement(entitlements, 'bulk')) {
+    return {
+      records_fetched: 0,
+      records_inserted: 0,
+      records_updated: 0,
+      records_skipped: 0,
+      errors: ['Bulk data entitlement required for FAOSTAT production ingestion. Upgrade to Professional or Enterprise tier.'],
+    };
+  }
+
   const supabase = await createClient();
   const result: IngestionResult = {
     records_fetched: 0,
@@ -256,6 +269,18 @@ export async function ingestFAOSTATProduction(
 export async function ingestFAOSTATTrade(
   context: IngestionContext
 ): Promise<IngestionResult> {
+  // Check bulk entitlement before performing large-scale data ingestion
+  const entitlements = await getEntitlements();
+  if (!hasEntitlement(entitlements, 'bulk')) {
+    return {
+      records_fetched: 0,
+      records_inserted: 0,
+      records_updated: 0,
+      records_skipped: 0,
+      errors: ['Bulk data entitlement required for FAOSTAT trade ingestion. Upgrade to Professional or Enterprise tier.'],
+    };
+  }
+
   const supabase = await createClient();
   const result: IngestionResult = {
     records_fetched: 0,
