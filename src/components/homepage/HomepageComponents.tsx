@@ -1,9 +1,13 @@
 /**
  * Hatsi360 Homepage — Live analytics and market intelligence components.
  *
- * These components power the redesigned homepage with Afex-inspired
- * professional market intelligence presentation. Every figure comes
- * from the database; nothing is fabricated.
+ * Light theme using logo color palette:
+ * - Primary: #0B3D2C (deep forest green)
+ * - Gold: #E5A020 (warm amber)
+ * - Accent: #1A6B40 (medium green)
+ * - Highlight: #4CAF50 (light green)
+ *
+ * Every figure comes from the database; nothing is fabricated.
  */
 
 import Link from 'next/link';
@@ -11,16 +15,11 @@ import type { ReactNode } from 'react';
 
 /* ============================================================ Sparkline ===== */
 
-/**
- * A tiny inline SVG sparkline.
- * Renders a polyline from an array of numeric values.
- * Used in price cards and the market ticker.
- */
 export function Sparkline({
   values,
   width = 120,
   height = 32,
-  color = 'currentColor',
+  color = '#1A6B40',
   fillOpacity = 0.1,
   className = '',
 }: {
@@ -71,7 +70,6 @@ export function Sparkline({
     >
       <path d={areaPath} fill={color} fillOpacity={fillOpacity} />
       <path d={linePath} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-      {/* Endpoint dot */}
       <circle
         cx={width}
         cy={height - padding - ((values[values.length - 1] - min) / range) * (height - padding * 2)}
@@ -93,9 +91,6 @@ export interface TickerItem {
   market?: string;
 }
 
-/**
- * A horizontal scrolling price ticker, like financial market terminals.
- */
 export function MarketTicker({ items }: { items: TickerItem[] }) {
   if (items.length === 0) return null;
 
@@ -107,43 +102,31 @@ export function MarketTicker({ items }: { items: TickerItem[] }) {
     }).format(amount);
 
   return (
-    <div className="relative overflow-hidden border-y border-terminal-border bg-terminal-surface">
+    <div className="relative overflow-hidden border-y border-gray-200 bg-[#0B3D2C]">
       <div className="flex animate-[ticker_40s_linear_infinite] gap-0 whitespace-nowrap py-2.5">
         {[...items, ...items].map((item, i) => (
           <div
             key={`${item.commodity}-${i}`}
-            className="inline-flex items-center gap-2.5 border-r border-terminal-border px-5"
+            className="inline-flex items-center gap-2.5 border-r border-[#0B3D2C]/30 px-5"
           >
-            <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-terminal-text-secondary">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-300">
               {item.commodity}
             </span>
-            <span className="figure-num text-[0.8125rem] font-bold text-terminal-text">
+            <span className="figure-num text-[0.8125rem] font-bold text-white">
               {formatPrice(item.price, item.currency)}
             </span>
-            <span className="text-[0.6875rem] text-terminal-text-muted">
-              /{item.unit}
-            </span>
+            <span className="text-[0.6875rem] text-gray-400">/{item.unit}</span>
             {item.change !== null && (
               <span
                 className={`inline-flex items-center gap-0.5 text-[0.6875rem] font-semibold ${
-                  item.change > 0
-                    ? 'text-move-up'
-                    : item.change < 0
-                      ? 'text-move-down'
-                      : 'text-move-flat'
+                  item.change > 0 ? 'text-[#4CAF50]' : item.change < 0 ? 'text-red-400' : 'text-gray-400'
                 }`}
               >
-                <span aria-hidden="true">
-                  {item.change > 0 ? '▲' : item.change < 0 ? '▼' : '–'}
-                </span>
+                <span aria-hidden="true">{item.change > 0 ? '▲' : item.change < 0 ? '▼' : '–'}</span>
                 {Math.abs(item.change).toFixed(1)}%
               </span>
             )}
-            {item.market && (
-              <span className="text-[0.625rem] text-terminal-text-muted">
-                {item.market}
-              </span>
-            )}
+            {item.market && <span className="text-[0.625rem] text-gray-400">{item.market}</span>}
           </div>
         ))}
       </div>
@@ -167,31 +150,29 @@ export function HomepageHero({
   latestObservedAt: string | null;
 }) {
   return (
-    <div className="relative overflow-hidden border-b border-terminal-border bg-terminal-bg">
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+    <div className="relative overflow-hidden border-b border-gray-200 bg-white">
+      <div className="absolute inset-0 opacity-[0.02]" style={{
+        backgroundImage: `linear-gradient(#0B3D2C 1px, transparent 1px), linear-gradient(90deg, #0B3D2C 1px, transparent 1px)`,
         backgroundSize: '40px 40px'
       }} />
 
       <div className="relative px-4 py-12 lg:px-8 lg:py-16">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-            {/* Left: Copy */}
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-terminal-border bg-terminal-surface px-3 py-1">
-                <span className="size-2 animate-pulse rounded-full bg-leaf-500" />
-                <span className="text-[0.6875rem] font-medium text-terminal-text-secondary">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#0B3D2C]/20 bg-[#0B3D2C]/5 px-3 py-1">
+                <span className="size-2 animate-pulse rounded-full bg-[#4CAF50]" />
+                <span className="text-[0.6875rem] font-medium text-[#0B3D2C]/70">
                   Market Intelligence Platform
                 </span>
               </div>
 
-              <h1 className="font-display text-3xl font-extrabold tracking-tight text-terminal-text sm:text-4xl lg:text-5xl">
+              <h1 className="font-display text-3xl font-extrabold tracking-tight text-[#0B3D2C] sm:text-4xl lg:text-5xl">
                 African Agricultural
-                <span className="block text-brand-400">Market Intelligence</span>
+                <span className="block text-[#E5A020]">Market Intelligence</span>
               </h1>
 
-              <p className="mt-4 max-w-lg text-[0.9375rem] leading-relaxed text-terminal-text-secondary">
+              <p className="mt-4 max-w-lg text-[0.9375rem] leading-relaxed text-gray-600">
                 Verified commodity prices collected in the field, analysed for
                 sourcing, procurement and trade decisions. Every figure traces
                 back to a person, a market and a moment.
@@ -200,59 +181,43 @@ export function HomepageHero({
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href="/prices"
-                  className="inline-flex items-center gap-2 rounded-control bg-brand-600 px-5 py-2.5 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-brand-500"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#E5A020] px-5 py-2.5 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-[#C88A15]"
                 >
-                  Explore Prices
-                  <span aria-hidden="true">→</span>
+                  Explore Prices <span aria-hidden="true">→</span>
                 </Link>
                 <Link
                   href="/trade/terminal"
-                  className="inline-flex items-center gap-2 rounded-control border border-terminal-border bg-terminal-surface px-5 py-2.5 text-[0.8125rem] font-semibold text-terminal-text transition-colors hover:bg-terminal-interactive"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#0B3D2C]/20 bg-white px-5 py-2.5 text-[0.8125rem] font-semibold text-[#0B3D2C] transition-colors hover:bg-[#0B3D2C]/5"
                 >
                   Trade Terminal
                 </Link>
                 <Link
                   href="/commodities"
-                  className="inline-flex items-center gap-2 rounded-control border border-terminal-border px-5 py-2.5 text-[0.8125rem] font-semibold text-terminal-text-secondary transition-colors hover:bg-terminal-interactive hover:text-terminal-text"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-2.5 text-[0.8125rem] font-semibold text-gray-700 transition-colors hover:border-[#0B3D2C]/30 hover:bg-gray-50"
                 >
                   Commodities
                 </Link>
               </div>
             </div>
 
-            {/* Right: Live stats panel */}
-            <div className="rounded-panel border border-terminal-border bg-terminal-surface p-5 shadow-terminal">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-[0.8125rem] font-bold uppercase tracking-wider text-terminal-text-secondary">
+                <h2 className="text-[0.8125rem] font-bold uppercase tracking-wider text-[#0B3D2C]/70">
                   Platform Overview
                 </h2>
-                <span className="text-[0.625rem] text-terminal-text-muted">
+                <span className="text-[0.625rem] text-gray-500">
                   {latestObservedAt ? `Updated ${formatRelative(latestObservedAt)}` : 'Live'}
                 </span>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <StatBlock
-                  value={publishedCount.toLocaleString()}
-                  label="Published Prices"
-                  accent={publishedCount > 0}
-                />
-                <StatBlock
-                  value={commodityCount.toLocaleString()}
-                  label="Commodities"
-                  accent
-                />
-                <StatBlock
-                  value={marketCount.toLocaleString()}
-                  label="Markets"
-                  accent
-                />
+                <StatBlock value={publishedCount.toLocaleString()} label="Published Prices" accent={publishedCount > 0} />
+                <StatBlock value={commodityCount.toLocaleString()} label="Commodities" accent />
+                <StatBlock value={marketCount.toLocaleString()} label="Markets" accent />
               </div>
 
-              <div className="mt-4 border-t border-terminal-border pt-3">
-                <p className="text-[0.6875rem] leading-relaxed text-terminal-text-muted">
-                  {coverageLine}
-                </p>
+              <div className="mt-4 border-t border-gray-200 pt-3">
+                <p className="text-[0.6875rem] leading-relaxed text-gray-500">{coverageLine}</p>
               </div>
             </div>
           </div>
@@ -265,10 +230,10 @@ export function HomepageHero({
 function StatBlock({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
   return (
     <div>
-      <div className={`figure-num text-2xl font-extrabold tracking-tight ${accent ? 'text-brand-400' : 'text-terminal-text'}`}>
+      <div className={`figure-num text-2xl font-extrabold tracking-tight ${accent ? 'text-[#E5A020]' : 'text-[#0B3D2C]'}`}>
         {value}
       </div>
-      <div className="mt-0.5 text-[0.6875rem] text-terminal-text-muted">{label}</div>
+      <div className="mt-0.5 text-[0.6875rem] text-gray-500">{label}</div>
     </div>
   );
 }
@@ -291,91 +256,52 @@ export interface PriceCardData {
 
 export function HomepagePriceCard({ data }: { data: PriceCardData }) {
   const formatPrice = (amount: number, currency: string) =>
-    new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 0,
-    }).format(amount);
-
-  const changeColor =
-    data.change === null ? 'text-move-flat'
-    : data.change > 0 ? 'text-move-up'
-    : data.change < 0 ? 'text-move-down'
-    : 'text-move-flat';
+    new Intl.NumberFormat('en-NG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 
   const sparkColor =
-    data.change === null ? '#748278'
-    : data.change > 0 ? '#2f8f57'
-    : data.change < 0 ? '#d0584f'
-    : '#748278';
+    data.change === null ? '#6B7280' : data.change > 0 ? '#1A6B40' : data.change < 0 ? '#DC2626' : '#6B7280';
 
   return (
     <Link
       href={`/commodities/${data.commoditySlug}`}
-      className="group flex flex-col rounded-panel border border-terminal-border bg-terminal-surface p-4 transition-all hover:border-brand-600/40 hover:shadow-terminal-lift"
+      className="group flex flex-col rounded-xl border border-gray-200 bg-white p-4 transition-all hover:border-[#E5A020]/40 hover:shadow-md"
     >
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-[0.875rem] font-bold text-terminal-text group-hover:text-brand-400 transition-colors">
+          <h3 className="text-[0.875rem] font-bold text-[#0B3D2C] group-hover:text-[#E5A020] transition-colors">
             {data.commodityName}
           </h3>
-          {data.marketName && (
-            <p className="mt-0.5 text-[0.6875rem] text-terminal-text-muted">
-              {data.marketName}
-            </p>
-          )}
+          {data.marketName && <p className="mt-0.5 text-[0.6875rem] text-gray-500">{data.marketName}</p>}
         </div>
         {data.change !== null && (
           <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold ${
-            data.change > 0 ? 'bg-move-up-soft text-move-up'
-            : data.change < 0 ? 'bg-move-down-soft text-move-down'
-            : 'bg-terminal-interactive text-move-flat'
+            data.change > 0 ? 'bg-[#4CAF50]/10 text-[#1A6B40]' : data.change < 0 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'
           }`}>
-            <span aria-hidden="true">
-              {data.change > 0 ? '▲' : data.change < 0 ? '▼' : '–'}
-            </span>
+            <span aria-hidden="true">{data.change > 0 ? '▲' : data.change < 0 ? '▼' : '–'}</span>
             {Math.abs(data.change).toFixed(1)}%
           </span>
         )}
       </div>
 
-      {/* Price + Sparkline */}
       <div className="mt-3 flex items-end justify-between">
         <div>
           {data.price !== null ? (
             <>
-              <div className="figure-num text-xl font-extrabold tracking-tight text-terminal-text">
+              <div className="figure-num text-xl font-extrabold tracking-tight text-[#0B3D2C]">
                 {formatPrice(data.price, data.currency)}
               </div>
-              <div className="text-[0.625rem] text-terminal-text-muted">
-                per {data.unit}
-              </div>
+              <div className="text-[0.625rem] text-gray-500">per {data.unit}</div>
             </>
           ) : (
-            <div className="text-sm text-terminal-text-muted">No data yet</div>
+            <div className="text-sm text-gray-500">No data yet</div>
           )}
         </div>
-        <Sparkline
-          values={data.sparklineValues}
-          width={80}
-          height={28}
-          color={sparkColor}
-        />
+        <Sparkline values={data.sparklineValues} width={80} height={28} color={sparkColor} />
       </div>
 
-      {/* Footer */}
-      <div className="mt-3 flex items-center justify-between border-t border-terminal-border pt-2.5">
-        {data.priceTypeLabel && (
-          <span className="text-[0.625rem] text-terminal-text-muted">
-            {data.priceTypeLabel}
-          </span>
-        )}
-        {data.observedAt && (
-          <span className="text-[0.625rem] text-terminal-text-muted">
-            {formatRelative(data.observedAt)}
-          </span>
-        )}
+      <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2.5">
+        {data.priceTypeLabel && <span className="text-[0.625rem] text-gray-500">{data.priceTypeLabel}</span>}
+        {data.observedAt && <span className="text-[0.625rem] text-gray-500">{formatRelative(data.observedAt)}</span>}
       </div>
     </Link>
   );
@@ -394,67 +320,33 @@ export interface AnalyticsData {
 
 export function HomepageAnalytics({ data }: { data: AnalyticsData }) {
   return (
-    <div className="rounded-panel border border-terminal-border bg-terminal-surface p-5">
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-[0.8125rem] font-bold uppercase tracking-wider text-terminal-text-secondary">
+        <h2 className="text-[0.8125rem] font-bold uppercase tracking-wider text-[#0B3D2C]/70">
           Market Analytics
         </h2>
-        <span className="rounded-full bg-terminal-interactive px-2 py-0.5 text-[0.625rem] text-terminal-text-muted">
+        <span className="rounded-full bg-[#0B3D2C]/5 px-2 py-0.5 text-[0.625rem] text-gray-600">
           Last 7 days
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <AnalyticsCard
-          label="Total Observations"
-          value={data.totalObservations.toLocaleString()}
-          trend={data.priceTrend}
-          trendColor="#2f8f57"
-        />
-        <AnalyticsCard
-          label="Verified Today"
-          value={data.verifiedToday.toLocaleString()}
-          trend={data.verificationTrend}
-          trendColor="#d5a441"
-        />
-        <AnalyticsCard
-          label="Active Markets"
-          value={data.activeMarkets.toLocaleString()}
-          trend={[]}
-          trendColor="#5b9a57"
-        />
-        <AnalyticsCard
-          label="Pending Review"
-          value={data.pendingVerification.toLocaleString()}
-          trend={[]}
-          trendColor="#d0584f"
-        />
+        <AnalyticsCard label="Total Observations" value={data.totalObservations.toLocaleString()} trend={data.priceTrend} trendColor="#1A6B40" />
+        <AnalyticsCard label="Verified Today" value={data.verifiedToday.toLocaleString()} trend={data.verificationTrend} trendColor="#E5A020" />
+        <AnalyticsCard label="Active Markets" value={data.activeMarkets.toLocaleString()} trend={[]} trendColor="#4CAF50" />
+        <AnalyticsCard label="Pending Review" value={data.pendingVerification.toLocaleString()} trend={[]} trendColor="#DC2626" />
       </div>
     </div>
   );
 }
 
-function AnalyticsCard({
-  label,
-  value,
-  trend,
-  trendColor,
-}: {
-  label: string;
-  value: string;
-  trend: number[];
-  trendColor: string;
-}) {
+function AnalyticsCard({ label, value, trend, trendColor }: { label: string; value: string; trend: number[]; trendColor: string }) {
   return (
-    <div className="rounded-control border border-terminal-border bg-terminal-bg p-3">
-      <div className="text-[0.6875rem] text-terminal-text-muted">{label}</div>
+    <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+      <div className="text-[0.6875rem] text-gray-500">{label}</div>
       <div className="mt-1 flex items-end justify-between">
-        <span className="figure-num text-xl font-extrabold tracking-tight text-terminal-text">
-          {value}
-        </span>
-        {trend.length > 1 && (
-          <Sparkline values={trend} width={48} height={20} color={trendColor} />
-        )}
+        <span className="figure-num text-xl font-extrabold tracking-tight text-[#0B3D2C]">{value}</span>
+        {trend.length > 1 && <Sparkline values={trend} width={48} height={20} color={trendColor} />}
       </div>
     </div>
   );
@@ -468,18 +360,8 @@ export interface TrendPoint {
 }
 
 export function HomepagePriceChart({
-  title,
-  commodityName,
-  points,
-  currency,
-  unit,
-}: {
-  title: string;
-  commodityName: string;
-  points: TrendPoint[];
-  currency: string;
-  unit: string;
-}) {
+  title, commodityName, points, currency, unit,
+}: { title: string; commodityName: string; points: TrendPoint[]; currency: string; unit: string; }) {
   if (points.length < 2) return null;
 
   const width = 600;
@@ -503,86 +385,49 @@ export function HomepagePriceChart({
   const areaPath = `${linePath} L ${padding.left + chartW},${padding.top + chartH} L ${padding.left},${padding.top + chartH} Z`;
 
   const formatPrice = (amount: number) =>
-    new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    new Intl.NumberFormat('en-NG', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 
-  // Y-axis ticks
   const yTicks = Array.from({ length: 4 }, (_, i) => min + (range * i) / 3);
 
   return (
-    <div className="rounded-panel border border-terminal-border bg-terminal-surface p-5">
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h3 className="text-[0.875rem] font-bold text-terminal-text">{title}</h3>
-          <p className="text-[0.6875rem] text-terminal-text-muted">
-            {commodityName} · {currency}/{unit}
-          </p>
+          <h3 className="text-[0.875rem] font-bold text-[#0B3D2C]">{title}</h3>
+          <p className="text-[0.6875rem] text-gray-500">{commodityName} · {currency}/{unit}</p>
         </div>
         <div className="text-right">
-          <div className="figure-num text-lg font-extrabold text-terminal-text">
-            {formatPrice(points[points.length - 1].value)}
-          </div>
-          <div className="text-[0.625rem] text-terminal-text-muted">Latest</div>
+          <div className="figure-num text-lg font-extrabold text-[#0B3D2C]">{formatPrice(points[points.length - 1].value)}</div>
+          <div className="text-[0.625rem] text-gray-500">Latest</div>
         </div>
       </div>
 
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="xMidYMid meet">
-        {/* Grid lines */}
         {yTicks.map((tick, i) => {
           const y = padding.top + chartH - ((tick - min) / range) * chartH;
           return (
             <g key={i}>
-              <line
-                x1={padding.left} y1={y}
-                x2={padding.left + chartW} y2={y}
-                stroke="currentColor"
-                strokeOpacity={0.06}
-                strokeWidth={1}
-              />
-              <text
-                x={padding.left - 8}
-                y={y + 3}
-                textAnchor="end"
-                className="fill-terminal-text-muted"
-                fontSize="9"
-              >
-                {formatPrice(tick)}
-              </text>
+              <line x1={padding.left} y1={y} x2={padding.left + chartW} y2={y} stroke="#E5E7EB" strokeWidth={1} />
+              <text x={padding.left - 8} y={y + 3} textAnchor="end" fill="#6B7280" fontSize="9">{formatPrice(tick)}</text>
             </g>
           );
         })}
 
-        {/* Area fill */}
-        <path d={areaPath} fill="#2f8f57" fillOpacity={0.08} />
-
-        {/* Line */}
-        <path d={linePath} fill="none" stroke="#2f8f57" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-
-        {/* Endpoint */}
+        <path d={areaPath} fill="#1A6B40" fillOpacity={0.08} />
+        <path d={linePath} fill="none" stroke="#1A6B40" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         <circle
           cx={padding.left + chartW}
           cy={padding.top + chartH - ((points[points.length - 1].value - min) / range) * chartH}
           r={4}
-          fill="#2f8f57"
+          fill="#E5A020"
         />
 
-        {/* X-axis labels */}
         {[0, Math.floor(points.length / 2), points.length - 1].map((idx) => {
           if (!points[idx]) return null;
           const x = padding.left + (idx / (points.length - 1)) * chartW;
           const date = new Date(points[idx].date);
           return (
-            <text
-              key={idx}
-              x={x}
-              y={height - 5}
-              textAnchor={idx === 0 ? 'start' : idx === points.length - 1 ? 'end' : 'middle'}
-              className="fill-terminal-text-muted"
-              fontSize="9"
-            >
+            <text key={idx} x={x} y={height - 5} textAnchor={idx === 0 ? 'start' : idx === points.length - 1 ? 'end' : 'middle'} fill="#6B7280" fontSize="9">
               {date.toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })}
             </text>
           );
@@ -594,36 +439,25 @@ export function HomepagePriceChart({
 
 /* ============================================================ Coverage Section ===== */
 
-export function HomepageCoverage({
-  rows,
-}: {
-  rows: { label: string; count: number; detail: string; href?: string }[];
-}) {
+export function HomepageCoverage({ rows }: { rows: { label: string; count: number; detail: string; href?: string }[] }) {
   const maxCount = Math.max(...rows.map(r => r.count), 1);
 
   return (
-    <div className="rounded-panel border border-terminal-border bg-terminal-surface p-5">
-      <h2 className="mb-4 text-[0.8125rem] font-bold uppercase tracking-wider text-terminal-text-secondary">
-        Platform Coverage
-      </h2>
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <h2 className="mb-4 text-[0.8125rem] font-bold uppercase tracking-wider text-[#0B3D2C]/70">Platform Coverage</h2>
       <div className="space-y-3">
         {rows.map((row) => (
           <div key={row.label} className="flex items-center gap-4">
             <div className="w-48 shrink-0">
-              <div className="text-[0.8125rem] font-medium text-terminal-text">{row.label}</div>
-              <div className="text-[0.625rem] text-terminal-text-muted">{row.detail}</div>
+              <div className="text-[0.8125rem] font-medium text-[#0B3D2C]">{row.label}</div>
+              <div className="text-[0.625rem] text-gray-500">{row.detail}</div>
             </div>
             <div className="flex-1">
-              <div className="h-2.5 overflow-hidden rounded-full bg-terminal-interactive">
-                <div
-                  className="h-full rounded-full bg-brand-600 transition-all"
-                  style={{ width: `${Math.max((row.count / maxCount) * 100, 2)}%` }}
-                />
+              <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#1A6B40] to-[#4CAF50] transition-all" style={{ width: `${Math.max((row.count / maxCount) * 100, 2)}%` }} />
               </div>
             </div>
-            <div className="figure-num w-16 text-right text-[0.875rem] font-bold text-terminal-text">
-              {row.count.toLocaleString()}
-            </div>
+            <div className="figure-num w-16 text-right text-[0.875rem] font-bold text-[#0B3D2C]">{row.count.toLocaleString()}</div>
           </div>
         ))}
       </div>
@@ -635,45 +469,23 @@ export function HomepageCoverage({
 
 export function HomepageHowItWorks() {
   const steps = [
-    {
-      icon: '◉',
-      title: 'Field Collection',
-      description: 'Market agents record prices at assigned markets with grade, unit, price type and evidence.',
-    },
-    {
-      icon: '✓',
-      title: 'Verification',
-      description: 'Automated checks and human review ensure every published price is accurate and traceable.',
-    },
-    {
-      icon: '◈',
-      title: 'Market Intelligence',
-      description: 'Verified prices become sourcing signals, procurement benchmarks and trade opportunities.',
-    },
-    {
-      icon: '▤',
-      title: 'Decision Support',
-      description: 'Exports, alerts, API access and analyst reports turn data into actionable intelligence.',
-    },
+    { icon: '◉', title: 'Field Collection', description: 'Market agents record prices at assigned markets with grade, unit, price type and evidence.' },
+    { icon: '✓', title: 'Verification', description: 'Automated checks and human review ensure every published price is accurate and traceable.' },
+    { icon: '◈', title: 'Market Intelligence', description: 'Verified prices become sourcing signals, procurement benchmarks and trade opportunities.' },
+    { icon: '▤', title: 'Decision Support', description: 'Exports, alerts, API access and analyst reports turn data into actionable intelligence.' },
   ];
 
   return (
-    <div className="rounded-panel border border-terminal-border bg-terminal-surface p-5">
-      <h2 className="mb-5 text-[0.8125rem] font-bold uppercase tracking-wider text-terminal-text-secondary">
-        How Hatsi360 Works
-      </h2>
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <h2 className="mb-5 text-[0.8125rem] font-bold uppercase tracking-wider text-[#0B3D2C]/70">How Hatsi360 Works</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((step, i) => (
-          <div key={step.title} className="relative rounded-control border border-terminal-border bg-terminal-bg p-4">
+          <div key={step.title} className="relative rounded-lg border border-gray-100 bg-gradient-to-br from-white to-gray-50 p-4">
             <div className="mb-2 flex items-center gap-2">
-              <span className="flex size-7 items-center justify-center rounded-full bg-brand-700 text-[0.75rem] font-bold text-brand-300">
-                {i + 1}
-              </span>
-              <span className="text-[0.8125rem] font-bold text-terminal-text">{step.title}</span>
+              <span className="flex size-7 items-center justify-center rounded-full bg-[#0B3D2C] text-[0.75rem] font-bold text-[#E5A020]">{i + 1}</span>
+              <span className="text-[0.8125rem] font-bold text-[#0B3D2C]">{step.title}</span>
             </div>
-            <p className="text-[0.75rem] leading-relaxed text-terminal-text-secondary">
-              {step.description}
-            </p>
+            <p className="text-[0.75rem] leading-relaxed text-gray-600">{step.description}</p>
           </div>
         ))}
       </div>
@@ -685,27 +497,19 @@ export function HomepageHowItWorks() {
 
 export function HomepageCTA() {
   return (
-    <div className="rounded-panel border border-brand-700/30 bg-gradient-to-br from-terminal-surface to-terminal-bg p-6">
+    <div className="rounded-xl border border-[#0B3D2C]/20 bg-gradient-to-br from-[#0B3D2C] to-[#1A6B40] p-6">
       <div className="flex flex-col items-start gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-lg font-bold text-terminal-text">
-            Ready for market intelligence you can trust?
-          </h2>
-          <p className="mt-1 text-[0.8125rem] text-terminal-text-secondary">
+          <h2 className="text-lg font-bold text-white">Ready for market intelligence you can trust?</h2>
+          <p className="mt-1 text-[0.8125rem] text-[#E5A020]/90">
             Free price discovery. Professional intelligence with exports, alerts and API access.
           </p>
         </div>
         <div className="flex gap-3">
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-2 rounded-control bg-brand-600 px-5 py-2.5 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-brand-500"
-          >
+          <Link href="/pricing" className="inline-flex items-center gap-2 rounded-lg bg-[#E5A020] px-5 py-2.5 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-[#C88A15]">
             View Plans
           </Link>
-          <Link
-            href="/api-docs"
-            className="inline-flex items-center gap-2 rounded-control border border-terminal-border px-5 py-2.5 text-[0.8125rem] font-semibold text-terminal-text-secondary transition-colors hover:bg-terminal-interactive hover:text-terminal-text"
-          >
+          <Link href="/api-docs" className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-5 py-2.5 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-white/10">
             Developer API
           </Link>
         </div>
