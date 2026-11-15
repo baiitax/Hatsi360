@@ -478,12 +478,14 @@ async function loadHomepage(): Promise<HomepageSummary> {
       }));
     } else {
       // Fallback: use sparkline-style data from movements
-      const base = movement.latestAmount * (1 - (movement.changePercent ?? 0) / 100);
-      const sparklineValues = generateSparkline(base, movement.latestAmount, 12);
-      chartData = sparklineValues.map((value, i) => ({
-        date: new Date(Date.now() - (11 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        value,
-      }));
+      if (movement.latestAmount !== null) {
+        const base = movement.latestAmount * (1 - (movement.changePercent ?? 0) / 100);
+        const sparklineValues = generateSparkline(base, movement.latestAmount, 12);
+        chartData = sparklineValues.map((value, i) => ({
+          date: new Date(Date.now() - (11 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          value,
+        }));
+      }
     }
 
     // Assign to categories (rotate through categories for demo)
@@ -492,11 +494,11 @@ async function loadHomepage(): Promise<HomepageSummary> {
     priceTrackerCommodities.push({
       ticker: movement.commoditySlug.toUpperCase().slice(0, 6),
       name: commodity.name,
-      price: movement.latestAmount,
+      price: movement.latestAmount ?? 0,
       change: movement.changePercent,
       category: categoryKeys[categoryIndex],
       currency: movement.currencyCode,
-      unit: movement.unitName,
+      unit: movement.unitName ?? 'unit',
       chartData,
     });
   }
@@ -522,9 +524,9 @@ async function loadHomepage(): Promise<HomepageSummary> {
       commodityId: commodity.id,
       commodityName: commodity.name,
       commoditySlug: commodity.slug,
-      price: movement.latestAmount,
+      price: movement.latestAmount ?? 0,
       currency: movement.currencyCode,
-      unit: movement.unitName,
+      unit: movement.unitName ?? 'unit',
       changePercent: movement.changePercent,
       priceHistory,
       marketName: movement.marketName ?? undefined,
@@ -578,11 +580,11 @@ async function loadHomepage(): Promise<HomepageSummary> {
       currencyCode: movement.currencyCode,
       unitName: movement.unitName,
       marketName: movement.marketName,
-      priceType: movement.priceType,
+      priceType: movement.priceType as string,
       gradeName: movement.gradeName,
-      observationCount: movement.observationCount,
+      observationCount: movement.observationCount ?? 0,
       collectedAt: movement.collectedAt,
-      verificationStatus: movement.verificationStatus,
+      verificationStatus: movement.verificationStatus as string,
       dailyHistory: dailyHistoryByCommodity.get(commodity.id) ?? [],
       imageUrl: getCommodityImage(commodity.slug),
     });

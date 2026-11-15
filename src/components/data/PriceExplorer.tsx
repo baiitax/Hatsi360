@@ -120,7 +120,10 @@ export function PriceExplorer({ data }: { data: PriceExplorerServerData }) {
       result = result.filter((o) => commodityIds.has(o.commodityId));
     }
     if (filters.stateId !== null) {
-      result = result.filter((o) => o.stateId === filters.stateId);
+      const stateSlug = states.find((s) => s.id === filters.stateId)?.slug;
+      if (stateSlug) {
+        result = result.filter((o) => o.stateSlug === stateSlug);
+      }
     }
     if (filters.marketId !== null) {
       result = result.filter((o) => o.marketId === filters.marketId);
@@ -651,7 +654,7 @@ function FilterSelect<T extends string | number | null>({
       </label>
       <select
         value={value ?? ''}
-        onChange={(e) => onChange(e.target.value ? (isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)) as T : null)}
+        onChange={(e) => onChange(e.target.value ? (isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)) as T : null as T)}
         className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-800 focus:border-brand-500 focus:outline-none"
       >
         {options.map((opt) => (

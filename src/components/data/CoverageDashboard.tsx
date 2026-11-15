@@ -122,7 +122,7 @@ export function CoverageDashboard({ data }: { data: CoverageServerData }) {
     const coverage: CommodityCoverage[] = commodities.map((c) => {
       const obs = observations.filter((o) => o.commodityId === c.id);
       const marketIds = new Set(obs.map((o) => o.marketId));
-      const marketNames = [...new Set(obs.map((o) => o.marketName))];
+      const marketNames = [...new Set(obs.map((o) => o.marketName).filter(Boolean))] as string[];
       const latest = obs.reduce<string | null>((acc, o) => {
         if (!acc || o.collectedAt > acc) return o.collectedAt;
         return acc;

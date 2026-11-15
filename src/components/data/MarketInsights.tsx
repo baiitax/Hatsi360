@@ -152,7 +152,7 @@ function computeInsights(observations: PriceObservation[]): Insight[] {
   }
 
   // 5. Unique states coverage
-  const states = new Set(observations.map((o) => o.stateId).filter(Boolean));
+  const states = new Set(observations.map((o) => o.stateSlug).filter(Boolean));
   if (states.size >= 3) {
     insights.push({
       type: 'geographic',

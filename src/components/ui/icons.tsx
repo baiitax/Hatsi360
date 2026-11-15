@@ -656,6 +656,106 @@ export function IconCode(props: IconProps) {
   );
 }
 
+/** Triangle warning icon. */
+export function IconAlertTriangle(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </IconShape>
+  );
+}
+
+/** Single chart icon (alias for IconCharts). */
+export function IconChart(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </IconShape>
+  );
+}
+
+/** Grid layout icon. */
+export function IconGrid(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+    </IconShape>
+  );
+}
+
+/** List layout icon. */
+export function IconList(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </IconShape>
+  );
+}
+
+/** Map pin marker icon. */
+export function IconMapPin(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </IconShape>
+  );
+}
+
+/** X close icon. */
+export function IconX(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </IconShape>
+  );
+}
+
+/** Chevron up icon. */
+export function IconChevronUp(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <polyline points="18 15 12 9 6 15" />
+    </IconShape>
+  );
+}
+
+/** Zoom in icon. */
+export function IconZoomIn(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      <line x1="11" y1="8" x2="11" y2="14" />
+      <line x1="8" y1="11" x2="14" y2="11" />
+    </IconShape>
+  );
+}
+
+/** Zoom out icon. */
+export function IconZoomOut(props: IconProps) {
+  return (
+    <IconShape {...props}>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      <line x1="8" y1="11" x2="14" y2="11" />
+    </IconShape>
+  );
+}
+
 /**
  * The registry, so a component can be handed an icon by name rather than by
  * import. Used by the terminal's navigation model, which carries an icon key
@@ -691,6 +791,15 @@ export const ICONS = {
   copy: IconCopy,
   download: IconDownload,
   close: IconClose,
+  alertTriangle: IconAlertTriangle,
+  chart: IconChart,
+  grid: IconGrid,
+  list: IconList,
+  mapPin: IconMapPin,
+  x: IconX,
+  chevronUp: IconChevronUp,
+  zoomIn: IconZoomIn,
+  zoomOut: IconZoomOut,
   menu: IconMenu,
   chevronDown: IconChevronDown,
   chevronRight: IconChevronRight,

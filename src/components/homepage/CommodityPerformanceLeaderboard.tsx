@@ -568,7 +568,7 @@ export function CommodityPerformanceLeaderboard({
       (a, b) => Math.abs(a.changePercent ?? 999) - Math.abs(b.changePercent ?? 999),
     );
     const stable = byStability.find(c => c.changePercent != null);
-    if (stable) {
+    if (stable && stable.changePercent !== null) {
       results.push({
         label: 'Market Stability',
         commodityName: stable.commodityName,
