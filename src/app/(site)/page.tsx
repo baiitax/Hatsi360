@@ -36,6 +36,11 @@ import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
 import { ProfessionalMarketWatch, type MarketWatchRow } from '@/components/homepage/ProfessionalMarketWatch';
 import { PriceTracker, type PriceTrackerCommodity } from '@/components/homepage/PriceTracker';
 import { PriceTrendSection, type TrendCommodity } from '@/components/homepage/PriceTrendSection';
+import {
+  CommodityPerformanceLeaderboard,
+  type CommodityPerformanceData,
+  type LeaderboardSummary,
+} from '@/components/homepage/CommodityPerformanceLeaderboard';
 
 /**
  * The Hatsi360 Markets homepage — professional market intelligence design.
@@ -92,6 +97,14 @@ export default async function MarketsHomePage() {
       {/* ─── 4. Main Content ─── */}
       <div className="bg-[#FAFBFC] px-4 py-8 sm:py-10 lg:px-8">
         <div className="mx-auto max-w-7xl space-y-6">
+
+          {/* ─── Agro Commodity Performance Leaderboard ─── */}
+          {summary.leaderboardCommodities.length > 0 && (
+            <CommodityPerformanceLeaderboard
+              commodities={summary.leaderboardCommodities}
+              summary={summary.leaderboardSummary}
+            />
+          )}
 
           {/* ─── Platform Features ─── */}
           <HomepageFeatures />
@@ -243,6 +256,8 @@ interface HomepageSummary {
   insights: InsightItem[];
   priceTrackerCommodities: PriceTrackerCommodity[];
   trendCommodities: TrendCommodity[];
+  leaderboardCommodities: CommodityPerformanceData[];
+  leaderboardSummary: LeaderboardSummary;
 }
 
 /** Commodity category definitions mapped from catalogue slugs. */
@@ -516,6 +531,70 @@ async function loadHomepage(): Promise<HomepageSummary> {
     });
   }
 
+  // ─── Build leaderboard data ───
+  // Build a map from commodity ID to daily history (up to 7 candles)
+  const dailyHistoryByCommodity = new Map<number, { date: string; value: number }[]>();
+  for (const movement of movements) {
+    const commodity = commodities.find((c) => c.id === movement.commodityId);
+    if (!commodity) continue;
+
+    let history: { date: string; value: number }[] = [];
+    const series = await getCommoditySeries({ commodityId: commodity.id, timeframe: 'daily' }).catch(() => null);
+    if (series?.candles?.candles && series.candles.candles.length >= 2) {
+      const ordered = series.candles.candles
+        .sort((a, b) => a.periodStart.localeCompare(b.periodStart))
+        .slice(-7)
+        .map((c) => ({ date: c.periodStart, value: c.close }));
+      history = ordered;
+    } else if (movement.latestAmount && movement.changePercent !== null) {
+      // Fallback: synthetic history from previous and latest price
+      const base = movement.latestAmount * (1 - movement.changePercent / 100);
+      const sparkline = generateSparkline(base, movement.latestAmount, 7);
+      history = sparkline.map((value, i) => ({
+        date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        value,
+      }));
+    }
+    dailyHistoryByCommodity.set(commodity.id, history);
+  }
+
+  // Build leaderboard entries (one per commodity, using its best movement)
+  const leaderboardCommodities: CommodityPerformanceData[] = [];
+  const seenCommodities = new Set<number>();
+  for (const movement of movements) {
+    if (seenCommodities.has(movement.commodityId)) continue;
+    const commodity = commodities.find((c) => c.id === movement.commodityId);
+    if (!commodity) continue;
+    seenCommodities.add(commodity.id);
+
+    leaderboardCommodities.push({
+      commodityId: commodity.id,
+      commodityName: commodity.name,
+      commoditySlug: commodity.slug,
+      latestPrice: movement.latestAmount,
+      previousPrice: movement.previousAmount,
+      change: movement.change,
+      changePercent: movement.changePercent,
+      currencyCode: movement.currencyCode,
+      unitName: movement.unitName,
+      marketName: movement.marketName,
+      priceType: movement.priceType,
+      gradeName: movement.gradeName,
+      observationCount: movement.observationCount,
+      collectedAt: movement.collectedAt,
+      verificationStatus: movement.verificationStatus,
+      dailyHistory: dailyHistoryByCommodity.get(commodity.id) ?? [],
+      imageUrl: getCommodityImage(commodity.slug),
+    });
+  }
+
+  const leaderboardSummary: LeaderboardSummary = {
+    totalCommodities: observedCommodities.size,
+    totalObservations: published?.total ?? 0,
+    latestUpdate: latest,
+    activeMarkets: new Set(publishedItems.map(o => o.marketId).filter(Boolean)).size,
+  };
+
   return {
     publishedCount: published?.total ?? 0,
     commodityCount: commodities.length,
@@ -539,6 +618,8 @@ async function loadHomepage(): Promise<HomepageSummary> {
     insights,
     priceTrackerCommodities,
     trendCommodities,
+    leaderboardCommodities,
+    leaderboardSummary,
   };
 }
 
@@ -567,4 +648,31 @@ function generateSparkline(start: number, end: number, points: number): number[]
     result.push(start + step * i + noise);
   }
   return result;
+}
+
+/** Map commodity slugs to their public image paths. */
+const COMMODITY_IMAGE_MAP: Record<string, string> = {
+  'maize-white': '/images/hatsi360/commodities/maize-white.jpg',
+  'maize-yellow': '/images/hatsi360/commodities/maize-yellow.jpg',
+  'paddy-rice': '/images/hatsi360/commodities/paddy-rice.jpg',
+  'local-rice': '/images/hatsi360/commodities/local-rice.jpg',
+  'imported-rice': '/images/hatsi360/commodities/imported-rice.jpg',
+  'sorghum-white': '/images/hatsi360/commodities/sorghum-white.jpg',
+  'sorghum-red': '/images/hatsi360/commodities/sorghum-red.jpg',
+  'millet': '/images/hatsi360/commodities/millet.jpg',
+  'wheat': '/images/hatsi360/commodities/wheat.jpg',
+  'groundnut': '/images/hatsi360/commodities/groundnut.jpg',
+  'soya-beans': '/images/hatsi360/commodities/soya-beans.jpg',
+  'sesame-seed': '/images/hatsi360/commodities/sesame-seed.jpg',
+  'bambara-nuts': '/images/hatsi360/commodities/bambara-nuts.jpg',
+  'brown-beans-oloyin': '/images/hatsi360/commodities/brown-beans-oloyin.jpg',
+  'white-beans': '/images/hatsi360/commodities/white-beans.jpg',
+  'sweet-potato': '/images/hatsi360/commodities/sweet-potato.jpg',
+  'dried-ginger': '/images/hatsi360/commodities/dried-ginger.jpg',
+  'dried-chilli-pepper': '/images/hatsi360/commodities/dried-chilli-pepper.jpg',
+  'gum-arabic': '/images/hatsi360/commodities/gum-arabic.jpg',
+};
+
+function getCommodityImage(slug: string): string | undefined {
+  return COMMODITY_IMAGE_MAP[slug];
 }
