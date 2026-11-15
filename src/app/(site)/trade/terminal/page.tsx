@@ -6,6 +6,7 @@ import {
   getCommodityOpportunities,
   getCommoditySeries,
   getCommoditySeriesOptions,
+  getCommodityFreshness,
 } from '@/lib/trade/queries';
 import {
   PRICE_STATE_TONES,
@@ -73,9 +74,17 @@ export default async function TradeTerminalPage({
   const commodities = configured ? await (await getDataSource()).listCommodities() : [];
   const markets = configured ? await (await getDataSource()).listMarkets() : [];
 
+  // Get commodity freshness to know which have observations (efficient batch query)
+  const freshness = configured ? await getCommodityFreshness() : [];
+  const commoditiesWithObservations = new Set(
+    freshness.filter((f) => f.observationCount > 0).map((f) => f.commodityId)
+  );
+
   const selected =
     commodities.find((c) => c.slug === params.commodity) ??
     commodities.find((c) => String(c.id) === params.commodity) ??
+    // Prefer first commodity with observations, else first commodity
+    commodities.find((c) => commoditiesWithObservations.has(c.id)) ??
     commodities[0] ??
     null;
 
@@ -152,18 +161,26 @@ export default async function TradeTerminalPage({
             <ul className="space-y-0.5">
               {commodities.map((commodity) => {
                 const active = commodity.id === selected.id;
+                const hasData = commoditiesWithObservations.has(commodity.id);
                 return (
                   <li key={commodity.id}>
                     <Link
                       href={`/trade/terminal?commodity=${commodity.slug}&timeframe=${timeframe}`}
-                      className={`block rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${
+                      className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${
                         active
                           ? 'bg-brand-50 text-brand-800'
-                          : 'text-ink-700 hover:bg-ink-50'
+                          : hasData
+                          ? 'text-ink-700 hover:bg-ink-50'
+                          : 'text-ink-400 hover:bg-ink-50'
                       }`}
                       aria-current={active ? 'page' : undefined}
                     >
-                      {commodity.name}
+                      <span>{commodity.name}</span>
+                      {!hasData && (
+                        <span className="text-[10px] text-ink-400" title="No data available">
+                          —
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
