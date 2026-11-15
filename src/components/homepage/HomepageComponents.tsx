@@ -212,29 +212,27 @@ export function HomepageHero({
 }) {
   return (
     <div className="relative overflow-hidden border-b border-gray-200 bg-[#0B3D2C]">
-      {/* Professional hero background image */}
-      <div className="absolute inset-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/hatsi360-hero.png"
-          alt=""
-          className="h-full w-full object-cover"
-          loading="eager"
-        />
-      </div>
-
-      {/* Gradient overlays for readability and depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0B3D2C]/75 via-[#0B3D2C]/55 to-[#0B3D2C]/85" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0B3D2C]/90 via-transparent to-[#0B3D2C]/40" />
-
-      {/* Decorative grid pattern */}
+      {/* Parallax hero background image */}
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0"
         style={{
-          backgroundImage: `linear-gradient(#E5A020 1px, transparent 1px), linear-gradient(90deg, #E5A020 1px, transparent 1px)`,
-          backgroundSize: '48px 48px',
+          backgroundImage: 'url(/brand/hatsi360-hero.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 30%',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+          minHeight: '100%',
         }}
       />
+
+      {/* Gradient overlays for readability and depth */}
+      {/* Bottom-up gradient for text contrast */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0B3D2C]/95 via-[#0B3D2C]/70 to-[#0B3D2C]/40" />
+      {/* Left-side emphasis for content area */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B3D2C]/85 via-[#0B3D2C]/30 to-transparent" />
+
+      {/* Subtle gold accent line at the bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#E5A020]/60 to-transparent" />
 
       <div className="relative px-4 py-16 sm:py-20 lg:px-8 lg:py-28 xl:py-32">
         <div className="mx-auto max-w-7xl">
