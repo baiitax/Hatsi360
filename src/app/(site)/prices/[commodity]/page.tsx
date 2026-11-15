@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { CommodityPriceView, PRICE_RANGES } from '@/components/data/CommodityPriceView';
+import { IntelligenceOverviewPanel, FundamentalSignalsPanel } from '@/components/intelligence/IntelligencePanels';
+import { MarketInsights } from '@/components/data/MarketInsights';
 import { getDataSource } from '@/lib/data';
+import { getCommodityIntelligenceOverview, getCommodityFundamentals } from '@/lib/intelligence/commodity-intelligence';
 
 interface Params {
   params: Promise<{ commodity: string }>;
@@ -53,19 +56,45 @@ export default async function CommodityPricePage({ params, searchParams }: Param
   const rangeKey = query.range ?? 'all';
   const range = PRICE_RANGES.find((r) => r.key === rangeKey) ?? PRICE_RANGES[PRICE_RANGES.length - 1]!;
 
-  const observations = await source.listObservationsForAnalysis({ commodityId: commodity.id });
+  const [observations, intelligence, fundamentals] = await Promise.all([
+    source.listObservationsForAnalysis({ commodityId: commodity.id }),
+    getCommodityIntelligenceOverview(commodity.slug),
+    getCommodityFundamentals(commodity.id, 10),
+  ]);
 
   return (
-    <CommodityPriceView
-      commodity={commodity}
-      observations={observations}
-      range={range}
-      basePath={`/prices/${commodity.slug}`}
-      eyebrow="Price directory"
-      breadcrumbs={[
-        { href: '/prices', label: 'Prices' },
-        { label: commodity.name },
-      ]}
-    />
+    <>
+      <CommodityPriceView
+        commodity={commodity}
+        observations={observations}
+        range={range}
+        basePath={`/prices/${commodity.slug}`}
+        eyebrow="Price directory"
+        breadcrumbs={[
+          { href: '/prices', label: 'Prices' },
+          { label: commodity.name },
+        ]}
+      />
+
+      {/* Intelligence sections below the price view */}
+      <div className="section">
+        <div className="container-page space-y-6">
+          <IntelligenceOverviewPanel
+            intelligence={intelligence}
+            commoditySlug={commodity.slug}
+            commodityName={commodity.name}
+          />
+
+          <FundamentalSignalsPanel
+            signals={fundamentals}
+            commodityName={commodity.name}
+          />
+
+          {observations.length > 0 && (
+            <MarketInsights observations={observations} />
+          )}
+        </div>
+      </div>
+    </>
   );
 }
