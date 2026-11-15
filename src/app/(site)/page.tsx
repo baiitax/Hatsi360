@@ -35,6 +35,7 @@ import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/marketing/Struct
 import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
 import { ProfessionalMarketWatch, type MarketWatchRow } from '@/components/homepage/ProfessionalMarketWatch';
 import { PriceTracker, type PriceTrackerCommodity } from '@/components/homepage/PriceTracker';
+import { PriceTrendSection, type TrendCommodity } from '@/components/homepage/PriceTrendSection';
 
 /**
  * The Hatsi360 Markets homepage — professional market intelligence design.
@@ -83,7 +84,12 @@ export default async function MarketsHomePage() {
         <MarketTicker items={summary.tickerItems} />
       )}
 
-      {/* ─── 3. Main Content ─── */}
+      {/* ─── 3. Price Trend Section (chart + product list) ─── */}
+      {summary.trendCommodities.length > 0 && (
+        <PriceTrendSection commodities={summary.trendCommodities} />
+      )}
+
+      {/* ─── 4. Main Content ─── */}
       <div className="bg-[#FAFBFC] px-4 py-8 sm:py-10 lg:px-8">
         <div className="mx-auto max-w-7xl space-y-6">
 
@@ -236,6 +242,7 @@ interface HomepageSummary {
   categories: CommodityCategory[];
   insights: InsightItem[];
   priceTrackerCommodities: PriceTrackerCommodity[];
+  trendCommodities: TrendCommodity[];
 }
 
 /** Commodity category definitions mapped from catalogue slugs. */
@@ -479,6 +486,36 @@ async function loadHomepage(): Promise<HomepageSummary> {
     });
   }
 
+  // ─── Build trend commodities (for the Price Trend section after hero) ───
+  const trendCommodities: TrendCommodity[] = [];
+  for (const movement of movements) {
+    const commodity = commodities.find((c) => c.id === movement.commodityId);
+    if (!commodity) continue;
+
+    // Fetch price history for the chart
+    let priceHistory: { date: string; value: number }[] = [];
+    const series = await getCommoditySeries({ commodityId: commodity.id, timeframe: 'daily' }).catch(() => null);
+    if (series?.candles?.candles && series.candles.candles.length >= 2) {
+      const ordered = series.candles.candles.sort((a, b) => a.periodStart.localeCompare(b.periodStart));
+      priceHistory = ordered.map((c) => ({
+        date: c.periodStart,
+        value: c.close,
+      }));
+    }
+
+    trendCommodities.push({
+      commodityId: commodity.id,
+      commodityName: commodity.name,
+      commoditySlug: commodity.slug,
+      price: movement.latestAmount,
+      currency: movement.currencyCode,
+      unit: movement.unitName,
+      changePercent: movement.changePercent,
+      priceHistory,
+      marketName: movement.marketName ?? undefined,
+    });
+  }
+
   return {
     publishedCount: published?.total ?? 0,
     commodityCount: commodities.length,
@@ -501,6 +538,7 @@ async function loadHomepage(): Promise<HomepageSummary> {
     categories,
     insights,
     priceTrackerCommodities,
+    trendCommodities,
   };
 }
 

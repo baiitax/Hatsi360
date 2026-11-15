@@ -120,36 +120,76 @@ export function MarketTicker({ items }: { items: TickerItem[] }) {
       maximumFractionDigits: 0,
     }).format(amount);
 
+  // Duplicate items 3x to ensure seamless loop for longer lists
+  const loopedItems = [...items, ...items, ...items];
+
   return (
     <div className="relative overflow-hidden border-y border-[#0B3D2C]/10 bg-[#0B3D2C]">
-      <div className="absolute top-0 left-0 bottom-0 z-10 w-12 bg-gradient-to-r from-[#0B3D2C] to-transparent" />
-      <div className="absolute top-0 right-0 bottom-0 z-10 w-12 bg-gradient-to-l from-[#0B3D2C] to-transparent" />
-      <div className="flex animate-[ticker_40s_linear_infinite] gap-0 whitespace-nowrap py-2.5">
-        {[...items, ...items].map((item, i) => (
-          <div
-            key={`${item.commodity}-${i}`}
-            className="inline-flex items-center gap-2.5 border-r border-white/10 px-5"
-          >
-            <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-300">
-              {item.commodity}
-            </span>
-            <span className="figure-num text-[0.8125rem] font-bold text-white">
-              {formatPrice(item.price, item.currency)}
-            </span>
-            <span className="text-[0.6875rem] text-gray-400">/{item.unit}</span>
-            {item.change !== null && (
-              <span
-                className={`inline-flex items-center gap-0.5 text-[0.6875rem] font-semibold ${
-                  item.change > 0 ? 'text-[#4CAF50]' : item.change < 0 ? 'text-red-400' : 'text-gray-400'
-                }`}
-              >
-                <span aria-hidden="true">{item.change > 0 ? '▲' : item.change < 0 ? '▼' : '–'}</span>
-                {Math.abs(item.change).toFixed(1)}%
+      {/* Fade edges */}
+      <div className="pointer-events-none absolute top-0 left-0 bottom-0 z-10 w-16 bg-gradient-to-r from-[#0B3D2C] to-transparent" />
+      <div className="pointer-events-none absolute top-0 right-0 bottom-0 z-10 w-16 bg-gradient-to-l from-[#0B3D2C] to-transparent" />
+
+      {/* Scrolling track */}
+      <div className="flex animate-[ticker_60s_linear_infinite] gap-0 whitespace-nowrap py-2.5">
+        {loopedItems.map((item, i) => {
+          const changePercent = item.change;
+          const isUp = changePercent !== null && changePercent > 0;
+          const isDown = changePercent !== null && changePercent < 0;
+          const changeAbs = changePercent !== null ? Math.abs(changePercent).toFixed(1) : null;
+
+          return (
+            <div
+              key={`${item.commodity}-${i}`}
+              className="inline-flex items-center gap-2 border-r border-white/[0.08] px-5"
+            >
+              {/* Commodity name */}
+              <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-white/70">
+                {item.commodity}
               </span>
-            )}
-            {item.market && <span className="text-[0.625rem] text-gray-400">· {item.market}</span>}
-          </div>
-        ))}
+
+              {/* Price */}
+              <span className="figure-num text-[0.8125rem] font-bold tabular-nums text-white">
+                {formatPrice(item.price, item.currency)}
+              </span>
+
+              {/* Unit */}
+              <span className="text-[0.625rem] text-white/40">/{item.unit}</span>
+
+              {/* Change indicator with up/down icons */}
+              {changePercent !== null && (
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.625rem] font-bold tabular-nums ${
+                    isUp
+                      ? 'bg-[#4CAF50]/15 text-[#4CAF50]'
+                      : isDown
+                        ? 'bg-red-500/15 text-red-400'
+                        : 'bg-white/5 text-white/40'
+                  }`}
+                >
+                  {isUp ? (
+                    <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="18 15 12 9 6 15" />
+                    </svg>
+                  ) : isDown ? (
+                    <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  ) : (
+                    <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                  )}
+                  {changeAbs}%
+                </span>
+              )}
+
+              {/* Market name */}
+              {item.market && (
+                <span className="text-[0.625rem] text-white/30">· {item.market}</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
