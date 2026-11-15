@@ -45,6 +45,8 @@ export const BRAND_ARTWORK = {
   markMono: '/brand/hatsi360-mark-mono.png',
   /** The mark in a single light ink, for dark surfaces. */
   markMonoLight: '/brand/hatsi360-mark-mono-light.png',
+  /** The complete brand lockup — emblem + HATSI360 + subtitle + underline + "Powered by Pluck Agro". */
+  fullLockup: '/brand/hatsi360-lockup-full.png',
   /** The social card. */
   social: '/brand/hatsi360-social-1200x630.png',
 } as const;
@@ -52,13 +54,13 @@ export const BRAND_ARTWORK = {
 /**
  * The intrinsic proportions of the artwork, so nothing is ever squashed.
  *
- * The mark is very slightly taller than it is wide, and the compact lockup
- * is a wide band, so both are sized from their height and their width
- * follows.
+ * The mark is very slightly taller than it is wide, the compact lockup
+ * is a wide band, and the full lockup is 2075×758 (≈2.74:1).
  */
 const COMPACT_RATIO = 415 / 1971;
 const MARK_RATIO = 1024 / 997;
 const HORIZONTAL_RATIO = 724 / 2016;
+const FULL_LOCKUP_RATIO = 758 / 2075;
 
 export function BrandMark({
   size = 40,
@@ -205,6 +207,42 @@ export function BrandHomeLink({
       <span className="sr-only">
         {BRAND.name} — {BRAND.descriptor}. {BRAND.endorsement}.
       </span>
+    </Link>
+  );
+}
+
+/**
+ * The complete brand lockup as a home link.
+ *
+ * Uses the full lockup image (emblem + HATSI360 + subtitle + underline +
+ * "Powered by Pluck Agro"). Sized from its height so proportions are preserved.
+ * Best for the navbar where the full brand identity should be visible.
+ */
+export function BrandFullLockup({
+  height = 40,
+  className = '',
+  priority = false,
+}: {
+  height?: number;
+  className?: string;
+  priority?: boolean;
+}) {
+  const width = Math.round(height / FULL_LOCKUP_RATIO);
+  return (
+    <Link
+      href="/"
+      className={`flex shrink-0 items-center ${className}`}
+      aria-label={`${BRAND.name} home — ${BRAND.descriptor}. ${BRAND.endorsement}.`}
+    >
+      <Image
+        src={BRAND_ARTWORK.fullLockup}
+        alt={`${BRAND.name} — ${BRAND.descriptor}. ${BRAND.endorsement}.`}
+        width={width}
+        height={height}
+        className="h-auto w-auto"
+        priority={priority}
+        sizes={`${width}px`}
+      />
     </Link>
   );
 }

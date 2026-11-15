@@ -96,30 +96,18 @@ export function Navbar({
             {/* Logo */}
             <Link
               href="/"
-              className="flex items-center gap-2.5"
+              className="flex items-center"
               aria-label="Hatsi360 home"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/brand/hatsi360-mark.png"
-                alt="Hatsi360"
-                width={40}
-                height={40}
-                className="rounded-lg"
+                src="/brand/hatsi360-lockup-full.png"
+                alt="Hatsi360 — Agricultural Market Intelligence. Powered by Pluck Agro."
+                width={160}
+                height={58}
+                className="h-auto w-auto"
+                priority
               />
-              <div className="flex flex-col">
-                <div className="flex items-baseline leading-none">
-                  <span className="font-display text-[1.125rem] font-extrabold tracking-tight text-[#0B3D2C]">
-                    HATSI
-                  </span>
-                  <span className="font-display text-[1.125rem] font-extrabold tracking-tight text-[#E5A020]">
-                    360
-                  </span>
-                </div>
-                <span className="text-[0.5rem] font-semibold uppercase tracking-widest text-[#0B3D2C]/60">
-                  Agricultural Market Intelligence
-                </span>
-              </div>
             </Link>
 
             {/* Desktop Navigation */}
@@ -279,28 +267,15 @@ export function Navbar({
           <div className="absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl">
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/brand/hatsi360-mark.png"
-                  alt="Hatsi360"
-                  width={32}
-                  height={32}
-                  className="rounded-lg"
+                  src="/brand/hatsi360-lockup-full.png"
+                  alt="Hatsi360 — Agricultural Market Intelligence. Powered by Pluck Agro."
+                  width={130}
+                  height={47}
+                  className="h-auto w-auto"
                 />
-                <div className="flex flex-col">
-                  <div className="flex items-baseline leading-none">
-                    <span className="font-display text-[0.9375rem] font-extrabold tracking-tight text-[#0B3D2C]">
-                      HATSI
-                    </span>
-                    <span className="font-display text-[0.9375rem] font-extrabold tracking-tight text-[#E5A020]">
-                      360
-                    </span>
-                  </div>
-                  <span className="text-[0.4375rem] font-semibold uppercase tracking-widest text-[#0B3D2C]/60">
-                    Agricultural Market Intelligence
-                  </span>
-                </div>
               </div>
               <button
                 type="button"

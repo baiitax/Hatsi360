@@ -612,15 +612,17 @@
 
   .hatsi-boot__mark {
     position: relative;
-    display: grid;
-    place-items: center;
-    width: 5.5rem;
-    height: 5.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14rem;
+    height: 6rem;
   }
 
   .hatsi-boot__logo {
-    width: 3.5rem;
-    height: auto;
+    width: auto;
+    height: 5rem;
+    max-width: 14rem;
     opacity: 0.96;
   }
 
