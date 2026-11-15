@@ -61,8 +61,8 @@ const PRICE_TYPES = [
   { value: 'indicative', label: 'Indicative estimate' },
 ];
 
-const DRAFT_KEY = 'pluck-live.collection-draft';
-const QUEUE_KEY = 'pluck-live.pending-submissions';
+const DRAFT_KEY = 'hatsi360.collection-draft';
+const QUEUE_KEY = 'hatsi360.pending-submissions';
 
 interface CollectionState {
   marketId: number | null;

@@ -5,8 +5,7 @@
  * the product resolves through this file. Nothing else hard-codes the product
  * name, so a brand change is a change in one place.
  *
- * The relationship with Pluck Agro is deliberate and subordinate: Hatsi360 is
- * the product; Pluck Agro is the endorsement.
+ * Hatsi360 is the product; Pluck Agro is the operator and endorsement.
  */
 
 /* -------------------------------------------------------------- identity -- */

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
  * The commodity catalogue in the Control Centre.
  *
  * The catalogue is reference data: it is public, read-only and versioned by
- * migration. This screen exists so operations staff can see what the product
+ * baseline. This screen exists so operations staff can see what the product
  * actually sells — including the commodities that are active in the catalogue
  * but have never reported a price.
  */

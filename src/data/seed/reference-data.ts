@@ -3,7 +3,7 @@
  *
  * Provenance:
  *  - Countries, states, markets, categories and commodities are transcribed from
- *    the public catalogue pages of https://liveprice.pluckagro.com (captured
+ *    the public catalogue pages (captured
  *    2026-10-22). The structured capture is kept in `audit/source/` and is
  *    asserted by `tests/data-integrity.test.ts`; the raw HTML pages it was
  *    transcribed from were not retained.
@@ -335,7 +335,7 @@ export const legacyCategoryMap: Record<string, number> = {
 
 /**
  * `legacyId` maps to the `commodities.id` used by the previous PHP site so that
- * migrated price rows keep pointing at the right product.
+ * historical price rows keep pointing at the right product.
  *
  * Two records are named "Paddy Rice" on the live site: id 1 (3 markets, the one
  * that actually carries prices) and id 19 (0 markets). id 19 is an orphan

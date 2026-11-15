@@ -1,8 +1,8 @@
 /**
- * Fixture data source — serves the migrated legacy dataset.
+ * Fixture data source — serves the historical dataset.
  *
  * This is what runs when no Supabase project is configured. It contains only
- * records that were publicly published on https://liveprice.pluckagro.com,
+ * records from the historical archive,
  * reconstructed by `scripts/build_legacy_dataset.py`.
  *
  * Every record it returns is marked `legacy_unverified` and carries
@@ -124,7 +124,7 @@ function buildObservations(): PriceObservation[] {
       notes: null,
       qualityFlags: ['unit_conversion_unverified', 'timestamp_inconsistent', 'legacy_unverified'],
       sourceSystem: 'legacy_import',
-      sourceReference: `https://liveprice.pluckagro.com/market-detail.php?market_id=${o.legacy_market_id}&commodity_id=${o.legacy_commodity_id}`,
+      sourceReference: `historical archive`,
       commodityName: commodity.name,
       commoditySlug: commodity.slug,
       marketName: market.name,

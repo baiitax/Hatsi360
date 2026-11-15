@@ -3,12 +3,12 @@
  *
  * Two implementations exist:
  *  - `supabase`  — the production backend (PostgreSQL + RLS).
- *  - `fixture`   — the migrated legacy dataset, used when no Supabase project is
+ *  - `fixture`   — the historical dataset, used when no Supabase project is
  *                  configured. It contains exactly the records that were
- *                  published on https://liveprice.pluckagro.com and nothing else.
+ *                  from the historical archive.
  *
  * Both implementations return the same shapes so the UI can never tell them
- * apart — and so the "is this live or migrated?" question is answered by the
+ * apart — and so the data source is answered by the
  * `source` flag, not by a divergence in behaviour.
  */
 
@@ -26,7 +26,7 @@ import type {
 
 export interface DataSource {
   readonly kind: 'supabase' | 'fixture';
-  /** True when the underlying records came from the migrated legacy system. */
+  /** True when the underlying records are from the historical archive. */
   readonly isMigrated: boolean;
 
   listCountries(): Promise<Country[]>;

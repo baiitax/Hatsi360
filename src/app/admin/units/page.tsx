@@ -13,7 +13,7 @@ export const metadata: Metadata = {
  * The measurement unit catalogue.
  *
  * `is_specific = false` marks the synthetic "unspecified" unit that carries
- * migrated records whose unit was never stated. Those records are never
+ * historical records whose unit was never stated. Those records are never
  * normalised and are always flagged as ambiguous.
  */
 export default async function AdminUnitsPage() {

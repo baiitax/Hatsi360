@@ -164,10 +164,9 @@ export default function ResearchPage() {
                   className="mr-1.5 inline size-3.5 align-text-top text-terminal-text-muted"
                   aria-hidden="true"
                 />
-                The previous Pluck Live site displayed a &ldquo;Price Forecast&rdquo; figure
-                on every commodity page without explaining how it was produced. It has been
-                removed. Hatsi360 publishes observations and analysis; it does not publish
-                predictions dressed up as data. See the{' '}
+                Some market data services display a &ldquo;Price Forecast&rdquo; figure without
+                explaining how it is produced. Hatsi360 publishes observations and analysis; it
+                does not publish predictions dressed up as data. See the{' '}
                 <Link
                   href="/disclaimer"
                   className="font-semibold text-harvest-300 underline decoration-terminal-border underline-offset-2"

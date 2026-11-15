@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { BRAND } from '@/lib/brand';
 import Link from 'next/link';
 import { PageHero } from '@/components/ui/PageHero';
 import { getPageImage } from '@/lib/images/registry';
@@ -21,10 +22,6 @@ const GROUPS = [
       {
         q: 'Which markets do you cover?',
         a: 'We currently list markets across Lagos, Kano, Jigawa, Kaduna, Katsina, Zamfara, Nasarawa, Borno, Bauchi, Benue and Sokoto, and we are adding more. A market only appears in price results once it has published observations — the full directory is on the Markets page.',
-      },
-      {
-        q: 'Why do some prices show “Legacy record — unverified”?',
-        a: 'Those records were migrated from the previous version of the Pluck Live system, the platform&rsquo;s earlier name. They carry no verification trail, no measurement unit and no collection time of day, so we publish them clearly labelled rather than presenting them as verified current quotes.',
       },
       {
         q: 'Why is there no price for some commodities?',
@@ -74,7 +71,7 @@ const GROUPS = [
       },
       {
         q: 'Do you publish price forecasts?',
-        a: 'Not on this site. The previous Pluck Live system displayed a “Price Forecast” figure without explaining how it was produced. Any forecasting we offer in future will be labelled explicitly as a model-generated estimate, with its method and limitations stated, and evaluated against historical observations.',
+        a: 'Not on this site. {BRAND.name} does not publish price forecasts. Any forecasting we offer in future will be labelled explicitly as a model-generated estimate, with its method and limitations stated, and evaluated against historical observations.',
       },
       {
         q: 'How do I report a price that looks wrong?',

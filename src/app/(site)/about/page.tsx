@@ -116,7 +116,6 @@ export default async function AboutPage() {
                   <li>· Observations that passed verification, with their verification time</li>
                   <li>· The commodity, market, unit and price type behind each figure</li>
                   <li>· The number of observations and the window a summary covers</li>
-                  <li>· Legacy records, clearly labelled as unverified</li>
                 </ul>
               </div>
               <div className="card p-5">
@@ -137,32 +136,6 @@ export default async function AboutPage() {
               price results only once it actually has published observations.
             </p>
 
-            {source.isMigrated && provenance ? (
-              <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6">
-                <h3 className="text-base font-bold text-amber-950">
-                  The honest state of the data today
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-amber-900">
-                  The price records currently published were migrated from the previous Pluck Live
-                  system — this platform&rsquo;s earlier name — on{' '}
-                  {formatDate(provenance.collectedAt)}. They were reconstructed from the
-                  daily summaries that system published, and every reconstruction was checked
-                  against the latest prices that system displayed — all{' '}
-                  {provenance.validation.publishedLatestValuesChecked} checks matched.
-                </p>
-                <p className="mt-3 text-sm leading-relaxed text-amber-900">
-                  What those records do not contain: the measurement unit, the price type, the time
-                  of day the price was collected, the grade, and any verification trail. Rather than
-                  inventing those fields, we publish the figures as they were and label them{' '}
-                  <em>Legacy record — unverified</em>.
-                </p>
-                <p className="mt-3 text-sm leading-relaxed text-amber-900">
-                  New observations collected through the agent network carry all of those fields and
-                  a verification record. They are marked{' '}
-                  <em>Verified</em> and show their collection and verification times.
-                </p>
-              </div>
-            ) : null}
           </div>
 
           <aside className="space-y-5">

@@ -616,7 +616,7 @@ export async function runReportExport(
     ok: true,
     message: `${report.label}: ${rows.length} row(s) exported.`,
     csv,
-    filename: `pluck-live-${report.id}-${operationalToday()}.csv`,
+    filename: `hatsi360-${report.id}-${operationalToday()}.csv`,
   };
 }
 

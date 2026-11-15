@@ -85,7 +85,7 @@ export function MarketPulse({
               </p>
               <p className="text-ink-400">
                 {observation.verificationStatus === 'legacy_unverified'
-                  ? 'Published — legacy record, unverified'
+                  ? 'Published — historical record, unverified'
                   : observation.verificationStatus === 'verified'
                     ? 'Published — verified'
                     : observation.verificationStatus}
@@ -869,7 +869,7 @@ export function ProvenanceStamp({ observation }: { observation: PriceObservation
     <p className="text-xs text-ink-500">
       Collected {formatDateTime(observation.collectedAt)}
       {observation.publishedAt ? ` · Published ${formatDate(observation.publishedAt)}` : ''}
-      {observation.verificationStatus === 'legacy_unverified' ? ' · Legacy record, unverified' : ''}
+      {observation.verificationStatus === 'legacy_unverified' ? ' · Historical record, unverified' : ''}
     </p>
   );
 }

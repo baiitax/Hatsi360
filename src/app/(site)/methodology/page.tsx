@@ -3,8 +3,7 @@ import type { Metadata } from 'next';
 import { PageHero } from '@/components/ui/PageHero';
 import { getPageImage } from '@/lib/images/registry';
 import { getDataSource } from '@/lib/data';
-import { formatDate } from '@/lib/money';
-import { PRICE_TYPE_META } from '@/types/domain';
+import { formatDate } from '@/lib/money';import { PRICE_TYPE_META } from '@/types/domain';
 import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
@@ -170,26 +169,6 @@ export default async function MethodologyPage() {
           </div>
 
           <aside className="space-y-5">
-            {source.isMigrated && provenance ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-amber-950">
-                  The legacy record
-                </h2>
-                <p className="mt-3 text-sm leading-relaxed text-amber-900">
-                  The price records currently published were migrated from the previous Pluck Live
-                  system on {formatDate(provenance.collectedAt)}. They were reconstructed from the
-                  daily summaries that system published, and every reconstruction was checked
-                  against the latest prices it displayed — all{' '}
-                  {provenance.validation.publishedLatestValuesChecked} checks matched.
-                </p>
-                <p className="mt-3 text-sm leading-relaxed text-amber-900">
-                  What they do not contain: the measurement unit, the price type, the time of day the
-                  price was collected, the grade, and any verification trail. Rather than inventing
-                  those fields, we publish the figures as they were and label them{' '}
-                  <em>Legacy record — unverified</em>.
-                </p>
-              </div>
-            ) : null}
 
             <div className="card p-5">
               <h2 className="text-sm font-bold uppercase tracking-wide text-ink-700">Read next</h2>

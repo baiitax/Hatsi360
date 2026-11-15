@@ -53,7 +53,7 @@ export function CentralSignInForm({ next }: { next?: string }) {
           required
           autoComplete="email"
           inputMode="email"
-          placeholder="you@pluckagro.com"
+          placeholder="you@example.com"
           className={fieldClass}
         />
       </div>

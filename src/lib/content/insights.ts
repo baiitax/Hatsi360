@@ -1,8 +1,8 @@
 /**
  * Published market insights.
  *
- * The articles below were first published on the previous Pluck Live site — this
- * platform's earlier name — and are reproduced here with their original titles,
+ * The articles below were first published on the earlier version of this
+ * platform and are reproduced here with their original titles,
  * excerpts and body text. Product references inside the body have been updated
  * to the current name; everything else is unchanged.
  *

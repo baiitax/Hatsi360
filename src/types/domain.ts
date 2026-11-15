@@ -1,7 +1,7 @@
 /**
  * Hatsi360 domain types.
  *
- * These mirror the Supabase schema in `supabase/migrations/`. They are the single
+ * These mirror the Supabase schema in `supabase/migrations/`. They are the authoritative
  * source of truth for shapes that cross the server/client boundary.
  *
  * Money is always `number` in the UI layer, but it is stored as PostgreSQL
@@ -113,7 +113,7 @@ export interface MeasurementUnit {
   /** Multiplier into the base unit, e.g. 1000 g -> 1 kg. */
   baseFactor: number | null;
   /**
-   * False for the synthetic "unspecified" unit used to hold legacy records whose
+   * False for the synthetic "unspecified" unit used to hold historical records whose
    * measurement unit was never recorded. Comparisons across such records are
    * allowed but always flagged as ambiguous.
    */
@@ -280,9 +280,9 @@ export const VERIFICATION_STATUS_META: Record<VerificationStatus, VerificationSt
   },
   legacy_unverified: {
     code: 'legacy_unverified',
-    label: 'Legacy record — unverified',
+    label: 'Historical record — unverified',
     description:
-      'Migrated from the previous Pluck Live system. It carries no verification trail, so it is published with an explicit unverified label rather than being retroactively marked verified.',
+      'A historical record without a verification trail. It is published with an explicit unverified label rather than being retroactively marked verified.',
     publiclyReadable: true,
     tone: 'warning',
   },

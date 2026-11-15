@@ -263,7 +263,7 @@ export default async function ChartsWorkspacePage({
           source="Source: published_price_observations, aggregated by period. Each bar spans the lowest and highest published observation in the period."
           footnote={
             series?.includesLegacyData
-              ? 'This series includes records migrated from the previous system, labelled legacy_unverified. They are never presented as verified.'
+              ? 'This series may include records without a verification trail. They are shown with their original data and never presented as verified.'
               : undefined
           }
           height="18rem"

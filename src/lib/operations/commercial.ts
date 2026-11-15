@@ -9,7 +9,7 @@ import { authEmailsFor, authIdsMatchingEmail } from '@/lib/auth/emails';
  *
  * The tables behind these screens — organizations, subscriptions, entitlement
  * tiers, API applications and their usage — have existed in the schema since
- * the commercial migration, with RLS and grants in place, but no
+ * the commercial database, with RLS and grants in place, but no
  * administrative surface ever read them. This module is that surface.
  *
  * Three rules run through every query here:

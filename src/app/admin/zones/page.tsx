@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 /**
  * Market zones — an optional grouping of markets inside a state.
  *
- * The catalogue migrated from the previous system has no zones, so the empty
+ * The current catalogue has no zones, so the empty
  * state is the truthful state. Nothing is invented to fill it.
  */
 export default async function AdminZonesPage() {
@@ -49,7 +49,7 @@ export default async function AdminZonesPage() {
     <>
       <PageHeader
         title="Market zones"
-        description="Optional groupings of markets inside a state — a grains corridor, a river market belt. Zones are assigned by operations staff; the migrated catalogue has none."
+        description="Optional groupings of markets inside a state — a grains corridor, a river market belt. Zones are assigned by operations staff."
         breadcrumbs={[
           { label: 'Control Centre', href: '/admin/overview' },
           { label: 'Catalogue' },
@@ -59,7 +59,7 @@ export default async function AdminZonesPage() {
       {rows.length === 0 ? (
         <InlineEmpty
           title="No market zones are configured"
-          description="Zones are an optional operational grouping. The eleven markets in the catalogue migrated without one, and none has been invented to fill the gap."
+          description="Zones are an optional operational grouping."
         />
       ) : (
         <DataTable

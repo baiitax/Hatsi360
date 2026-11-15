@@ -119,8 +119,8 @@ export function DataFreshnessIndicator({
  * The verification state of a record.
  *
  * Only a record that passed verification is labelled "Verified". Submitted but
- * unreviewed records are labelled as pending, and migrated legacy records stay
- * labelled as unverified.
+ * unreviewed records are labelled as pending, and historical records without a
+ * verification trail stay labelled as unverified.
  */
 export function VerificationBadge({
   status,
@@ -186,7 +186,7 @@ export function SourceAttribution({
 }) {
   const sourceLabel =
     observation.sourceSystem === 'legacy_import'
-      ? 'Migrated from the previous Pluck Live site'
+      ? 'Historical record'
       : observation.sourceSystem === 'agent_app'
         ? 'Collected by a field agent'
         : 'Entered manually';
