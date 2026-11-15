@@ -11,7 +11,8 @@ import {
   IconBriefcase,
   IconSettings,
   IconShieldCheck,
-  IconCode
+  IconCode,
+  IconUser
 } from '@/components/ui/icons';
 import type { SVGProps, ReactElement } from 'react';
 
@@ -46,8 +47,10 @@ const navigation: NavSection[] = [
   {
     title: 'Trade & Sourcing',
     items: [
-      { title: 'Opportunities', href: '/client/trade', icon: IconTrendingUp },
+      { title: 'Trade Overview', href: '/client/trade', icon: IconTrendingUp },
       { title: 'My RFQs', href: '/client/trade/rfqs', icon: IconBriefcase },
+      { title: 'Orders', href: '/client/trade/orders', icon: IconBriefcase },
+      { title: 'Suppliers', href: '/client/trade/suppliers', icon: IconUser },
     ],
   },
   {
@@ -114,7 +117,7 @@ export function ClientSidebar() {
         <div className="p-4 border-t border-gray-200">
           <div className="px-3 py-2 text-xs text-gray-500">
             <p className="font-medium">Premium Client Portal</p>
-            <p className="mt-1">v2.0 • Stage 2</p>
+            <p className="mt-1">v4.0 • Stage 4</p>
           </div>
         </div>
       </div>
