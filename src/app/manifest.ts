@@ -1,5 +1,4 @@
 import type { MetadataRoute } from 'next';
-import { BRAND } from '@/lib/brand';
 
 /**
  * The installable web application manifest.
@@ -11,16 +10,16 @@ import { BRAND } from '@/lib/brand';
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${BRAND.name} — ${BRAND.descriptor}`,
-    short_name: BRAND.name,
+    name: 'Hatsi360 Markets — African Agricultural Market Intelligence',
+    short_name: 'Hatsi360 Markets',
     description:
-      'Agricultural commodity prices, market comparison and verified market intelligence.',
+      'Agricultural commodity prices, market intelligence, price analytics, commodity research and trade insights across African agricultural markets.',
     start_url: '/',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait-primary',
-    background_color: '#F7F8F5',
-    theme_color: '#123B2A',
+    background_color: '#F7F9F7',
+    theme_color: '#103C2D',
     categories: ['business', 'productivity', 'news'],
     icons: [
       {

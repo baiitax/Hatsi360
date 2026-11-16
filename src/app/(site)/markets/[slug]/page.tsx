@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { BRAND } from '@/lib/brand';
 import { PriceChart } from '@/components/data/PriceChart';
 import { CHART_COLOURS } from '@/lib/chart-colours';
 import { PriceTable } from '@/components/data/PriceTable';
@@ -24,11 +25,38 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!market) return { title: 'Market not found' };
 
   return {
-    title: `${market.name} prices`,
+    title: `${market.name} Agricultural Market Prices | Hatsi360 Markets`,
     description:
       market.description ??
-      `Agricultural commodity prices collected at ${market.name}, ${market.stateName}.`,
+      `Explore agricultural commodity prices collected at ${market.name}${market.stateName ? `, ${market.stateName}` : ''}. Compare markets and monitor price movements on Hatsi360 Markets.`,
     alternates: { canonical: `/markets/${market.slug}` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Hatsi360 Markets',
+      locale: BRAND.locale,
+      title: `${market.name} Agricultural Market Prices | Hatsi360 Markets`,
+      description:
+        market.description ??
+        `Explore agricultural commodity prices collected at ${market.name}${market.stateName ? `, ${market.stateName}` : ''}.`,
+      url: `/markets/${market.slug}`,
+      images: [
+        {
+          url: '/brand/hatsi360-social-preview.png',
+          width: 1200,
+          height: 630,
+          alt: `${market.name} — agricultural market prices on Hatsi360 Markets.`,
+          type: 'image/png',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${market.name} Agricultural Market Prices | Hatsi360 Markets`,
+      description:
+        market.description ??
+        `Agricultural commodity prices at ${market.name}${market.stateName ? `, ${market.stateName}` : ''}.`,
+      images: ['/brand/hatsi360-social-preview.png'],
+    },
   };
 }
 

@@ -53,15 +53,40 @@ import {
  */
 
 export const metadata: Metadata = {
-  title: { absolute: `${BRAND.productName} — African Agricultural Market Intelligence` },
+  title: { absolute: 'Hatsi360 Markets | African Agricultural Market Intelligence & Trade' },
   description:
-    'Agricultural commodity prices collected in the field, verified before publication, with the market, unit, price type, grade and observation time behind every figure.',
+    'Discover agricultural commodity prices, market intelligence, price analytics, ' +
+    'commodity research and trade insights across African agricultural markets. ' +
+    'Hatsi360 helps businesses, traders, producers and exporters make better-informed decisions.',
   alternates: { canonical: '/' },
   openGraph: {
-    title: `${BRAND.productName} — African Agricultural Market Intelligence`,
-    description:
-      'Agricultural commodity prices collected in the field, verified before publication, with the provenance behind every figure.',
     type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Hatsi360 Markets — Agricultural Intelligence for Better Decisions',
+    description:
+      'Explore African agricultural markets through commodity prices, market trends, price analytics, ' +
+      'agricultural research and trade intelligence. Discover the information you need to make more ' +
+      'informed agricultural business decisions.',
+    url: '/',
+    images: [
+      {
+        url: '/brand/hatsi360-social-preview.png',
+        width: 1200,
+        height: 630,
+        alt: 'Hatsi360 Markets — African Agricultural Market Intelligence. Agricultural Intelligence for Better Decisions.',
+        type: 'image/png',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@Hatsi360',
+    title: 'Hatsi360 Markets — Agricultural Intelligence for Better Decisions',
+    description:
+      'Explore African agricultural markets through commodity prices, market trends, price analytics, ' +
+      'agricultural research and trade intelligence.',
+    images: ['/brand/hatsi360-social-preview.png'],
   },
 };
 

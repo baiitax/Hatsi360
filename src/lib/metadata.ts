@@ -24,7 +24,7 @@ import { getSiteUrl } from './supabase/config';
  *   - the endorsement is subordinate but present.
  */
 
-const SOCIAL_CARD = '/brand/hatsi360-social-1200x630.png';
+const SOCIAL_CARD = '/brand/hatsi360-social-preview.png';
 
 export interface ShareInput {
   /** The page's own title, without the brand suffix. */
@@ -103,15 +103,14 @@ export function buildShareMetadata(input: ShareInput): Metadata {
  * proposition.
  */
 export const PLATFORM_DESCRIPTION =
-  'Verified agricultural commodity prices from Nigerian markets, collected by ' +
-  'field agents and checked before publication. Compare markets, track price ' +
-  'movement and find where the best prices are — for traders, aggregators, ' +
-  'processors and exporters.';
+  'Hatsi360 Markets provides agricultural commodity prices, market intelligence, price analytics, ' +
+  'commodity research and trade insights to help businesses, traders, producers and exporters make ' +
+  'informed decisions across African agricultural markets.';
 
 /** A shorter form, for cards and lists where space is tight. */
 export const PLATFORM_DESCRIPTION_SHORT =
-  'Verified agricultural commodity prices from Nigerian markets, checked ' +
-  'before publication.';
+  'African agricultural commodity prices, market intelligence and trade insights ' +
+  'from Hatsi360 Markets.';
 
 /**
  * The description for the Trade Intelligence section.

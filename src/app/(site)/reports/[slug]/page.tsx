@@ -36,8 +36,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: { canonical: `/reports/${report.slug}` },
     openGraph: {
       type: 'article',
-      title: `${report.title} | ${BRAND.name}`,
+      siteName: 'Hatsi360 Markets',
+      locale: BRAND.locale,
+      title: `${report.title} | Hatsi360 Markets`,
       description: report.summary,
+      url: `/reports/${report.slug}`,
+      images: [
+        {
+          url: '/brand/hatsi360-social-preview.png',
+          width: 1200,
+          height: 630,
+          alt: `${report.title} — agricultural market intelligence from Hatsi360 Markets.`,
+          type: 'image/png',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${report.title} | Hatsi360 Markets`,
+      description: report.summary,
+      images: ['/brand/hatsi360-social-preview.png'],
     },
   };
 }

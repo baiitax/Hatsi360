@@ -9,10 +9,27 @@ import { BreadcrumbJsonLd, DatasetJsonLd } from '@/components/marketing/Structur
 import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: { absolute: `${BRAND.productName} — Price Directory` },
+  title: { absolute: 'Hatsi360 Markets — Price Directory' },
   description:
-    'Interactive price directory for Nigerian agricultural commodities. Filter by commodity, market, state, and date with live charts, heatmaps and market insights.',
+    'Explore agricultural commodity price observations across African markets. Filter by commodity, market and date with live market intelligence.',
   alternates: { canonical: '/prices' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Hatsi360 Markets — Price Directory',
+    description:
+      'Explore agricultural commodity price observations across African markets. Filter by commodity, market and date with live market intelligence.',
+    url: '/prices',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Hatsi360 Markets — Price Directory',
+    description:
+      'Explore agricultural commodity price observations across African markets.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 export const dynamic = 'force-dynamic';

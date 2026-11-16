@@ -1,8 +1,17 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { PremiumSidebar } from '@/components/client/PremiumSidebar';
 import { PremiumHeader } from '@/components/client/PremiumHeader';
 import { createClient } from '@/lib/supabase/server';
+
+/**
+ * All authenticated client pages must not be indexed by search engines.
+ * Private workspace information must never surface through search results.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function ClientLayout({
   children,

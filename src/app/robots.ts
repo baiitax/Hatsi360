@@ -13,14 +13,25 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/api/',
           '/admin',
+          '/admin/',
           '/agent',
+          '/agent/',
+          '/client',
+          '/client/',
           '/dashboard',
           '/login',
           '/register',
           '/forgot-password',
           '/reset-password',
           '/auth/',
+          '/_next/',
         ],
+      },
+      // Allow social preview crawlers to access the social card image
+      // even if it lives under a restricted path (it does not, but be explicit).
+      {
+        userAgent: ['Googlebot', 'facebookexternalhit', 'Twitterbot', 'LinkedInBot'],
+        allow: '/brand/',
       },
     ],
     sitemap: `${base}/sitemap.xml`,

@@ -1,14 +1,30 @@
 import type { Metadata } from 'next';
+import { BRAND } from '@/lib/brand';
 import Link from 'next/link';
 import { PageHero } from '@/components/ui/PageHero';
 import { getPageImage } from '@/lib/images/registry';
 import { ContactForm } from '@/components/forms/ContactForm';
 
 export const metadata: Metadata = {
-  title: 'Contact',
+  title: 'Contact | Hatsi360 Markets',
   description:
-    'Talk to the Hatsi360 team about market partnerships, API access, custom reports or a published price you think looks wrong.',
+    'Talk to the Hatsi360 Markets team about market partnerships, API access, custom reports or a published price you think looks wrong.',
   alternates: { canonical: '/contact' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Contact | Hatsi360 Markets',
+    description: 'Contact the Hatsi360 Markets team.',
+    url: '/contact',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Contact | Hatsi360 Markets',
+    description: 'Contact the Hatsi360 Markets team.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 export default function ContactPage() {

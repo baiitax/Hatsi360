@@ -9,10 +9,27 @@ import { PRICE_TYPE_META, type PriceType } from '@/types/domain';
 import { BreadcrumbJsonLd } from '@/components/marketing/StructuredData';
 
 export const metadata: Metadata = {
-  title: 'Business Solutions',
+  title: 'Business Solutions | Hatsi360 Markets',
   description:
-    'How farmers, aggregators, traders, processors, exporters, cooperatives, financial institutions, development organisations and government agencies use verified agricultural market prices from Hatsi360.',
+    'How farmers, aggregators, traders, processors, exporters, cooperatives, financial institutions and development organisations use verified agricultural market intelligence from Hatsi360 Markets.',
   alternates: { canonical: '/solutions' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Business Solutions | Hatsi360 Markets',
+    description:
+      'How agricultural businesses use verified market intelligence from Hatsi360 Markets.',
+    url: '/solutions',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Business Solutions | Hatsi360 Markets',
+    description:
+      'How agricultural businesses use verified market intelligence.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 /**

@@ -6,10 +6,25 @@ import { INTELLIGENCE_TIERS } from '@/lib/brand';
 import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Intelligence Plans',
+  title: 'Plans & Pricing | Hatsi360 Markets',
   description:
     'Public price discovery stays free. Professional and enterprise intelligence add extended history, exports, alerts, API access and custom coverage.',
   alternates: { canonical: '/pricing' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Plans & Pricing | Hatsi360 Markets',
+    description: 'Public price discovery is free. Professional and enterprise intelligence add extended history, exports and API access.',
+    url: '/pricing',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Plans & Pricing | Hatsi360 Markets',
+    description: 'Plans and pricing for Hatsi360 Markets agricultural intelligence.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 export default function PricingPage() {

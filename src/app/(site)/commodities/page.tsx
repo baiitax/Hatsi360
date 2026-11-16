@@ -13,10 +13,27 @@ import { BreadcrumbJsonLd } from '@/components/marketing/StructuredData';
 import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Commodity Directory',
+  title: 'Agricultural Commodity Intelligence | Hatsi360 Markets',
   description:
-    'Interactive directory of every agricultural commodity Hatsi360 Markets tracks, with search, filters, and live freshness indicators.',
+    'Discover agricultural commodities, their market prices, quality information, historical trends and available intelligence across African agricultural markets.',
   alternates: { canonical: '/commodities' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Agricultural Commodity Intelligence | Hatsi360 Markets',
+    description:
+      'Discover agricultural commodities, their market prices, quality information, historical trends and available intelligence across African agricultural markets.',
+    url: '/commodities',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Agricultural Commodity Intelligence | Hatsi360 Markets',
+    description:
+      'Discover agricultural commodities, their market prices, quality information, historical trends and available intelligence across African agricultural markets.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 export const dynamic = 'force-dynamic';

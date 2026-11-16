@@ -8,10 +8,27 @@ import { BreadcrumbJsonLd, DatasetJsonLd } from '@/components/marketing/Structur
 import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Market Directory',
+  title: 'Agricultural Markets & Commodity Prices | Hatsi360 Markets',
   description:
-    'Interactive directory of Nigerian agricultural markets with live trading data, commodity coverage, and price observations.',
+    'Explore agricultural market prices and commodity observations across available African markets. Compare market information and monitor agricultural price movements.',
   alternates: { canonical: '/markets' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Agricultural Markets & Commodity Prices | Hatsi360 Markets',
+    description:
+      'Explore agricultural market prices and commodity observations across available African markets. Compare market information and monitor agricultural price movements.',
+    url: '/markets',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Agricultural Markets & Commodity Prices | Hatsi360 Markets',
+    description:
+      'Explore agricultural market prices and commodity observations across available African markets. Compare market information and monitor agricultural price movements.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 export const dynamic = 'force-dynamic';

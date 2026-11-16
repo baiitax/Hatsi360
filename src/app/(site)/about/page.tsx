@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { BRAND } from '@/lib/brand';
 import { PageHero } from '@/components/ui/PageHero';
 import { getDataSource } from '@/lib/data';
 import { formatDate } from '@/lib/money';
@@ -7,10 +8,26 @@ import { getPageImage } from '@/lib/images/registry';
 import { HatsiImage } from '@/components/media/HatsiImage';
 
 export const metadata: Metadata = {
-  title: 'About Hatsi360',
+  title: 'About Hatsi360 Markets | African Agricultural Intelligence',
   description:
-    'How Hatsi360 collects, verifies and publishes agricultural commodity prices across Nigeria — our methodology, our data coverage and what we do not know.',
+    'Learn about Hatsi360 Markets, our mission to improve agricultural market intelligence and our commitment to helping businesses make better-informed decisions across African agricultural markets.',
   alternates: { canonical: '/about' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'About Hatsi360 Markets | African Agricultural Intelligence',
+    description:
+      'Learn about Hatsi360 Markets, our mission to improve agricultural market intelligence and our commitment to helping businesses make better-informed decisions.',
+    url: '/about',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About Hatsi360 Markets | African Agricultural Intelligence',
+    description: 'Our mission to improve agricultural market intelligence across African markets.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 const STEPS = [

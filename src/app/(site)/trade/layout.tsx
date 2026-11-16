@@ -4,11 +4,11 @@ import { TRADE_NAV } from '@/lib/trade/navigation';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Trade Intelligence',
-    template: '%s · Hatsi360 Trade Intelligence',
+    default: 'African Agricultural Trade Intelligence | Hatsi360 Markets',
+    template: `%s | Hatsi360 Markets`,
   },
   description:
-    'Agricultural commodity market terminal for Nigeria: latest verified prices, price movement, market comparison and trading opportunities.',
+    'Explore agricultural trade intelligence, commodity export insights, market access information and available buyer and supplier discovery opportunities.',
 };
 
 /**

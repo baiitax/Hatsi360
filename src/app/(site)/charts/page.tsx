@@ -52,10 +52,27 @@ import { Select } from '@/components/ui/primitives';
  */
 
 export const metadata: Metadata = {
-  title: 'Chart workspace',
+  title: 'Agricultural Price Analytics & Historical Trends | Hatsi360 Markets',
   description:
-    'Published agricultural price history by comparable series: commodity, market, grade, price type, unit and currency, with the observations behind every point.',
+    'Analyse agricultural commodity price movements, historical observations and market comparisons using available Hatsi360 market intelligence data.',
   alternates: { canonical: '/charts' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Agricultural Price Analytics & Historical Trends | Hatsi360 Markets',
+    description:
+      'Analyse agricultural commodity price movements, historical observations and market comparisons.',
+    url: '/charts',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Agricultural Price Analytics & Historical Trends | Hatsi360 Markets',
+    description:
+      'Analyse agricultural commodity price movements, historical observations and market comparisons.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 export const dynamic = 'force-dynamic';

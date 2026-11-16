@@ -6,14 +6,26 @@ import { REPORTS } from '@/lib/content/reports';
 import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Market Intelligence Reports',
+  title: 'Agricultural Market Research & Reports | Hatsi360 Markets',
   description:
-    'Published Hatsi360 market intelligence: grain market reviews, recorded price movement and an honest statement of collection coverage.',
+    'Access agricultural market research, commodity reports, regional insights and published intelligence from Hatsi360 Markets.',
   alternates: { canonical: '/reports' },
   openGraph: {
-    title: `Market intelligence reports | ${BRAND.name}`,
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Agricultural Market Research & Reports | Hatsi360 Markets',
     description:
-      'Published Hatsi360 market intelligence, with every figure computed from published price observations.',
+      'Access agricultural market research, commodity reports, regional insights and published intelligence from Hatsi360 Markets.',
+    url: '/reports',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Agricultural Market Research & Reports | Hatsi360 Markets',
+    description:
+      'Access agricultural market research, commodity reports, regional insights and published intelligence.',
+    images: ['/brand/hatsi360-social-preview.png'],
   },
 };
 

@@ -7,10 +7,27 @@ import { BreadcrumbJsonLd } from '@/components/marketing/StructuredData';
 import { BRAND } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Compare prices across markets',
+  title: 'Compare Agricultural Commodity Prices | Hatsi360 Markets',
   description:
-    'Interactive comparison of agricultural commodity prices across Nigerian markets. Visual charts and detailed data tables.',
+    'Interactive comparison of agricultural commodity prices across African markets. Visual charts, detailed data tables and market-by-market intelligence.',
   alternates: { canonical: '/compare' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Compare Agricultural Commodity Prices | Hatsi360 Markets',
+    description:
+      'Interactive comparison of agricultural commodity prices across African markets.',
+    url: '/compare',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Compare Agricultural Commodity Prices | Hatsi360 Markets',
+    description:
+      'Interactive comparison of agricultural commodity prices across African markets.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 export const dynamic = 'force-dynamic';

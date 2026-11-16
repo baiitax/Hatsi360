@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { BRAND } from '@/lib/brand';
 import { Breadcrumbs } from '@/components/ui';
 import { getInsight, insights } from '@/lib/content/insights';
 import { formatDate } from '@/lib/money';
@@ -22,15 +23,33 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!article) return { title: 'Insight not found' };
 
   return {
-    title: article.title,
+    title: `${article.title} | Hatsi360 Markets`,
     description: article.excerpt,
     alternates: { canonical: `/insights/${article.slug}` },
     openGraph: {
       type: 'article',
-      title: article.title,
+      siteName: 'Hatsi360 Markets',
+      locale: BRAND.locale,
+      title: `${article.title} | Hatsi360 Markets`,
       description: article.excerpt,
+      url: `/insights/${article.slug}`,
       publishedTime: article.publishedAt ?? undefined,
       authors: [article.author],
+      images: [
+        {
+          url: '/brand/hatsi360-social-preview.png',
+          width: 1200,
+          height: 630,
+          alt: `${article.title} — agricultural market intelligence from Hatsi360 Markets.`,
+          type: 'image/png',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${article.title} | Hatsi360 Markets`,
+      description: article.excerpt,
+      images: ['/brand/hatsi360-social-preview.png'],
     },
   };
 }

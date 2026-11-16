@@ -5,10 +5,25 @@ import { PageHero } from '@/components/ui/PageHero';
 import { getPageImage } from '@/lib/images/registry';
 
 export const metadata: Metadata = {
-  title: 'Frequently Asked Questions',
+  title: 'Frequently Asked Questions | Hatsi360 Markets',
   description:
-    'Answers about how Hatsi360 collects, verifies and publishes agricultural commodity prices in Nigeria.',
+    'Answers about how Hatsi360 Markets collects, verifies and publishes agricultural commodity prices across African markets.',
   alternates: { canonical: '/faq' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Frequently Asked Questions | Hatsi360 Markets',
+    description: 'Answers about how Hatsi360 Markets collects and publishes agricultural commodity prices.',
+    url: '/faq',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Frequently Asked Questions | Hatsi360 Markets',
+    description: 'Answers about Hatsi360 Markets agricultural intelligence.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 const GROUPS = [

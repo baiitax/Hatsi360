@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { BRAND } from '@/lib/brand';
 import { getDataSource } from '@/lib/data';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { getMarketMovements, getCommoditySeriesOptions } from '@/lib/trade/queries';
@@ -42,15 +43,37 @@ export async function generateMetadata({
   if (!commodity) return { title: 'Commodity not found' };
 
   return {
-    title: `${commodity.name} profile`,
+    title: `${commodity.name} Prices & Market Intelligence | Hatsi360 Markets`,
     description:
       commodity.description ??
-      `The reporting markets, comparable series and freshness of the published record for ${commodity.name} on Hatsi360 Markets.`,
+      `Explore ${commodity.name} prices, available market observations, historical trends and related agricultural intelligence on Hatsi360 Markets.`,
     alternates: { canonical: `/commodities/${commodity.slug}` },
     openGraph: {
-      title: `${commodity.name} profile — Hatsi360 Markets`,
-      description: commodity.description ?? `The commodity profile for ${commodity.name}.`,
+      type: 'website',
+      siteName: 'Hatsi360 Markets',
+      locale: BRAND.locale,
+      title: `${commodity.name} Prices & Market Intelligence | Hatsi360 Markets`,
+      description:
+        commodity.description ??
+        `Explore ${commodity.name} prices, available market observations, historical trends and related agricultural intelligence on Hatsi360 Markets.`,
       url: `/commodities/${commodity.slug}`,
+      images: [
+        {
+          url: '/brand/hatsi360-social-preview.png',
+          width: 1200,
+          height: 630,
+          alt: `${commodity.name} — agricultural commodity intelligence on Hatsi360 Markets.`,
+          type: 'image/png',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${commodity.name} Prices & Market Intelligence | Hatsi360 Markets`,
+      description:
+        commodity.description ??
+        `Explore ${commodity.name} prices, market observations and agricultural intelligence on Hatsi360 Markets.`,
+      images: ['/brand/hatsi360-social-preview.png'],
     },
   };
 }

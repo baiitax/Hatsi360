@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { BRAND } from '@/lib/brand';
 import { insights } from '@/lib/content/insights';
 import { REPORTS } from '@/lib/content/reports';
 import { formatDate } from '@/lib/money';
@@ -14,10 +15,27 @@ import { EmptyStatePanel } from '@/components/feedback/TerminalFeedback';
 import { IconBook, IconResearch } from '@/components/ui/icons';
 
 export const metadata: Metadata = {
-  title: 'Research',
+  title: 'Agricultural Market Research & Insights | Hatsi360 Markets',
   description:
-    'Market briefs and published research from the Hatsi360 research desk on Nigerian agricultural markets — what the price data shows, and what it does not.',
+    'Market briefs and published research from the Hatsi360 research desk on African agricultural markets — what the price data shows, and what it does not.',
   alternates: { canonical: '/insights' },
+  openGraph: {
+    type: 'website',
+    siteName: 'Hatsi360 Markets',
+    locale: BRAND.locale,
+    title: 'Agricultural Market Research & Insights | Hatsi360 Markets',
+    description:
+      'Market briefs and published research from the Hatsi360 research desk on African agricultural markets.',
+    url: '/insights',
+    images: [{ url: '/brand/hatsi360-social-preview.png', width: 1200, height: 630, type: 'image/png' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Agricultural Market Research & Insights | Hatsi360 Markets',
+    description:
+      'Market briefs and published research on African agricultural markets.',
+    images: ['/brand/hatsi360-social-preview.png'],
+  },
 };
 
 /**
