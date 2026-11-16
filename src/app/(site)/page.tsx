@@ -9,7 +9,6 @@ import {
 import { PRICE_TYPE_META } from '@/types/domain';
 import { BRAND } from '@/lib/brand';
 import {
-  HomepageHero,
   HomepagePriceCard,
   HomepageAnalytics,
   HomepagePriceChart,
@@ -26,6 +25,7 @@ import {
   type CommodityCategory,
   type InsightItem,
 } from '@/components/homepage/HomepageComponents';
+import { RefinedHero } from '@/components/homepage/RefinedHero';
 import { EmptyStatePanel } from '@/components/feedback/TerminalFeedback';
 import {
   MarketMovers,
@@ -75,8 +75,8 @@ export default async function MarketsHomePage() {
       <OrganizationJsonLd />
       <WebSiteJsonLd />
 
-      {/* ─── 1. Professional Hero ─── */}
-      <HomepageHero
+      {/* ─── 1. Refined Hero ─── */}
+      <RefinedHero
         publishedCount={summary.publishedCount}
         commodityCount={summary.commodityCount}
         marketCount={summary.marketCount}

@@ -1,18 +1,20 @@
 /**
- * Hatsi360 — Professional Navigation Bar.
+ * Hatsi360 — Refined Professional Navigation Bar.
  *
- * Light-themed navbar using logo color palette:
- * - Primary: #0B3D2C (deep forest green)
- * - Gold: #E5A020 (warm amber)
- * - Accent: #1A6B40 (medium green)
+ * Clean, minimal, enterprise-grade navigation experience.
+ *
+ * Brand Colors:
+ * - Forest Green: #103C2D
+ * - Primary Green: #1D805A
+ * - Deep Green: #0B2A20
+ * - Gold: #C7A45A (subtle accents only)
  *
  * Features:
- * - Sticky with backdrop blur
- * - Professional desktop dropdown menus
- * - Modern mobile drawer with smooth animations
- * - Active route indicators
- * - Integrated search
- * - Accessibility: keyboard navigation, ARIA labels
+ * - Sticky with refined scroll behavior
+ * - Simplified navigation structure (5 items)
+ * - Professional desktop dropdowns
+ * - Accessible mobile drawer
+ * - Keyboard navigation support
  */
 
 'use client';
@@ -20,13 +22,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MARKET_NAV } from '@/lib/brand';
 import {
   IconBell,
   IconChevronDown,
   IconClose,
   IconMenu,
-  IconSearch,
   IconSignIn,
   IconUser,
 } from '../ui/icons';
@@ -38,6 +38,55 @@ export interface NavbarProps {
   unreadCount?: number;
   freshness?: { state: string; label: string; observedAt: string | null } | null;
 }
+
+// Simplified navigation structure
+const NAV_ITEMS = [
+  {
+    id: 'markets',
+    label: 'Markets',
+    href: '/markets',
+    items: [
+      { href: '/markets', label: 'Market Overview' },
+      { href: '/prices', label: 'Live Market Watch' },
+      { href: '/compare', label: 'Market Comparisons' },
+    ],
+  },
+  {
+    id: 'commodities',
+    label: 'Commodities',
+    href: '/commodities',
+    items: [
+      { href: '/commodities', label: 'Commodity Directory' },
+      { href: '/prices', label: 'Historical Prices' },
+    ],
+  },
+  {
+    id: 'trade',
+    label: 'Trade Intelligence',
+    href: '/trade',
+    items: [
+      { href: '/trade', label: 'Trade Overview' },
+      { href: '/trade/best-buy', label: 'Sourcing Intelligence' },
+      { href: '/trade/best-sell', label: 'Procurement Intelligence' },
+      { href: '/trade/terminal', label: 'Trade Terminal' },
+    ],
+  },
+  {
+    id: 'research',
+    label: 'Research',
+    href: '/insights',
+    items: [
+      { href: '/insights', label: 'Market Briefs' },
+      { href: '/reports', label: 'Research Reports' },
+    ],
+  },
+  {
+    id: 'about',
+    label: 'About',
+    href: '/about',
+    items: [],
+  },
+];
 
 /* ============================================================ Navbar ===== */
 
@@ -53,9 +102,9 @@ export function Navbar({
   const [scrolled, setScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
-  // Track scroll for background opacity
+  // Track scroll for background
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -87,80 +136,81 @@ export function Navbar({
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           scrolled
-            ? 'border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur-md'
-            : 'border-b border-gray-100 bg-white'
+            ? 'border-b border-[#E3EAE5] bg-white shadow-sm'
+            : 'border-b border-[#E3EAE5] bg-white'
         }`}
       >
-        <div className="mx-auto max-w-7xl px-4 lg:px-8">
-          <div className="flex h-16 items-center justify-between lg:h-18">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between lg:h-[72px]">
             {/* Logo */}
             <Link
               href="/"
-              className="flex items-center"
+              className="flex items-center flex-shrink-0"
               aria-label="Hatsi360 home"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/brand/hatsi360-lockup-full.png"
-                alt="Hatsi360 — Agricultural Market Intelligence. Powered by Pluck Agro."
-                width={160}
-                height={58}
+                alt="Hatsi360"
+                width={140}
+                height={40}
                 className="h-auto w-auto"
               />
             </Link>
 
             {/* Desktop Navigation */}
-            <nav aria-label="Main" className="hidden items-center gap-0.5 lg:flex">
-              {MARKET_NAV.map((module) => {
-                const active = isActive(module.href);
+            <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
+              {NAV_ITEMS.map((item) => {
+                const active = isActive(item.href);
+                const hasItems = item.items.length > 0;
+
                 return (
                   <div
-                    key={module.id}
-                    className="group/nav relative"
-                    onMouseEnter={() => setActiveDropdown(module.id)}
+                    key={item.id}
+                    className="group relative"
+                    onMouseEnter={() => hasItems && setActiveDropdown(item.id)}
                     onMouseLeave={() => setActiveDropdown(null)}
                   >
                     <Link
-                      href={module.href}
-                      className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-[0.8125rem] font-semibold transition-colors ${
+                      href={item.href}
+                      className={`inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                         active
-                          ? 'bg-[#0B3D2C]/5 text-[#0B3D2C]'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-[#0B3D2C]'
+                          ? 'text-[#103C2D]'
+                          : 'text-[#64736B] hover:text-[#103C2D]'
                       }`}
+                      aria-expanded={hasItems && activeDropdown === item.id}
                     >
-                      {module.label}
-                      {module.items.length > 0 && (
-                        <IconChevronDown className={`size-3 transition-transform ${activeDropdown === module.id ? 'rotate-180' : ''}`} />
+                      {item.label}
+                      {hasItems && (
+                        <IconChevronDown
+                          className={`h-3.5 w-3.5 transition-transform ${
+                            activeDropdown === item.id ? 'rotate-180' : ''
+                          }`}
+                        />
                       )}
-                      {active && <span className="absolute -bottom-0.5 left-3 right-3 h-0.5 rounded-full bg-[#E5A020]" />}
                     </Link>
 
+                    {/* Active indicator */}
+                    {active && (
+                      <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[#1D805A]" />
+                    )}
+
                     {/* Dropdown */}
-                    {module.items.length > 0 && (
+                    {hasItems && (
                       <div
-                        className={`absolute top-full left-0 z-50 mt-1 w-72 rounded-xl border border-gray-200 bg-white p-2 shadow-lg transition-all ${
-                          activeDropdown === module.id
+                        className={`absolute top-full left-0 z-50 mt-2 w-56 rounded-lg border border-[#E3EAE5] bg-white py-1 shadow-lg transition-all ${
+                          activeDropdown === item.id
                             ? 'visible translate-y-0 opacity-100'
-                            : 'invisible translate-y-2 opacity-0'
+                            : 'invisible translate-y-1 opacity-0'
                         }`}
                       >
-                        <p className="px-3 pb-2 pt-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-gray-400">
-                          {module.label}
-                        </p>
-                        {module.items.map((item) => (
+                        {item.items.map((subItem) => (
                           <Link
-                            key={item.href + item.label}
-                            href={item.href}
-                            className="block rounded-lg px-3 py-2 transition-colors hover:bg-gray-50"
+                            key={subItem.href + subItem.label}
+                            href={subItem.href}
+                            className="block px-4 py-2 text-sm text-[#64736B] transition-colors hover:bg-[#F7F9F7] hover:text-[#103C2D]"
                           >
-                            <span className="block text-[0.8125rem] font-medium text-[#0B3D2C]">
-                              {item.label}
-                            </span>
-                            {item.description && (
-                              <span className="block text-[0.6875rem] text-gray-500">
-                                {item.description}
-                              </span>
-                            )}
+                            {subItem.label}
                           </Link>
                         ))}
                       </div>
@@ -171,34 +221,18 @@ export function Navbar({
             </nav>
 
             {/* Right actions */}
-            <div className="flex items-center gap-2 lg:gap-3">
-              {/* Search - Desktop */}
-              <button
-                type="button"
-                aria-label="Search commodities and markets"
-                className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[0.8125rem] text-gray-500 transition-colors hover:border-[#0B3D2C]/30 hover:bg-white lg:flex"
-                onClick={() => window.location.href = '/prices'}
-              >
-                <IconSearch className="size-3.5" />
-                <span className="text-gray-400">Search commodities & markets...</span>
-                <span className="ml-2 rounded bg-gray-200 px-1.5 py-0.5 text-[0.625rem] font-medium text-gray-500">
-                  ⌘K
-                </span>
-              </button>
-
+            <div className="flex items-center gap-3">
               {/* Notifications */}
-              {signedIn && (
+              {signedIn && unreadCount > 0 && (
                 <Link
                   href="/trade/alerts"
                   aria-label="Notifications"
-                  className="relative inline-flex size-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition-colors hover:border-[#0B3D2C]/30 hover:bg-gray-50 hover:text-[#0B3D2C]"
+                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#64736B] transition-colors hover:bg-[#F7F9F7] hover:text-[#103C2D]"
                 >
-                  <IconBell className="size-4" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#E5A020] text-[0.5625rem] font-bold text-white">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
+                  <IconBell className="h-4 w-4" />
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#C7A45A] text-[0.625rem] font-bold text-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
                 </Link>
               )}
 
@@ -206,19 +240,28 @@ export function Navbar({
               {signedIn ? (
                 <Link
                   href={workspaceHref}
-                  className="hidden items-center gap-2 rounded-lg bg-[#0B3D2C] px-4 py-2 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-[#1A6B40] sm:inline-flex"
+                  className="hidden items-center gap-2 rounded-lg bg-[#1D805A] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#103C2D] sm:inline-flex"
                 >
-                  <IconUser className="size-3.5" />
-                  <span className="max-w-[8rem] truncate">{userEmail?.split('@')[0] ?? 'Dashboard'}</span>
+                  <IconUser className="h-3.5 w-3.5" />
+                  <span className="max-w-[120px] truncate">
+                    {userEmail?.split('@')[0] ?? 'Dashboard'}
+                  </span>
                 </Link>
               ) : (
-                <Link
-                  href="/login"
-                  className="hidden items-center gap-2 rounded-lg bg-[#0B3D2C] px-4 py-2 text-[0.8125rem] font-semibold text-white transition-colors hover:bg-[#1A6B40] sm:inline-flex"
-                >
-                  <IconSignIn className="size-3.5" />
-                  Sign In
-                </Link>
+                <div className="hidden items-center gap-2 sm:flex">
+                  <Link
+                    href="/login"
+                    className="rounded-lg px-4 py-2 text-sm font-semibold text-[#103C2D] transition-colors hover:bg-[#F7F9F7]"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="rounded-lg bg-[#1D805A] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#103C2D]"
+                  >
+                    Get Started
+                  </Link>
+                </div>
               )}
 
               {/* Mobile menu trigger */}
@@ -226,113 +269,89 @@ export function Navbar({
                 type="button"
                 onClick={() => setMobileOpen(true)}
                 aria-label="Open menu"
-                className="inline-flex size-9 items-center justify-center rounded-lg border border-gray-200 text-gray-700 transition-colors hover:bg-gray-50 lg:hidden"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#17241F] transition-colors hover:bg-[#F7F9F7] lg:hidden"
               >
-                <IconMenu className="size-5" />
+                <IconMenu className="h-5 w-5" />
               </button>
             </div>
           </div>
         </div>
-
-        {/* Freshness strip */}
-        {freshness && (
-          <div className="border-t border-gray-100 bg-gray-50">
-            <div className="mx-auto max-w-7xl px-4 py-1.5 lg:px-8">
-              <div className="flex items-center gap-2 text-[0.6875rem] text-gray-600">
-                <span className={`size-1.5 rounded-full ${
-                  freshness.state === 'fresh' || freshness.state === 'today' ? 'bg-[#4CAF50]' : 'bg-[#E5A020]'
-                }`} />
-                <span className="font-medium">{freshness.label}</span>
-                {freshness.observedAt && (
-                  <span className="text-gray-500">
-                    · Last observation {new Date(freshness.observedAt).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Mobile Drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden">
+          {/* Backdrop */}
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             aria-label="Close menu"
           />
+
+          {/* Drawer */}
           <div className="absolute inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl">
             {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-              <div className="flex items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/brand/hatsi360-lockup-full.png"
-                  alt="Hatsi360 — Agricultural Market Intelligence. Powered by Pluck Agro."
-                  width={130}
-                  height={47}
-                  className="h-auto w-auto"
-                />
-              </div>
+            <div className="flex items-center justify-between border-b border-[#E3EAE5] px-4 py-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/hatsi360-lockup-full.png"
+                alt="Hatsi360"
+                width={120}
+                height={34}
+                className="h-auto w-auto"
+              />
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
-                className="inline-flex size-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#64736B] transition-colors hover:bg-[#F7F9F7]"
               >
-                <IconClose className="size-5" />
+                <IconClose className="h-5 w-5" />
               </button>
-            </div>
-
-            {/* Search */}
-            <div className="border-b border-gray-100 p-4">
-              <Link
-                href="/prices"
-                className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-[0.8125rem] text-gray-500"
-              >
-                <IconSearch className="size-4" />
-                Search commodities and markets
-              </Link>
             </div>
 
             {/* Navigation */}
             <nav aria-label="Mobile" className="flex-1 overflow-y-auto p-4">
               <ul className="space-y-1">
-                {MARKET_NAV.map((module) => {
-                  const active = isActive(module.href);
-                  return (
-                    <li key={module.id}>
-                      <MobileModule module={module} active={active} pathname={pathname} />
-                    </li>
-                  );
-                })}
+                {NAV_ITEMS.map((item) => (
+                  <MobileNavItem
+                    key={item.id}
+                    item={item}
+                    active={isActive(item.href)}
+                    pathname={pathname}
+                  />
+                ))}
               </ul>
             </nav>
 
             {/* Drawer Footer */}
-            <div className="border-t border-gray-200 p-4">
+            <div className="border-t border-[#E3EAE5] p-4">
               {signedIn ? (
                 <Link
                   href={workspaceHref}
-                  className="flex items-center gap-2 rounded-lg bg-[#0B3D2C] px-4 py-2.5 text-[0.8125rem] font-semibold text-white"
+                  className="flex items-center gap-2 rounded-lg bg-[#1D805A] px-4 py-2.5 text-sm font-semibold text-white"
                 >
-                  <IconUser className="size-4" />
+                  <IconUser className="h-4 w-4" />
                   {userEmail ?? 'Your workspace'}
                 </Link>
               ) : (
-                <Link
-                  href="/login"
-                  className="flex items-center justify-center gap-2 rounded-lg bg-[#0B3D2C] px-4 py-2.5 text-[0.8125rem] font-semibold text-white"
-                >
-                  <IconSignIn className="size-4" />
-                  Sign In
-                </Link>
+                <div className="space-y-2">
+                  <Link
+                    href="/login"
+                    className="flex items-center justify-center gap-2 rounded-lg border border-[#E3EAE5] px-4 py-2.5 text-sm font-semibold text-[#103C2D]"
+                  >
+                    <IconSignIn className="h-4 w-4" />
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="flex items-center justify-center gap-2 rounded-lg bg-[#1D805A] px-4 py-2.5 text-sm font-semibold text-white"
+                  >
+                    Get Started
+                  </Link>
+                </div>
               )}
-              <p className="mt-3 text-center text-[0.5625rem] font-semibold uppercase tracking-widest text-[#0B3D2C]/40">
-                Powered by Pluck Agro
-              </p>
             </div>
           </div>
         </div>
@@ -341,70 +360,69 @@ export function Navbar({
   );
 }
 
-/* ============================================================ Mobile Module ===== */
+/* ============================================================ Mobile Nav Item ===== */
 
-function MobileModule({
-  module,
+function MobileNavItem({
+  item,
   active,
   pathname,
 }: {
-  module: (typeof MARKET_NAV)[number];
+  item: (typeof NAV_ITEMS)[number];
   active: boolean;
   pathname: string;
 }) {
   const [expanded, setExpanded] = useState(active);
 
   return (
-    <div className="rounded-lg border border-gray-100">
+    <li className="rounded-lg border border-[#E3EAE5]">
       <div className="flex items-center">
         <Link
-          href={module.href}
-          className={`flex-1 rounded-l-lg px-3 py-2.5 text-[0.875rem] font-semibold transition-colors ${
+          href={item.href}
+          className={`flex-1 rounded-l-lg px-3 py-2.5 text-sm font-medium transition-colors ${
             active
-              ? 'bg-[#0B3D2C]/5 text-[#0B3D2C]'
-              : 'text-gray-800 hover:bg-gray-50'
+              ? 'bg-[#EAF4EE] text-[#103C2D]'
+              : 'text-[#17241F] hover:bg-[#F7F9F7]'
           }`}
         >
-          {module.label}
+          {item.label}
         </Link>
-        {module.items.length > 0 && (
+        {item.items.length > 0 && (
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
             aria-expanded={expanded}
-            aria-label={`${module.label} submenu`}
-            className={`inline-flex size-9 items-center justify-center rounded-r-lg transition-colors hover:bg-gray-50 ${
-              expanded ? 'text-[#0B3D2C]' : 'text-gray-400'
+            aria-label={`${item.label} submenu`}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-r-lg transition-colors hover:bg-[#F7F9F7] ${
+              expanded ? 'text-[#103C2D]' : 'text-[#64736B]'
             }`}
           >
-            <IconChevronDown className={`size-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            <IconChevronDown
+              className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            />
           </button>
         )}
       </div>
-      {expanded && module.items.length > 0 && (
-        <ul className="border-t border-gray-100 py-1">
-          {module.items.map((item) => {
-            const itemActive = pathname === item.href;
+      {expanded && item.items.length > 0 && (
+        <ul className="border-t border-[#E3EAE5] py-1">
+          {item.items.map((subItem) => {
+            const subActive = pathname === subItem.href;
             return (
-              <li key={item.href + item.label}>
+              <li key={subItem.href + subItem.label}>
                 <Link
-                  href={item.href}
-                  className={`block px-4 py-2 text-[0.8125rem] transition-colors ${
-                    itemActive
-                      ? 'bg-[#E5A020]/10 font-medium text-[#0B3D2C]'
-                      : 'text-gray-600 hover:bg-gray-50'
+                  href={subItem.href}
+                  className={`block px-4 py-2 text-sm transition-colors ${
+                    subActive
+                      ? 'bg-[#EAF4EE] font-medium text-[#103C2D]'
+                      : 'text-[#64736B] hover:bg-[#F7F9F7]'
                   }`}
                 >
-                  {item.label}
-                  {item.description && (
-                    <div className="text-[0.6875rem] text-gray-400">{item.description}</div>
-                  )}
+                  {subItem.label}
                 </Link>
               </li>
             );
           })}
         </ul>
       )}
-    </div>
+    </li>
   );
 }
