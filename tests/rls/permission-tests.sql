@@ -42,6 +42,18 @@ end $$;
 -- statement succeeds and affects zero rows instead of raising. This helper
 -- asserts on the effect, which is the only reliable way to test a row-level
 -- UPDATE denial.
+-- Two denial modes are legitimate and both mean "this caller could not write":
+--
+--   * the grant allows the verb and RLS filters every row (0 rows affected);
+--   * the grant itself denies the verb (SQLSTATE 42501, "permission denied").
+--
+-- The second is strictly stronger than the first, and it becomes the normal
+-- case once anonymous DML grants are revoked (migration 0053/0054). Accepting
+-- only the first mode would fail the suite for being *more* locked down.
+--
+-- Everything else still fails: an unexpected error means the statement was
+-- malformed or the wrong thing was tested, and a successful write that changes
+-- rows means the caller was not denied at all.
 create or replace function rls_test.assert_no_rows_affected(message text, statement text)
 returns void
 language plpgsql
@@ -51,8 +63,13 @@ declare
 begin
   begin
     execute statement;
-  exception when others then
-    raise exception 'ASSERTION FAILED: % (statement raised: %)', message, sqlerrm;
+  exception
+    when insufficient_privilege then
+      -- 42501. Either the privilege is absent or an RLS WITH CHECK rejected the
+      -- row; both are denials, which is exactly what this assertion means.
+      return;
+    when others then
+      raise exception 'ASSERTION FAILED: % (statement raised: %)', message, sqlerrm;
   end;
   get diagnostics affected = row_count;
   if affected <> 0 then
@@ -1140,5 +1157,72 @@ where id in (
   '77777777-7777-7777-7777-777777777777',
   '88888888-8888-8888-8888-888888888888'
 );
+
+-- ------------------------------------------------------ helper self-tests --
+-- The helper above changed under the 0053/0054 work: it now accepts a 42501
+-- privilege denial as well as a zero-row outcome. Both branches are exercised
+-- here so it cannot regress into swallowing every error.
+
+create temp table rls_test_denied (n integer);
+create temp table rls_test_allowed (n integer);
+insert into rls_test_allowed (n) values (1);
+
+-- (a) A missing privilege must be accepted as a denial.
+begin;
+  set local role anon;
+  set local request.jwt.claim.sub = '';
+
+  do $$
+  begin
+    begin
+      perform rls_test.assert_no_rows_affected(
+        'helper accepts a 42501 privilege denial',
+        'update rls_test_denied set n = n'
+      );
+    exception when others then
+      raise exception 'ASSERTION FAILED: helper rejected a privilege denial (%)', sqlerrm;
+    end;
+  end $$;
+
+  -- (b) An unexpected error must still fail. A reference to a column that does
+  --     not exist raises 42703, which is not a denial.
+  do $$
+  declare
+    caught boolean := false;
+  begin
+    begin
+      perform rls_test.assert_no_rows_affected(
+        'helper still fails on an unexpected error',
+        'update rls_test_denied set no_such_column = 1'
+      );
+    exception when others then
+      caught := true;
+    end;
+    if caught is not true then
+      raise exception 'ASSERTION FAILED: helper accepted a malformed statement';
+    end if;
+  end $$;
+rollback;
+
+-- (c) A statement that actually changes rows must still fail the assertion.
+do $$
+declare
+  caught boolean := false;
+begin
+  begin
+    perform rls_test.assert_no_rows_affected(
+      'helper still fails on a successful write',
+      'update rls_test_allowed set n = n'
+    );
+  exception when others then
+    caught := true;
+  end;
+  if caught is not true then
+    raise exception 'ASSERTION FAILED: helper accepted a statement that changed a row';
+  end if;
+end $$;
+
+drop table rls_test_denied;
+drop table rls_test_allowed;
 
 drop schema rls_test cascade;

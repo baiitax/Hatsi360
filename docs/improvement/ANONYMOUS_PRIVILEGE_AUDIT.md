@@ -6,7 +6,7 @@
 | Project measured | `umxzsdepbrenqysabtlt` (production) |
 | Method | read-only `execute_query` against `pg_class`, `pg_policies`, `pg_default_acl`, `information_schema.role_table_grants`; repository provenance by inspection; verification of the proposal on the throwaway local replica |
 | Production mutations | **none.** No grant changed, no policy changed, no row written. |
-| Status | Audit complete. Remediation **proposed, not applied** — Phase 1 is in the repository chain and validated locally; Phase 2 is a separate, unapplied proposal. |
+| Status | Audit complete. **Phase 1 applied to production** 2026-11-26 as `20261126225938_least_privilege_anonymous_grants`, verified before/after (§12). Phase 2 is a separate, unapplied proposal, ready for independent review. |
 
 ---
 
@@ -170,7 +170,7 @@ Derived from policies that reach `anon`, not from what is granted:
 
 Revokes `TRUNCATE, REFERENCES, TRIGGER, MAINTAIN` from `anon` **and** `authenticated` on every public relation, and revokes the same from the *default* privileges for role `postgres` so future tables start closed. No DML grant changes, no policy changes — nothing an application path depends on, so there is nothing to break. Ends with a self-check that raises rather than silently under-delivering.
 
-Validated on the local replica: chain applies cleanly, 89/89 tables with RLS, 203 policies, RLS suite (210 statements) and workflow suite (346 statements) pass, no leftover rows.
+Validated on the local replica: chain applies cleanly, 89/89 tables with RLS, 203 policies, RLS suite (222 statements after the helper change, §12 of the readiness report) and workflow suite (346 statements) pass, no leftover rows.
 
 ### 8.2 Phase 2 — `supabase/proposed/0054_anonymous_dml_revocation.sql` (proposed, unapplied)
 
@@ -226,13 +226,110 @@ Still to add, when Phase 2 is applied:
 
 ---
 
-## 11. Approval requested
+## 11. Approval status
 
-1. **Approve Phase 1 for production** (`0053`): revokes only unpoliced privileges, no policy or DML change, validated locally against both suites. Before/after evidence would follow the SEC-01 pattern.
-2. **Approve the Phase 2 test change** (`assert_no_rows_affected` accepting `42501`) so `0054` can be prepared for review.
-3. **Note** that Phase 2 application still requires staging, which is blocked on the provisioning decision (see `PHASE_2_OPERATIONAL_READINESS_REPORT.md` §9).
+| Item | State |
+|---|---|
+| Phase 1 (`0053`) to production | **APPROVED AND APPLIED** 2026-11-26 — `20261126225938_least_privilege_anonymous_grants`, evidence §12 |
+| Phase 2 test change (`42501` accepted) | **DONE** — helper updated, three branches self-tested, suite 222 statements passing |
+| Phase 2 (`0054`) for review | **READY** — `supabase/proposed/0054_anonymous_dml_revocation.sql`, unapplied and outside the chain |
+| Phase 2 application | **NOT REQUESTED** until a staging project exists |
+| Phase 3 (policy scoping) | **NOT REQUESTED** |
+| `supabase_admin` default ACL | **needs a credential with that membership** — §12.4, item 1 |
 
 ---
+
+
+## 12. Phase 1 — applied to production (2026-11-26)
+
+Applied under written authorisation as a single migration, after the six-point
+preflight the authorisation required.
+
+| | |
+|---|---|
+| Migration identifier | **`20261126225938_least_privilege_anonymous_grants`** |
+| Repository counterpart | `supabase/migrations/0053_least_privilege_anonymous_grants.sql` |
+| Payload | the same `revoke truncate, references, trigger, maintain` loop, the `postgres` default-privilege change, the self-check, and the schema comment |
+| Transactional | yes — the connector rolls back on failure; it reported success |
+| Rows touched | **none** — the migration contains no DML |
+
+### 12.1 Preflight findings
+
+| Check | Result |
+|---|---|
+| Exact committed SQL reviewed | yes — the applied payload is that file's statements |
+| Dependency on `0052` or `0042`–`0045` | **none** — the file references no entitlement function, policy or helper; it applies against production's current schema, which lacks those migrations |
+| Before-snapshot captured | yes (§12.2) |
+| `postgres` default ACL addressed | **yes** — now `anon=arwd`, `authenticated=arwd` |
+| `supabase_admin` default ACL addressed | **NO — not possible with this credential.** `postgres` is neither superuser nor a member of `supabase_admin` (`pg_has_role('postgres','supabase_admin','member')` = false), so `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` is rejected. Its default ACL still reads `anon=arwdDxtm`. See §12.4. |
+| Application dependency on the four privileges | **none** — no `TRUNCATE`, `REFERENCES` or `TRIGGER` use in `src/` or `scripts/` (the only grep hits are the CSS class `truncate` and the word "preferences"); no migration executes `TRUNCATE` |
+| Recovery procedure | §12.5 |
+
+### 12.2 Before and after (production)
+
+| Measurement | Before | After |
+|---|---|---|
+| Public tables / views | 80 / 7 | 80 / 7 |
+| `anon` TRUNCATE | 73 | **0** |
+| `anon` REFERENCES | 73 | **0** |
+| `anon` TRIGGER | 73 | **0** |
+| `authenticated` TRUNCATE | 73 | **0** |
+| `authenticated` REFERENCES | 73 | **0** |
+| `authenticated` TRIGGER | 73 | **0** |
+| `anon` SELECT / INSERT / UPDATE / DELETE | 73 each | 73 each (**unchanged** — Phase 1 does not touch DML) |
+| `service_role` TRUNCATE | 80 | 80 (**unchanged**) |
+| Default ACL, grantor `postgres` | `anon=arwdDxtm`, `authenticated=arwdDxtm` | `anon=arwd`, `authenticated=arwd` |
+| Default ACL, grantor `supabase_admin` | `anon=arwdDxtm` | `anon=arwdDxtm` (unchanged, §12.4) |
+
+### 12.3 Post-application verification
+
+| Check | Result |
+|---|---|
+| Public reads as `anon` | commodities 22, states 11, `published_price_observations` 259, `market_price_summary` 96 — **intact** |
+| Contact form as `anon` | insert succeeded (rolled back). Note: `insert … returning id` fails, because returning a row needs SELECT visibility and the table's only SELECT policy is staff-scoped. `src/lib/forms/actions.ts` inserts **without** `.select()`, so the real path is unaffected. |
+| Authenticated ingestion | as `admin` (`is_staff()` true): UPDATE on `commodity_production` affected **48 rows** — staff policy and DML grant intact |
+| `anon` TRUNCATE attempt | **`42501 permission denied for table commodities`** |
+| `authenticated` TRUNCATE attempt (admin session) | **`42501 permission denied for table commodity_production`** |
+| Data integrity | no rows read, written or deleted; the migration is pure privilege DDL |
+
+### 12.4 Residual gap: `supabase_admin`'s default ACL
+
+The migration addresses the grantor that creates Hatsi360's tables — all 80 are
+owned by `postgres`, and its default ACL now excludes TRUNCATE/REFERENCES/
+TRIGGER for both browser-facing roles. `supabase_admin`'s default ACL is
+untouched, so a table created **by `supabase_admin`** in `public` would still
+inherit them.
+
+Mitigations, in order of preference:
+
+1. Have the platform owner run
+   `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public REVOKE …`
+   from a credential that holds `supabase_admin` membership.
+2. Re-run the revoke loop after any platform-side table creation — it is
+   idempotent and self-checking.
+3. The `verify:privileges` gate catches any reappearance in the replica, and the
+   audit's recommended monitoring query (§9.2) catches it in production.
+
+This is recorded, not concealed: the authorisation asked for both grantors to be
+addressed, and only one could be.
+
+### 12.5 Recovery procedure
+
+Every change is a privilege or a default-ACL entry, and the before-state is
+fully captured above, so recovery needs no data:
+
+```sql
+-- restore the object privileges
+grant truncate, references, trigger on all tables in schema public to anon, authenticated;
+
+-- restore the grantor default
+alter default privileges for role postgres in schema public
+  grant truncate, references, trigger on tables to anon, authenticated;
+```
+
+That is deliberately a *reversal*, not a recommendation: re-granting these
+privileges restores the SEC-class exposure the migration removed. It exists for
+completeness of the control set, not as an expected action.
 
 ## Appendix A — full anonymous privilege inventory (production, 2026-11-26)
 

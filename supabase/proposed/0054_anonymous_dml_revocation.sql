@@ -1,25 +1,26 @@
 -- ============================================================================
 -- Hatsi360 — 0054 least-privilege anonymous grants (PROPOSED; Phase 2 of 2)
 -- ============================================================================
--- STATUS: NOT APPLIED, AND DELIBERATELY NOT IN supabase/migrations/.
+-- STATUS: NOT APPLIED. READY FOR INDEPENDENT REVIEW (prerequisite 1 met).
+-- Deliberately kept outside supabase/migrations/ so nothing applies it by accident.
 --
 -- This file lives outside the migration chain so that `npm run verify:migrations`
 -- does not apply it: the chain must stay green while this is a proposal.
 --
 -- Prerequisites before this can be applied anywhere:
 --
---   1. The RLS permission suite must accept privilege denial as well as policy
---      denial for anonymous write attempts. `rls_test.assert_no_rows_affected`
---      currently requires the statement to run and affect zero rows; after this
---      migration the same attempt raises `42501 permission denied`. The
---      assertion's intent ("anon cannot rewrite X") is preserved either way,
---      but the helper needs an `or denied` form, and every anon-context use
---      (e.g. tests/rls/permission-tests.sql:870) needs to switch to it. That is
---      a test change to be reviewed on its own, not smuggled in here.
---   2. The full six-context entitlement matrix and the staging acceptance run
---      must pass with this applied, because anonymous read of the public
+--   1. DONE (2026-11-26). `rls_test.assert_no_rows_affected` now accepts
+--      SQLSTATE 42501 as a denial alongside "zero rows affected", while still
+--      failing on unexpected errors (42703 and friends) and on any statement
+--      that actually changes rows. The three branches are self-tested at the
+--      end of tests/rls/permission-tests.sql, and the suite runs 222 statements
+--      (was 210) with all assertions passing. Without that change this
+--      migration would fail the suite for being more restrictive.
+--   2. OPEN. The six-context entitlement matrix and an anonymous browsing pass
+--      must run with this applied, because anonymous read of the public
 --      surface is exactly what it rewrites.
---   3. A staging project must exist. It does not yet (see the readiness report).
+--   3. OPEN. A staging project must exist. It does not, and provisioning is
+--      blocked on the organisation's free-project limit.
 --
 -- Measured target, derived from policies that reach `anon` rather than from
 -- what is currently granted:

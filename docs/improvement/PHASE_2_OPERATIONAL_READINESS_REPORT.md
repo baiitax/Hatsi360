@@ -5,7 +5,7 @@
 | Date | 2026-11-26 |
 | Branch | `arena/990d7ace-hatsi360` |
 | Project | `umxzsdepbrenqysabtlt` (production) |
-| Status | **SEC-01 remediated and verified in production.** Entitlement Stage 1 prepared and validated locally (31/31). **Staging provisioning BLOCKED** — free-tier project limit, approval requested. Anonymous privilege audit complete; Phase 1 proposed and validated, not applied. No production change this turn. |
+| Status | SEC-01 remediated. **Privilege Phase 1 applied to production** (`20261126225938`, verified before/after). Entitlement Stage 1 prepared (31/31 locally). Staging provisioning **BLOCKED** on plan cost, with options and prices in §10. Phase 2 (`0054`) ready for review, unapplied. |
 | Release recommendation | **NOT_READY_FOR_PRODUCTION** |
 
 ## 1. What this report is
@@ -124,9 +124,9 @@ Project-wide: **80 tables, 80 with RLS** (was 74 of 80) · **policies 162** (was
 
 | Record | Entries | Contents |
 |---|---|---|
-| Supabase CLI history (`supabase_migrations.schema_migrations`) | **7** | `0001`, `0002`, `0003`, `0004`, `20261114152034 commodity_intelligence`, `20261114152829 intelligence_analytics_views`, **`20261126224213 sec01_intelligence_table_rls`** |
+| Supabase CLI history (`supabase_migrations.schema_migrations`) | **8** | `0001`, `0002`, `0003`, `0004`, `20261114152034 commodity_intelligence`, `20261114152829 intelligence_analytics_views`, `20261126224213 sec01_intelligence_table_rls`, **`20261126225938 least_privilege_anonymous_grants`** |
 | Project ledger (`public._hatsi_migrations`) | **32** | last entry `0033_collection_activation.sql`, applied `2026-11-14 13:15:43 UTC` |
-| Repository | **51** files | `0000`–`0052` |
+| Repository | **52** files | `0000`–`0053`, plus `supabase/proposed/0054` (not in the chain) |
 
 The three records still disagree, and this remediation did **not** fix that: the
 new migration is recorded in the CLI history and in the repository file
@@ -204,7 +204,7 @@ project's existing public-read policies — consistent house style, not a findin
 | TypeScript | pass | **pass** | `npx tsc --noEmit`, exit 0 |
 | ESLint | 45 errors / 171 warnings | **43 errors / 171 warnings** | see §7 — the only red gate |
 | Unit/integration tests | 999 pass / 42 fail / 40 skip | **1018 pass / 23 fail / 40 skip** | 19 application failures fixed; all 23 remaining are environment-only |
-| Migration verification | fail (7 defects) | **pass** | 89/89 RLS, 203 policies, 210-statement RLS suite, 346-statement workflow suite |
+| Migration verification | fail (7 defects) | **pass** | 89/89 RLS, 203 policies, **222**-statement RLS suite (210 + 12 helper self-tests), 346-statement workflow suite |
 | Production build | **blocked** (Google Fonts) | **pass**, exit 0, 116 routes, offline | fonts vendored under `src/app/fonts/` (73 KB, OFL) |
 | Entitlement acceptance (new) | — | **pass on the local replica, 31/31** | `npm run verify:entitlements` — six contexts + negative control (§9.2). Staging equivalent still BLOCKED. |
 
@@ -350,45 +350,56 @@ Unchanged from §4: CLI history 7, ledger 32 (last `0033`), repository 51. Stage
 1 applied **no** migration, so nothing was added to any record, and per the
 authorisation no attempt was made to reconcile them.
 
-## 10. Workstream A — staging provisioning: BLOCKED on a capacity limit
+## 10. Workstream A — staging: blocked, with options and costs
 
-`create_project` was called for `hatsi360-staging`: free plan, `us-east-1`
-(matching production), PostgreSQL 17, independent credentials generated for the
-purpose and not recorded anywhere.
+`create_project` for `hatsi360-staging` was rejected: the organisation is at its
+**2 active free projects** limit, already used by production and
+`kwari-pos-manager-test`. No plan was upgraded and no other product's project was
+touched — both were ruled out by the authorisation.
 
-**The platform rejected it:**
+### 10.1 Plan options and list prices
 
-> The following organization members have reached their maximum limits for the
-> number of active free projects … (2 project limit). To continue, these users
-> will need to either delete, pause or upgrade one or more of these projects.
+Prices below are published list prices gathered from Supabase pricing summaries in
+October–November 2026, **not a quote**. Confirm on the pricing page before
+committing; the annual figures are 12 × the monthly list price, and at least one
+source states Supabase publishes no annual billing option on these self-serve
+tiers.
 
-The two active free projects are `umxzsdepbrenqysabtlt` (production) and
-`kwari-pos-manager-test` (a different product). The other six projects in the
-organisation are already inactive.
+| Plan | Monthly | Annual (12×) | What it changes for us |
+|---|---|---|---|
+| Free | $0 | $0 | the current limit: 2 active projects, pauses after a week idle. Cannot hold production + staging. |
+| **Pro** | **$25** organisation fee + compute per project, minus a $10 credit | **≈ $300** + compute | removes the 2-project limit, no pausing, daily backups 7 days |
+| Team | $599 | ≈ $7,188 | Pro plus SOC 2 / ISO 27001, SSO, 14-day backups — not needed for staging |
+| Enterprise | custom | custom | not applicable |
 
-The authorisation is explicit: "If provisioning requires an unexpected paid
-upgrade or material additional cost, stop and request approval." Freeing a slot
-means either upgrading the organisation to a paid plan or pausing/deleting one
-of two active projects — one of which is production, and the other of which is
-not this product. Both are decisions for the account owner, so **nothing was
-changed and the workstream stops here.**
+**Realistic Pro cost for this estate:** production and staging are both Micro
+instances, $10 each, less the $10 credit → **$25 + $10 = $35/month ≈ $420/year**.
+That is the figure to weigh, not $25.
 
-Consequences, stated plainly:
+### 10.2 Can an existing project be repurposed?
 
-| Staging verification item | Status |
-|---|---|
-| 1. Migration reproducibility | **BLOCKED on hosted** — validated only on the local replica (89/89 RLS, 203 policies, both suites, `ALL MIGRATIONS APPLIED CLEANLY`). Not hosted evidence. |
-| 2. RLS and grants | BLOCKED on hosted — measured on the replica and, for production, read-only |
-| 3. Entitlement resolver behaviour | BLOCKED on hosted — 31/31 on the replica including the negative control |
-| 4. PostgREST JWT authentication | BLOCKED twice: no project, and this environment has no network egress to `*.supabase.co` |
-| 5. Six-context entitlement matrix | BLOCKED on hosted — done on the replica |
-| 6. Public report access | BLOCKED — same two reasons |
-| 7. React client-shell behaviour | BLOCKED — same two reasons |
-| 8. Vercel staging integration | BLOCKED — needs both a project and a deployment decision |
+**No.** The organisation has eight projects; one is production and the other
+seven belong to other products (`kwari-pos-manager-test`, `koriepay_app`,
+`pluck-erp-dev`, `pluck-erp-v2-dev`, `lumi-phase1-dev`,
+`supabase-almond-magnet`). The five inactive ones are paused: restoring one would
+consume the same free slots we are short of, and repurposing one as Hatsi360
+staging would require discarding another product's data. Neither is acceptable
+without that product's owner agreeing, which is outside this authorisation.
 
-Items 4, 6, 7 and 8 need something this environment cannot supply even once a
-project exists: reachable network access to the staging API and a deployment.
-They will need an operator-run pass or a networked environment.
+### 10.3 Alternative staging arrangements
+
+| Option | Covers | Cost | Blocker |
+|---|---|---|---|
+| **Local Supabase stack** (`supabase start`: Postgres + PostgREST + GoTrue + Studio in Docker) | migration chain, RLS, **real PostgREST JWT path**, and the Next.js client shell pointed at `localhost` | $0 | needs Docker in the environment; not verified available here |
+| Local replica (`npm run verify:migrations`) — **already in use** | migrations, RLS, grants, entitlement SQL | $0 | no HTTP layer, no Auth, no UI |
+| Supabase database branch | isolated schema copy of production | requires **Pro** — same cost as 10.1 | still paid |
+| Second free organisation under a different owner account | full hosted staging | $0 | the free-project limit is per *member* across organisations, so the same person cannot hold a third; needs another owner |
+| Defer HTTP/UI acceptance to pre-release | — | $0 | leaves the PostgREST and client-shell paths unproven |
+
+**Recommendation:** if Docker is available, the local Supabase stack is the
+zero-cost way to clear items 4, 6 and 7; Pro at ≈ $35/month is the only way to
+get a genuinely hosted staging environment. Neither is actioned here — the
+authorisation says to wait for approval.
 
 ## 11. Workstream B — anonymous privilege audit: complete, remediation proposed
 
@@ -419,8 +430,8 @@ Proposed in two phases, both unapplied to any hosted project:
 
 | Phase | File | Content | Validation |
 |---|---|---|---|
-| 1 | `supabase/migrations/0053_least_privilege_anonymous_grants.sql` | revoke TRUNCATE/REFERENCES/TRIGGER/MAINTAIN from `anon` and `authenticated` on every public relation, plus the matching default-privilege revocation; self-checking | in the chain: `ALL MIGRATIONS APPLIED CLEANLY`, 89/89 RLS, 203 policies, 210-statement RLS suite, 346-statement workflow suite, no leftovers |
-| 2 | `supabase/proposed/0054_anonymous_dml_revocation.sql` | revoke *all* anonymous privileges, then grant back the measured minimum (SELECT on 36 tables + 2 public views, INSERT on `contact_enquiries` only) | **not applied and not in the chain**; requires a reviewed test change first (§11.1) |
+| 1 | `supabase/migrations/0053_least_privilege_anonymous_grants.sql` | revoke TRUNCATE/REFERENCES/TRIGGER/MAINTAIN from `anon` and `authenticated` on every public relation, plus the matching default-privilege revocation; self-checking | in the chain: `ALL MIGRATIONS APPLIED CLEANLY`, 89/89 RLS, 203 policies, RLS + workflow suites green, no leftovers; then **applied to production** and verified (§11.3) |
+| 2 | `supabase/proposed/0054_anonymous_dml_revocation.sql` | revoke *all* anonymous privileges, then grant back the measured minimum (SELECT on 36 tables + 2 public views, INSERT on `contact_enquiries` only) | **not applied and not in the chain**; the test prerequisite is now done (§12); ready for independent review |
 
 Phase 1 touches only privileges no policy or code path uses, so it is
 behaviour-neutral by construction. Phase 2 changes how a denial is reported
@@ -442,37 +453,99 @@ today only because their predicates carry the restriction. A future predicate
 edit would re-open anonymous writes with the grant already in place. Proposed as
 a separate Phase 3, no grant change.
 
-## 12. Risk register (consolidated)
+### 11.3 Phase 1 applied to production (2026-11-26)
+
+Migration **`20261126225938_least_privilege_anonymous_grants`** — the committed
+`0053` payload, transactional, no DML. Full evidence in
+`ANONYMOUS_PRIVILEGE_AUDIT.md` §12; the essentials:
+
+| Measurement | Before | After |
+|---|---|---|
+| `anon` / `authenticated` TRUNCATE, REFERENCES, TRIGGER | 73 tables each | **0** |
+| `anon` SELECT / INSERT / UPDATE / DELETE | 73 each | 73 each (unchanged) |
+| `service_role` TRUNCATE | 80 | 80 (unchanged) |
+| Default ACL grantor `postgres` | `anon=arwdDxtm` | `anon=arwd` |
+| Default ACL grantor `supabase_admin` | `anon=arwdDxtm` | unchanged — **cannot be altered by this credential** (`postgres` is not a member; §11.4) |
+
+Functional verification: anonymous reads intact (22 commodities, 11 states,
+259 published observations, 96 summary rows); a real contact-enquiry insert
+succeeds as `anon` when rolled back; an admin session still updated 48
+intelligence rows; `TRUNCATE` refused with `42501` for both `anon` and an admin
+`authenticated` session; no row was read, written or deleted.
+
+Two honest caveats. First, `insert … returning id` on `contact_enquiries` fails
+even for `anon` — returning a row requires SELECT visibility and the table's only
+SELECT policy is staff-scoped. The application inserts without `.select()`
+(`src/lib/forms/actions.ts`), so the public form is unaffected. Second, the
+`supabase_admin` default ACL gap is real (§11.4).
+
+### 11.4 Residual: `supabase_admin` default ACL
+
+`postgres` is neither superuser nor a member of `supabase_admin`, so
+`ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` is refused. All 80 tables are
+owned by `postgres` and are covered; a table created *by* `supabase_admin` in
+`public` would still inherit `arwdDxtm`. Mitigation: the platform owner runs the
+same revocation from a `supabase_admin` credential, and `verify:privileges` plus
+the audit's monitoring query catch any reappearance.
+
+## 12. Workstream C — assertion change and 0054
+
+`rls_test.assert_no_rows_affected` now treats **both** "zero rows affected" and
+SQLSTATE **42501** as a denial, and still fails on any other error and on any
+statement that actually changes rows. Three self-tests in
+`tests/rls/permission-tests.sql` pin all three branches, so the helper cannot
+regress into swallowing errors:
+
+| Self-test | Expectation | Result |
+|---|---|---|
+| statement raises 42501 (missing privilege) | helper accepts | PASS |
+| statement raises 42703 (malformed) | helper fails | PASS |
+| statement changes a row | helper fails | PASS |
+
+The RLS suite therefore runs **222 statements** (was 210) with all assertions
+passing; the workflow suite is unchanged at 346; no leftover rows.
+
+`supabase/proposed/0054_anonymous_dml_revocation.sql` is updated and **ready for
+independent review**: prerequisite 1 (the assertion change) is done, prerequisites
+2 and 3 (staging acceptance, a staging project) remain open. It stays outside
+`supabase/migrations/` so nothing can apply it by accident, and it has **not**
+been applied to production or staging.
+
+## 13. Risk register (consolidated)
 
 | # | Risk | Severity | Status / next step |
 |---|---|---|---|
 | 1 | Entitlement resolver raises in production; every client user silently receives zero entitlements | **High** (latent — 0 subscriptions) | Stage 1 prepared, 31/31 locally; **blocked on staging** |
-| 2 | `anon` holds TRUNCATE on 73 public tables; RLS cannot mitigate | **High** | Phase 1 proposed and validated; awaiting production approval |
-| 3 | `anon` holds INSERT/UPDATE/DELETE on 73 tables, denied only by policy | Medium | Phase 2 proposed; needs test change + staging |
+| 2 | `anon`/`authenticated` held TRUNCATE/REFERENCES/TRIGGER on 73 public tables | ~~High~~ | **CLOSED 2026-11-26** — `20261126225938`, verified 73 → 0 |
+| 3 | `anon` still holds INSERT/UPDATE/DELETE on 73 tables, denied only by policy | Medium | Phase 2 `0054` ready for review; application needs staging |
+| 3a | `supabase_admin` default ACL still grants `arwdDxtm` to `anon` (§11.4) | Medium | needs a `supabase_admin` credential; monitoring catches reappearance |
 | 4 | Ten `{public}`-scoped write policies | Medium | Phase 3 proposed |
-| 5 | No staging project — blocks entitlement acceptance, Phase 2, and P2.2–P2.6 | **High** | free-tier limit; approval requested (§13, request 1) |
+| 5 | No staging project — blocks entitlement acceptance, Phase 2, and P2.2–P2.6 | **High** | free-tier limit; approval requested (§14, request 1) |
 | 6 | Migration records disagree (CLI 7 / ledger 32 / repo 51+1) | Medium | not reconciled by design; needs a separate approved plan |
 | 7 | Lint gate red (43 errors / 171 warnings) | Medium | CI cannot enforce the passing build |
 | 8 | Publication integrity: all series rows are `imported`, nothing prevents unverified rendering | Medium | open |
 | 9 | Staging HTTP/JWT/Vercel verification impossible from this environment | Medium | needs operator-run pass or networked environment |
 | 10 | `supabase_admin` default privileges outside Phase 1's reach | Low | residual, documented |
 
-## 13. Approval requests (separate, in priority order)
+## 14. Approval requests (separate, in priority order)
 
-1. **Staging capacity.** Either (a) upgrade the organisation to a paid plan, or
-   (b) nominate an active free project to pause. *(Pricing was not verified and
-   is deliberately not quoted.)* Until one is chosen, §10 stays blocked.
-2. **Phase 1 to production** — apply `0053` (unpoliced privileges only; no
-   policy, no DML, no data). Before/after evidence would follow the SEC-01
-   pattern.
-3. **Phase 2 test change** — allow `assert_no_rows_affected` to accept `42501`,
-   so `0054` can be prepared for review.
-4. **Entitlement Stage 1 to production** — `fix_user_entitlements` (`0052`),
-   *after* staging acceptance.
-5. **Phase 2 / Phase 3 / `0042`–`0045`** — not requested yet; each needs staging
-   and its own evidence.
+1. **Staging capacity** — choose one: Pro at ≈ **$35/month** (≈ $420/year) for
+   production + staging; the local Supabase Docker stack at $0 if Docker is
+   available; or defer hosted HTTP/UI acceptance. §10.1–§10.3. Nothing is
+   actioned until you choose.
+2. **Entitlement Stage 1 to production** — `fix_user_entitlements` (`0052`),
+   still gated on staging acceptance per the earlier decision.
+3. **Privilege Phase 2 to staging, then production** — `0054`, ready for
+   independent review; needs a staging run of the anonymous read surface.
+4. **`supabase_admin` default ACL** — requires a credential holding that role;
+   this environment cannot do it. Owner action or explicit acceptance of the gap.
+5. **Phase 3 (policy scoping)** and **`0042`–`0045`** — not requested.
 
-## 14. Operational metrics — definitions, ready to run
+**Already done this turn, no further approval needed:** Phase 1 (`0053`) applied
+and verified; the `assert_no_rows_affected` change plus its three self-tests;
+`0054` prepared outside the chain.
+
+## 15. Operational metrics — definitions, ready to run
 
 P2.5 asks for ten operational metrics from real records. Definitions are the
 queries; ✅ marks those already run against production.
@@ -491,7 +564,7 @@ queries; ✅ marks those already run against production.
 | 10 | Data-quality findings | `observation_quality_findings`, `data_quality_flags` | pending |
 | 11 | Failed scheduled jobs | `scheduled_job_runs where status='failed'` | pending — the runner has never been executed in production |
 
-## 15. The five outstanding Phase 2 documents
+## 16. The five outstanding Phase 2 documents
 
 | Document | Blocked on | What can already be stated |
 |---|---|---|
@@ -501,7 +574,7 @@ queries; ✅ marks those already run against production.
 | `OPERATIONAL_MONITORING_REPORT.md` | error-tracking decision | No error tracking, health endpoint or structured logging; §9 is the skeleton |
 | `PHASE_2_OPERATIONAL_READINESS_REPORT.md` | — | this document |
 
-## 16. Blockers, in priority order
+## 17. Blockers, in priority order
 
 1. ~~Six ungoverned tables with full DML for `authenticated`~~ — **closed**
    2026-11-26, migration `20261126224213_sec01_intelligence_table_rls`,
@@ -513,20 +586,22 @@ queries; ✅ marks those already run against production.
    tier allows 2 active projects and both slots are taken, so `hatsi360-staging`
    could not be created (§10). Blocks P2.2–P2.5, entitlement acceptance, and
    Phase 2 of the privilege remediation. Approval requested (§13, request 1).
-4. **Migration records disagree** (7 / 32 / 51) — blocks reliable deploy and
+4. **Migration records disagree** (8 / 32 / 52) — blocks reliable deploy and
    rollback.
 5. **Lint gate red** (43 errors / 171 warnings) — CI cannot pass, so the passing
    build and test suite are not enforced on future commits.
 6. **Publication integrity** — series are all `imported`; nothing prevents
    unverified series from being rendered as published.
-7. **`anon` holds `TRUNCATE` on 73 of 80 public tables** (§11) — RLS cannot
-   mitigate it; SEC-01's own lesson, unapplied at scale. Phase 1 remediation is
-   written and locally validated, awaiting production approval (§13, request 2).
-8. **`anon` holds INSERT/UPDATE/DELETE on 73 tables**, denied only by policy,
-   and ten write policies are mis-scoped to `{public}` — Phase 2 (proposed,
-   unapplied) and Phase 3 (proposed) address these.
+7. ~~`anon` holds `TRUNCATE` on 73 of 80 public tables~~ — **closed**
+   2026-11-26 by `20261126225938`, verified 73 → 0 for both browser-facing roles
+   (§11.3).
+8. **`anon` still holds INSERT/UPDATE/DELETE on 73 tables**, denied only by
+   policy, and ten write policies are mis-scoped to `{public}` — Phase 2
+   (`0054`, ready) and Phase 3 (proposed) address these; both need staging.
+9. **`supabase_admin` default ACL** still grants the full set to `anon` (§11.4) —
+   outside this environment's credentials.
 
-## 17. Release recommendation
+## 18. Release recommendation
 
 > **NOT_READY_FOR_PRODUCTION**
 
@@ -539,8 +614,9 @@ rest have not, and closing one defect does not make the platform releasable:
 - Phase 2's operational evidence — agent → verification → publication, jobs,
   monitoring — does not exist yet, because the environment to produce it does not;
 - the lint gate is red, so CI is not protecting any of the above;
-- a wider grant defect has been found and not yet fixed — `anon` holds
-  `TRUNCATE` on 73 of 80 public tables, which RLS cannot mitigate (§11);
+- the wider grant defect is **partly** closed: unpoliced privileges are gone
+  (§11.3), but `anon` still holds INSERT/UPDATE/DELETE on 73 tables and
+  `supabase_admin`'s default ACL is unchanged (§11.4);
 - the environment that would let these fixes be proven does not exist, and
   cannot be created without a decision on capacity (§10).
 
