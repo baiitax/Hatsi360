@@ -313,6 +313,14 @@ Mitigations, in order of preference:
 This is recorded, not concealed: the authorisation asked for both grantors to be
 addressed, and only one could be.
 
+**Post-application preflight review (2026-11-26)** formally recorded this as the
+single failing condition of the six-point checklist
+(`PHASE_2_OPERATIONAL_READINESS_REPORT.md` §13). Because `0053` is now an applied
+migration it must not be edited, so closing the gap requires a **new** additive
+migration run by a credential holding `supabase_admin` — this environment has
+neither. The residual is monitored instead: the revoke loop is idempotent, and
+`npm run verify:privileges` fails if the privileges reappear.
+
 ### 12.5 Recovery procedure
 
 Every change is a privilege or a default-ACL entry, and the before-state is
