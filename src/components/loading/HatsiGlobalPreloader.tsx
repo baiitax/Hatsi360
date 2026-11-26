@@ -123,6 +123,13 @@ export function HatsiGlobalPreloader() {
         id="hatsi-boot-curtain"
         data-state="hidden"
         aria-hidden="true"
+        /*
+          The boot script raises the curtain — it sets `data-state="visible"`
+          and drops `aria-hidden` — before React hydrates. Those attributes are
+          deliberately owned by the script, so the server's values are expected
+          to differ by the time hydration runs.
+        */
+        suppressHydrationWarning
         role="status"
         aria-live="polite"
         aria-busy="true"

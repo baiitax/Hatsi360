@@ -9,6 +9,7 @@
 
 'use client';
 
+import { SITE_TIME_ZONE } from '@/lib/money';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { TrendPoint } from '@/components/homepage/HomepageComponents';
@@ -102,7 +103,11 @@ export function PriceTracker({ commodities }: PriceTrackerProps) {
       .map((d, i) => {
         const x = padding + ((i * xLabelStep) / (data.length - 1)) * (width - padding * 2);
         const date = new Date(d.date);
-        const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const label = date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          timeZone: SITE_TIME_ZONE,
+        });
         return { label, x };
       });
 

@@ -168,8 +168,16 @@ export const viewport: Viewport = {
  * browser for no reason.
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // The boot script stamps `data-hatsi-boot` on <html> before the first paint —
+  // that is what makes the curtain work without waiting for JavaScript. The
+  // attribute is therefore already present when React hydrates, so the
+  // difference from the server's markup is expected, not a defect.
   return (
-    <html lang={BRAND.locale} className={`${inter.variable} ${manrope.variable}`}>
+    <html
+      lang={BRAND.locale}
+      className={`${inter.variable} ${manrope.variable}`}
+      suppressHydrationWarning
+    >
       <body className="flex min-h-screen flex-col antialiased">
         <a href="#main" className="skip-link">
           Skip to main content

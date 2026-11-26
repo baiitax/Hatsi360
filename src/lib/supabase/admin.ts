@@ -27,3 +27,13 @@ export function createAdminClient() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
+
+/**
+ * Whether a service-role write is possible in this deployment.
+ *
+ * Callers ask this rather than reading the environment themselves: the key's
+ * name belongs in one file, and that file is `server-only`.
+ */
+export function isAdminConfigured(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}

@@ -26,6 +26,7 @@ import {
   type InsightItem,
 } from '@/components/homepage/HomepageComponents';
 import { RefinedHero } from '@/components/homepage/RefinedHero';
+import { WhatsAppAlerts } from '@/components/homepage/WhatsAppAlerts';
 import { EmptyStatePanel } from '@/components/feedback/TerminalFeedback';
 import {
   MarketMovers,
@@ -102,9 +103,6 @@ export default async function MarketsHomePage() {
 
       {/* ─── 1. Refined Hero ─── */}
       <RefinedHero
-        publishedCount={summary.publishedCount}
-        commodityCount={summary.commodityCount}
-        marketCount={summary.marketCount}
         coverageLine={summary.coverageLine}
         latestObservedAt={summary.latestObservedAt}
       />
@@ -229,6 +227,9 @@ export default async function MarketsHomePage() {
 
           {/* ─── Coverage ─── */}
           <HomepageCoverage rows={summary.coverageRows} />
+
+          {/* ─── WhatsApp alerts ─── */}
+          <WhatsAppAlerts />
 
           {/* ─── How It Works ─── */}
           <HomepageHowItWorks />

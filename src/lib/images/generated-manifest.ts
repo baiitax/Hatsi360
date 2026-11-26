@@ -158,6 +158,12 @@ export const SERVED_IMAGES: Record<string, ServedImage> = {
     bytes: 320483,
     blur: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAALABQDASIAAhEBAxEB/8QAGAAAAwEBAAAAAAAAAAAAAAAAAAIDBAX/xAAkEAABAwMEAQUAAAAAAAAAAAABAAIDBBETBRIhMSJBYZGhwf/EABYBAQEBAAAAAAAAAAAAAAAAAAEAAv/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AGj1Sqlkbi4YfQxG32rz6rVU0ge8NwNbyQy5e78WeInDu7PullAPfKyXSh1iqqmZKXCI+vM2PwUKUTGsjbtaBcAnhCi//9k=",
   },
+  "/images/hatsi360/hero/golden-harvest.jpg": {
+    width: 1672,
+    height: 941,
+    bytes: 259309,
+    blur: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAALABQDASIAAhEBAxEB/8QAGAAAAgMAAAAAAAAAAAAAAAAAAAUBAwT/xAAiEAABAwQCAgMAAAAAAAAAAAABAAIRAwQSIUFCEyRRgZH/xAAWAQEBAQAAAAAAAAAAAAAAAAAAAQL/xAAXEQEBAQEAAAAAAAAAAAAAAAAAAREh/9oADAMBAAIRAxEAPwCi2t7AMDn1ZPwAtGdgyMKZeOdwfxIsiHHfcD6Uh7sSZ2DCztDa5rM8vrUm4R3buUJW9xBEHhCbU4//2Q==",
+  },
   "/images/hatsi360/hero/harvest-field.jpg": {
     width: 2000,
     height: 1125,
@@ -354,6 +360,7 @@ export const SERVED_IMAGE_PATHS: Record<string, string> = {
   "commodity.wheat": "/images/hatsi360/commodities/wheat.jpg",
   "commodity.white-beans": "/images/hatsi360/commodities/white-beans.jpg",
   "hero.aggregation-yard": "/images/hatsi360/hero/aggregation-yard.jpg",
+  "hero.golden-harvest": "/images/hatsi360/hero/golden-harvest.jpg",
   "hero.harvest-field": "/images/hatsi360/hero/harvest-field.jpg",
   "hero.market-warehouse": "/images/hatsi360/hero/market-warehouse.jpg",
   "infrastructure.bagging-line": "/images/hatsi360/infrastructure/bagging-line.jpg",

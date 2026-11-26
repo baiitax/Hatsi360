@@ -31,6 +31,7 @@ import {
   IconCheck,
   IconCode,
 } from '@/components/ui/icons';
+import { formatRelative, SITE_TIME_ZONE } from '@/lib/money';
 
 /* ============================================================ Sparkline ===== */
 
@@ -326,7 +327,11 @@ export function HomepageHero({
                       <span className="ml-2 text-[0.6875rem] font-semibold text-white/60">Market Dashboard</span>
                     </div>
                     <span className="text-[0.625rem] text-white/50">
-                      {latestObservedAt ? `Updated ${formatRelative(latestObservedAt)}` : 'Live'}
+                      {latestObservedAt ? (
+                        <span suppressHydrationWarning>{`Updated ${formatRelative(latestObservedAt)}`}</span>
+                      ) : (
+                        'Live'
+                      )}
                     </span>
                   </div>
 
@@ -452,7 +457,11 @@ export function HomepagePriceCard({ data }: { data: PriceCardData }) {
 
       <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2.5">
         {data.priceTypeLabel && <span className="text-[0.625rem] text-gray-500">{data.priceTypeLabel}</span>}
-        {data.observedAt && <span className="text-[0.625rem] text-gray-500">{formatRelative(data.observedAt)}</span>}
+        {data.observedAt && (
+          <span className="text-[0.625rem] text-gray-500" suppressHydrationWarning>
+            {formatRelative(data.observedAt)}
+          </span>
+        )}
       </div>
     </Link>
   );
@@ -660,7 +669,7 @@ export function HomepagePriceChart({
           const date = new Date(points[idx].date);
           return (
             <text key={idx} x={x} y={height - 5} textAnchor={idx === 0 ? 'start' : idx === points.length - 1 ? 'end' : 'middle'} fill="#6B7280" fontSize="9">
-              {date.toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })}
+              {date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', timeZone: SITE_TIME_ZONE })}
             </text>
           );
         })}
@@ -1002,17 +1011,4 @@ export function HomepageCTA() {
 
 /* ============================================================ Helpers ===== */
 
-function formatRelative(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return 'unknown';
-  const now = Date.now();
-  const diff = now - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString('en-NG', { day: '2-digit', month: 'short' });
-}
+
