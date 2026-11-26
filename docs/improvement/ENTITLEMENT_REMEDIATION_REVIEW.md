@@ -1,37 +1,36 @@
-# Hatsi360 — Entitlement Remediation Review
+# Hatsi360 — Entitlement Remediation Review (Stage 1)
 
 | | |
 |---|---|
 | Date | 2026-11-26 |
-| Project | `umxzsdepbrenqysabtlt` (production) |
+| Project | `umxzsdepbrenqysabtlt` (production) — **not modified by this stage** |
 | Branch | `arena/990d7ace-hatsi360` |
-| Status | **REVIEW ONLY. Nothing in this document has been applied.** |
-| Authority | SEC-01 authorisation, Part C — "review only, submit for separate approval" |
+| Status | **Stage 1 prepared and validated on the local replica. Hosted staging validation BLOCKED (no staging project). Production NOT applied.** |
+| Authority | Stage 1 authorisation, 2026-11-26: "preparation and staging validation only. Production application is not authorised." |
 
 ---
 
-## 1. Scope
+## 0. Position in one paragraph
 
-The SEC-01 authorisation permitted one production change: row-level security and
-grants on six intelligence tables (§1–§6 of the readiness report). It
-explicitly withheld the entitlement defect, which is a **separate** production
-security defect with its own failure mode. This document prepares that change so
-it can be approved or rejected on evidence rather than on urgency.
+The repair is a single `create or replace function`. It is already in the
+repository as `0052_fix_user_entitlements.sql`, has not been applied to any
+hosted project, and is the exact payload proposed for production. It has now
+been exercised against a real PostgreSQL 17 replica across all six required
+contexts — **31 of 31 checks pass**, and a negative control reproduces the
+production `42P01` failure in the same run so the fix is demonstrated rather
+than asserted. Hosted staging validation has **not** happened: no Hatsi360
+staging project exists, and provisioning one requires the approval the
+authorisation itself asks for. Production is untouched.
 
-Nothing here is applied. `0052` and the repaired `0042`–`0045` remain
-unapplied on production and will remain unapplied until this review is
-approved in writing.
+---
 
-## 2. Current production definition of the resolver
+## 1. The defect (unchanged, re-verified against the live catalogue)
 
-Read directly from `pg_proc` on production, not from the repository.
+`public.user_entitlements()` on production, read from `pg_proc` on 2026-11-26:
 
 ```sql
 CREATE OR REPLACE FUNCTION public.user_entitlements()
- RETURNS SETOF text
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ RETURNS SETOF text LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
 AS $function$
   select distinct k.key
   from public.customer_subscriptions s
@@ -46,186 +45,398 @@ AS $function$
 $function$
 ```
 
-```sql
-CREATE OR REPLACE FUNCTION public.has_entitlement(p_key text)
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-  select exists (
-    select 1 from public.user_entitlements() e where e = p_key
-  );
-$function$
-```
-
-`public.current_role()` is the third function in the chain and is **correct**;
-it is included because `is_staff()` and `is_admin()` depend on it:
-
-```sql
-select coalesce(
-  (select p.role from public.profiles p where p.id = auth.uid()),
-  'public_user'::public.user_role
-);
-```
-
-## 3. The defect, stated exactly
-
-`jsonb_each()` returns columns named `key` and `value`. The alias list
-`as e(k, v)` renames them to `k` and `v` in the *output*, but the qualified
-reference `e.k` is resolved against the row type of `e`, whose field is `key`.
-The planner rejects the statement before it runs:
+`jsonb_each()` returns columns `key` and `value`. The alias list `as e(k, v)`
+renames them in the output, so the qualified reference `e.k` has no field to
+resolve against and the planner rejects the statement:
 
 ```
 ERROR: 42P01: missing FROM-clause entry for table "k"
 ```
 
-`has_entitlement()` is `select exists (select 1 from user_entitlements() ...)`,
-so it raises the same error. A `SECURITY DEFINER` function that raises inside a
-policy or an RPC does not deny cleanly — it fails the caller's query.
+`public.has_entitlement(p_key text)` is `select exists (select 1 from
+public.user_entitlements() e where e = p_key)`, so it raises with it. The
+`where e = p_key` form is itself valid — a scalar-returning set function exposes
+its value under the alias name — and needs no change.
 
-**Provenance note.** The authorisation referred to this as an alias/`e.k`
-conflict. Verified against the live catalogue: the live spelling is exactly
-`as e(k, v)` … `e.k`, i.e. the alias form, and `has_entitlement()` uses
-`where e = p_key` (valid once the resolver returns, because a scalar-returning
-set function exposes its value under the alias name). No discrepancy between
-the authorisation and production.
+**The live spelling is the alias form**, matching what the authorisation
+described. No discrepancy.
 
-## 4. Blast radius — measured, and smaller than it looks, in a way that matters
+---
 
-### 4.1 In the database
+## 2. Stage A — the prepared repair
 
-Exactly **one** production policy references the resolver:
+### 2.1 Artifact
 
-| table | policy | cmd |
-|---|---|---|
-| `market_reports` | `reports_public_read` | SELECT |
+`supabase/migrations/0052_fix_user_entitlements.sql`, 52 lines: **one**
+`create or replace function` plus a `comment on function`. No table is altered,
+no policy is touched, no row is read or written.
 
-The enforcing policies written in `0042`–`0045` (watchlist, alerts, exports,
-bulk reads) are **not present on production at all**. They are part of the
-hosted-vs-repository gap (150 policies hosted vs 202 in the repository), and
-`can_perform_bulk_operations()` does not exist on hosted either. So no database
-policy is silently denying rows for a reason anyone could observe — the
-enforcement was never installed.
-
-### 4.2 In the application
-
-| Caller | Call | Effect of the raise |
-|---|---|---|
-| `src/app/(client)/layout.tsx` | `rpc('user_entitlements')` | error ignored, falls back to `[]` |
-| `src/app/(client)/client/actions/intelligence.ts` ×3 | `rpc('has_entitlement')` | error → null → treated as "not entitled" |
-| `src/app/(client)/client/alerts/page.tsx` | `rpc('has_entitlement')` | same |
-| `src/app/(client)/client/watchlists/page.tsx` | `rpc('has_entitlement')` | same |
-
-The layout destructures `{ data: entitlements }` and discards the error, so the
-portal **renders normally with zero entitlements**. This is a silent, total
-denial of every paid capability — worse than a crash, because a crash would have
-been reported.
-
-### 4.3 Why nobody has noticed
-
-```
-customer_subscriptions rows          : 0
-  of which active or trialing        : 0
-entitlement_catalog keys             : 6
-entitlement_tiers                    : 3
+```sql
+create or replace function public.user_entitlements()
+returns setof text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select distinct e.key
+  from public.customer_subscriptions s
+  cross join lateral jsonb_each(coalesce(s.entitlements, '{}'::jsonb)) as e
+  join public.entitlement_catalog c on c.key = e.key
+  where s.user_id = auth.uid()
+    and s.status in ('active', 'trialing')
+    and (s.starts_at is null or s.starts_at <= now())
+    and (s.ends_at is null or s.ends_at > now())
+    and (s.trial_ends_at is null or s.trial_ends_at > now())
+    and coalesce(e.value, 'false')::boolean;
+$$;
 ```
 
-There are no subscriptions, so there is no user who is *supposed* to be entitled
-and therefore no visible inconsistency. The defect is **latent and total**: the
-first real subscriber would receive nothing, and the catalogue and tiers that
-would define what they bought are already seeded and waiting.
+### 2.2 Why this is the smallest safe repair
 
-## 5. Hosted versus repository — exact differences
+The change is confined to the two identifiers that cannot resolve — `e.k` →
+`e.key`, `e.v` → `e.value` — plus removing the alias list that caused it. Every
+predicate is preserved character for character:
 
-| Item | Production | Repository | Consequence |
+| Predicate | 0016 (live) | 0052 | Preserved |
 |---|---|---|---|
-| `user_entitlements()` body | `as e(k, v)` … `e.k` — raises | `0052` rewrites to `as e` … `e.key` / `e.value` | the only change `0052` makes |
-| `has_entitlement()` body | unchanged, raises via resolver | unchanged in `0052` | fixes itself once the resolver returns |
-| `saved_commodities_entitlement_*`, `saved_markets_entitlement_*` (`0042`) | absent | present (3 policies each after the `42710` repair) | watchlists unenforced in DB |
-| `price_alerts_*`, `alert_delivery_logs.alert_logs_read` (`0043`) | absent | present | alerts unenforced in DB |
-| `export_jobs_insert_entitled` (`0044`) | absent | present | exports unenforced in DB |
-| `price_observations_bulk_read`, `international_trade_bulk_read`, `scheduled_job_runs_bulk_access` (`0045`) | absent | present | bulk reads unenforced in DB |
-| `can_perform_bulk_operations()` | does not exist | defined (`0051` repair) | bulk gating calls would error |
-| `market_reports.reports_public_read` | present, calls `has_entitlement` | same | the one policy that fails today's queries |
+| subscription owner | `s.user_id = auth.uid()` | same | ✅ |
+| status gate | `in ('active','trialing')` | same | ✅ |
+| start window | `starts_at is null or <= now()` | same | ✅ |
+| end window | `ends_at is null or > now()` | same | ✅ |
+| trial window | `trial_ends_at is null or > now()` | same | ✅ |
+| per-key boolean | `coalesce(…, 'false')::boolean` | same, on `e.value` | ✅ |
+| catalogue gate | `join entitlement_catalog on key` | same | ✅ |
+| distinctness | `select distinct` | same | ✅ |
+| signature, volatility, security, search path | `setof text / stable / definer / public` | same | ✅ |
 
-## 6. Proposed remediation — three stages, each independently reversible
+`create or replace` keeps the existing ACL, so the `EXECUTE` grants to `anon`
+and `authenticated` that production already carries are untouched — no grant
+change is required for the fix to work.
 
-The sequence matters: the resolver must return before anything is allowed to
-depend on it, and each stage must be verifiable on its own.
+### 2.3 What it deliberately does not do
 
-### Stage 1 — repair the resolver (`0052` as written)
+- does not grant an entitlement to anybody, and does not create or edit a
+  subscription;
+- does not install `0042`–`0045` enforcement (Stage 3, separately authorised);
+- does not alter the entitlement model, the six catalogue keys or the tiers;
+- does not touch `has_entitlement()`, which needs no change (§1);
+- does not fix the other defects listed in §7.
 
-`create or replace function public.user_entitlements()` only. No policy, no
-grant, no data. It cannot deny anything that is currently allowed, because it
-currently denies everything by raising. Risk: **low**.
+### 2.4 Dependencies
 
-### Stage 2 — verify the resolver before it is trusted
-
-Run the test matrix in §8 against production read-only. Stage 2 is not a
-migration; it is a gate. If any row of the matrix fails, stop — do not proceed
-to Stage 3.
-
-### Stage 3 — install enforcement (`0042`–`0045`, `0051`)
-
-These change access, so they must come **after** a green Stage 2. `0042` was
-repaired because the original could never apply (`42710`, duplicate policy name);
-`0045`/`0051` were repaired because the bulk check referenced a function that did
-not exist. Presenting them as one migration is tempting and wrong: if the
-watchlist policies behave unexpectedly, the alerts ones should not be implicated.
-
-Recommended as three separate applies, in this order, with a verification pause
-between each: `0042` (watchlists) → `0043` (alerts) → `0044`/`0045` (exports,
-bulk).
-
-## 7. Rollback and recovery
-
-| Stage | Rollback | Notes |
+| Direction | Object | Detail |
 |---|---|---|
-| 1 | `create or replace` the `0016` body back | The old body raises; rollback restores the *defect*, not a working state. Only justified if the new body is worse, which it cannot be — it is the same predicate with valid field names. |
-| 3 (`0042`) | `drop policy` the three `*_entitlement_*` policies, `create policy saved_commodities_owner` from `0016` | Restores owner-only access, i.e. the pre-`0042` behaviour |
-| 3 (`0043`) | `drop policy price_alerts_read/create/update`, `create policy price_alerts_owner` from `0016` | same |
-| 3 (`0044`, `0045`) | `drop policy export_jobs_insert_entitled`, restore `export_jobs_insert`; `drop policy` the three bulk reads | same |
-| any | nothing touches rows, so no data recovery is required at any stage | every object here is a function or policy definition |
+| Reads | `public.customer_subscriptions` | columns `user_id, status, starts_at, ends_at, trial_ends_at, entitlements` — all present on production (13-column table, matches `0016`) |
+| Reads | `public.entitlement_catalog` | `key` — present, 6 rows on production |
+| Uses | `auth.uid()` | Supabase built-in, unchanged |
+| Depended on by | `public.has_entitlement(text)` | raises until this is fixed; needs no edit itself |
+| Depended on by | `market_reports.reports_public_read` | production policy whose qual calls `has_entitlement('reports')` |
+| Depended on by | application RPC callers | `src/app/(client)/layout.tsx`, `client/actions/intelligence.ts` ×3, `client/alerts/page.tsx`, `client/watchlists/page.tsx` |
 
-Every stage is a definition change. There is no point in the sequence where a
-rollback has to restore data, which is the property that makes this approvable
-without a maintenance window.
+**Provenance note on the migration header.** `0052`'s header says "every
+entitlement check in the database goes through those two functions… the
+watchlist, alert, export and bulk policies plus `can_perform_bulk_operations()`
+all call `has_entitlement()`." That describes the **repository's** policy set.
+On production those policies do not exist (§4), so only one policy actually
+consumes the function today. The SQL is unaffected; the file has deliberately
+been left byte-identical so the artifact under approval is the artifact that was
+reviewed.
 
-## 8. Test matrix — the four contexts the authorisation requires
+### 2.5 Proposed production payload and identifier
 
-Run against production after Stage 1 (read-only) and again after each Stage 3
-step. `claims` means `request.jwt.claims` set to a real `profiles.id`.
+The production apply path (connector `create_migration`) takes a name and a
+payload, and assigns the version at execution — SEC-01 landed as
+`20261126224213_sec01_intelligence_table_rls` from name
+`sec01_intelligence_table_rls`.
 
-| # | Context | Setup | Expected |
+| | |
+|---|---|
+| Proposed name | `fix_user_entitlements` |
+| Payload | the `create or replace` + `comment on function` above, unchanged |
+| Identifier | assigned at execution; will be recorded in §9 of the readiness report as `YYYYMMDDHHMMSS_fix_user_entitlements` |
+| Repository counterpart | `supabase/migrations/0052_fix_user_entitlements.sql` |
+| Transactional | yes — the connector rolls back on failure |
+| Data changes | none |
+
+### 2.6 Rollback and recovery
+
+A function replacement is the easiest class of change to reverse, because the
+prior state is a document, not a row. The exact production text is captured in
+§1 above; recovery is:
+
+```sql
+-- rollback: restore the 0016 body verbatim (re-instates the defect, see caveat)
+create or replace function public.user_entitlements()
+returns setof text language sql stable security definer set search_path = public
+as $function$
+  select distinct k.key
+  from public.customer_subscriptions s
+  cross join lateral jsonb_each(coalesce(s.entitlements, '{}'::jsonb)) as e(k, v)
+  join public.entitlement_catalog c on c.key = e.k
+  where s.user_id = auth.uid()
+    and s.status in ('active', 'trialing')
+    and (s.starts_at is null or s.starts_at <= now())
+    and (s.ends_at is null or s.ends_at > now())
+    and (s.trial_ends_at is null or s.trial_ends_at > now())
+    and coalesce(e.v, 'false')::boolean;
+$function$;
+```
+
+**Caveat, stated plainly:** this restores the *previous definition*, which
+raises. It is a rollback of the change, not a return to a working entitlement
+system. Since the repaired predicate is identical except for two field names,
+the realistic failure modes are "still raises" (fix is wrong) or "denies more
+than expected" (predicate differs) — both diagnosable from the post-apply
+verification below, neither made better by rolling back. Rollback exists for
+completeness of the control, not because it is the likely response.
+
+Verification to run immediately after any future apply (read-only):
+
+```sql
+select pg_get_functiondef('public.user_entitlements()'::regprocedure);
+select public.has_entitlement('reports');                      -- must answer, not raise
+select count(*) from public.market_reports;                    -- must not raise
+select count(*) from public.user_entitlements();               -- operator's own: 0, no error
+```
+
+---
+
+## 3. Stage B — validation
+
+### 3.1 Hosted staging: BLOCKED
+
+`list_projects` on 2026-11-26 returns eight projects in the organisation, none of
+them a Hatsi360 staging environment: `supabase-cobalt-park`
+(`umxzsdepbrenqysabtlt`, the production project), `supabase-almond-magnet`,
+`koriepay_app`, `pluck-erp-dev`, `kwari-pos-manager-test`, `lumi-phase1-dev`,
+`pluck-erp-v2-dev`. Several belong to other products and none carries this
+schema.
+
+The authorisation says to "obtain approval to provision a staging Supabase
+project if one does not already exist". None exists, and project creation is on
+the stop-and-ask list, so **no project was created**. Hosted staging acceptance
+is therefore **BLOCKED** and is the one remaining gate before a production
+application request can be made.
+
+### 3.2 What was validated instead, and what that is worth
+
+The repository ships a throwaway PostgreSQL 17 replica
+(`npm run verify:migrations`) that applies every migration, stubs `auth.users` /
+`auth.uid()`, creates the real `anon` / `authenticated` / `service_role` roles,
+and asserts RLS behaviour. The new matrix runs the six contexts against it:
+
+```bash
+npm run verify:migrations     # build/refresh the replica
+npm run verify:entitlements   # node supabase/tests/entitlement-stage1-matrix.mjs
+```
+
+Synthetic fixtures only, created and removed by the script: seven identities
+(no subscription, entitled, expired, trial-ended, cancelled, analyst, admin),
+four `market_reports` rows (free/premium × published/unpublished), and
+subscriptions whose `entitlements` include a `false` key and a key absent from
+the catalogue. The script never connects to a hosted project.
+
+**Result: 31 of 31 checks pass.** `ALL STAGE 1 EXPECTATIONS MET`.
+
+| Context | `user_entitlements()` | `has_entitlement('reports')` | `market_reports` rows visible |
 |---|---|---|---|
-| 1 | **Entitled user** | temporary `customer_subscriptions` row, status `active`, `entitlements {"watchlist":true,"alerts":true,"exports":true}` | `user_entitlements()` returns those three keys; `has_entitlement('alerts')` = true; watchlist/alerts/export writes succeed |
-| 2 | **Non-entitled user** | real profile without a subscription | `user_entitlements()` returns empty set (not an error); `has_entitlement('alerts')` = false; watchlist/alerts/export writes denied |
-| 3 | **Administrator** | `profiles.role = 'admin'` | `is_staff()` true; admin surfaces unaffected; `has_entitlement` still answers (staff status does not imply entitlements — this is intended and should be asserted, not assumed) |
-| 4 | **Unauthenticated** | `role anon`, no claims | `auth.uid()` null → empty set, no raise; no entitlement-gated row readable |
-| 5 | **Expired / trial-ended** | subscription with `ends_at` in the past, or `trial_ends_at` past | empty set — the predicate's time bounds are part of the contract |
-| 6 | **Catalogue miss** | subscription granting a key absent from `entitlement_catalog` | key excluded (the `join` is deliberate) |
+| anonymous | `(empty)` | false | 1 |
+| authenticated, no subscription | `(empty)` | false | 1 |
+| active entitled | `alerts, exports, reports, watchlists` | true | 4 |
+| expired subscription | `(empty)` | false | 1 |
+| trial ended | `(empty)` | false | 1 |
+| cancelled subscription | `(empty)` | false | 1 |
+| staff (analyst) | `(empty)` | false | 4 |
+| administrator | `(empty)` | false | 4 |
 
-Test 1 requires inserting a subscription row, which is a **production data
-change** and is therefore outside this authorisation. It must either run on a
-staging project or be approved explicitly as a temporary, rolled-back insert.
-Tests 2–6 need no writes.
+Additional checks in the same run:
 
-## 9. What this review does not claim
+| Check | Result |
+|---|---|
+| client-shell path: `select … from public.user_entitlements()` as a non-entitled signed-in user | answers, 0 rows — the layout's `[]` fallback is no longer papering over an error |
+| `has_entitlement('api')` where the subscription stores `"api": false` | false — the boolean is honoured, not the key's presence |
+| `has_entitlement('not_in_catalog')` where the key is absent from `entitlement_catalog` | false — the catalogue join is load-bearing |
+| staff/admin do **not** inherit entitlements | asserted explicitly; `is_staff()` grants report visibility through a separate branch of the policy, which is the intended design |
 
-- That the entitlement model is right. It reviews a defect, not a design. The
-  six catalogue keys and three tiers are unchanged and unexamined here.
-- That Stage 3 is safe to apply without a staging run. The three-part split
-  reduces the blast radius; it does not substitute for executing the matrix.
-- That any of it has happened. Nothing in this document has been applied to
-  production.
+**Negative control (the important half).** In a rolled-back transaction the
+production body is reinstated and the same checks are run:
 
-## 10. Decision requested
+| Context | Pre-fix call | Observed |
+|---|---|---|
+| anonymous | `user_entitlements()` | `42P01 missing FROM-clause entry for table "k"` |
+| anonymous | read of premium reports | `42P01` — **the defect breaks unauthenticated reads too** |
+| active entitled | `user_entitlements()` | `42P01` |
+| active entitled | read of premium reports | `42P01` |
 
-Approve, reject or amend: (a) Stage 1 alone; (b) Stage 1 + the §8 read-only
-matrix on production; (c) the full sequence including Stage 3, with or without a
-staging project first.
+Both directions are therefore demonstrated in one run: broken before, correct
+after, on the same data.
 
-Recommendation: **(b) now, (c) only after a staging project exists**, because
-Stage 3 changes access and the matrix's most important row — the entitled user —
-needs a temporary subscription row that production should not receive.
+### 3.3 What this does not prove
+
+| Unproven here | Why it matters | Where it must be proven |
+|---|---|---|
+| Hosted staging behaviour | the replica is repository state; production is not | staging project, once approved |
+| The PostgREST JWT path | the matrix sets `request.jwt.claim.sub` **and** `request.jwt.claims`; production's `auth.uid()` reads the claims JSON, the replica stub reads the singular form | a real `supabase.rpc()` call in staging |
+| Anon read of `market_reports` | the repository **revokes** anon's grants; production **grants** them, so the matrix applies a temporary production-parity grant to `anon` for the run and removes it in teardown | staging must measure the real grant state — see §7.1 |
+| Client-shell rendering | the SQL path answers; the React layout was not executed against a database | staging, then the app acceptance pass |
+
+The anon row in particular is explicitly an emulation. It is labelled as such in
+the script, and the divergence it exposes is filed as a finding rather than
+smoothed over.
+
+---
+
+## 4. Stage C — production reconciliation (read-only)
+
+All rows below were read on 2026-11-26. Nothing was written.
+
+### 4.1 Functions
+
+| Function | Production | Repository | Difference |
+|---|---|---|---|
+| `user_entitlements()` | broken alias body (§1) | `0052` repaired body | the defect; `0052` is the fix |
+| `has_entitlement(text)` | `select exists (select 1 from user_entitlements() e where e = p_key)` | identical (`0016`) | **none** — fixes itself |
+| `current_role()` | profiles lookup, `coalesce(..., 'public_user')` | identical | none |
+| `can_perform_bulk_operations()` | **absent** | defined in `0045` | missing on production; bulk gating would error if called |
+
+### 4.2 Policies that reference entitlements
+
+| Table | Production policy | Shape | Repository | Difference |
+|---|---|---|---|---|
+| `market_reports` | `reports_public_read` | `((not is_premium and published_at not null) or is_staff() or has_entitlement('reports'))`, to `anon, authenticated` | same (`0016`) | none — but it raises today because it calls the broken function |
+| `export_jobs` | `export_jobs_insert` | `(requested_by = auth.uid()) or is_admin()` — **no entitlement check** | `0044` replaces with `requested_by = auth.uid() and has_entitlement('exports')` | enforcement absent |
+| `price_alerts` | `price_alerts_owner` | `ALL`, `user_id = auth.uid()` — no entitlement check | `0043` splits into read/create/update with `has_entitlement('alerts')` | enforcement absent |
+| `alert_delivery_logs` | `alert_logs_owner` | owner-or-staff read | `0043` renames to `alert_logs_read` | shape differs |
+| `saved_markets` / `saved_commodities` | owner-only (no entitlement names present) | — | `0042` adds `*_entitlement_select/insert/delete` | enforcement absent |
+| `price_observations`, `international_trade_records`, `scheduled_job_runs` | no bulk policy | — | `0045` adds three bulk-read policies gated on `can_perform_bulk_operations()` | enforcement absent |
+| `entitlement_catalog`, `entitlement_tiers` | `*_public_read`, `entitlement_tiers_admin_write` | matches `0016` | same | none |
+| `customer_subscriptions` | 2 policies | matches `0016` | same | none |
+
+### 4.3 Schema
+
+`customer_subscriptions` (13 columns), `entitlement_catalog` (5) and
+`entitlement_tiers` (8) on production match `0016` exactly, column for column.
+The divergence is **functions and policies**, not tables.
+
+### 4.4 Migration records
+
+| Record | Entries | Last | Comment |
+|---|---|---|---|
+| CLI history (`supabase_migrations.schema_migrations`) | 7 | `20261126224213 sec01_intelligence_table_rls` | records only what was applied through this connector |
+| Internal ledger (`public._hatsi_migrations`) | 32 | `0033_collection_activation.sql` (2026-11-14 13:15 UTC) | nothing recorded after `0033` |
+| Repository | 51 files (`0000`–`0052`) | — | includes everything unapplied |
+
+Per the authorisation, **no attempt was made to reconcile these records** — no
+migration was marked applied, and no historical SQL was replayed. The
+disagreement is recorded as a blocker; it means the ledger cannot be used to
+determine what production contains, which is why §4.1–§4.3 were measured from
+the catalogue instead.
+
+---
+
+## 5. Stage D — approval boundary
+
+Nothing in this stage crossed it:
+
+| Boundary | State |
+|---|---|
+| `0052` applied to production | **no** |
+| `0042`–`0045` applied | **no** |
+| Production data changed (subscriptions, entitlements, any row) | **no** |
+| Temporary subscription created in production | **no** |
+| Production env vars, deploy, staging project | **no** |
+| Migration history "reconciled" | **no** |
+
+The four conditions the authorisation sets before a production apply are
+tracked in §8: (1) staging acceptance — **not met**, blocked; (2) exact
+migration reviewed — **met** (§2.5); (3) recovery documented — **met** (§2.6);
+(4) separate production approval — **not yet requested formally**, depends on (1).
+
+---
+
+## 6. Stage E — production approval request
+
+> **Request:** approve a **hosted staging project** (`hatsi360-staging`, free
+> plan, `us-east-1`, separate from `umxzsdepbrenqysabtlt`) so the six-context
+> matrix can be executed with real JWT claims through PostgREST and with
+> production's actual grant state, before any production entitlement change is
+> requested.
+
+No production approval is requested at this time, because condition (1) is not
+met. When staging acceptance passes, the production request will be:
+
+> Apply payload `fix_user_entitlements` (the `0052` SQL, §2.5) as a single
+> transactional migration. No policies, no grants, no data. Rollback and
+> post-apply verification as documented in §2.6.
+
+---
+
+## 7. Findings raised by this stage (reported, not fixed)
+
+### 7.1 `anon` holds `TRUNCATE` on 73 of 80 public tables
+
+Measured on production:
+
+| Privilege held by `anon` | Tables |
+|---|---|
+| `TRUNCATE` | **73 of 80** |
+| `INSERT` | 73 |
+| `DELETE` | 73 |
+
+Row-level security is enabled on all 80, so `INSERT`/`DELETE` are policed — but
+**RLS never applies to `TRUNCATE`**, which is exactly the point the SEC-01
+authorisation made. Among the 73 are `customer_subscriptions`,
+`entitlement_catalog` and `market_reports`.
+
+This is the same class of defect SEC-01 closed on six tables, at a much larger
+scale, and it sits directly underneath the entitlement work: one unguarded
+`TRUNCATE` of `customer_subscriptions` would delete every entitlement in the
+platform regardless of any policy.
+
+Practical exposure is currently limited by there being no SQL channel for the
+anon role through PostgREST (it cannot issue `TRUNCATE`), but the privilege is
+unnecessary and would become directly exploitable through any SQL injection,
+any `SECURITY DEFINER` function taking SQL, or any credential exposure. The
+repository already revokes these grants, so production is behind the repository
+here — the same direction of drift as the six SEC-01 tables.
+
+Not fixed in this stage: it needs its own authorisation, its own before/after
+evidence, and a staging verification, because revoking grants on 73 tables is a
+wider blast radius than Stage 1 permits.
+
+### 7.2 Repository and production disagree on `anon` reads of `market_reports`
+
+The repository's migrations leave `anon` with no grant on `market_reports`, while
+production grants it. The policy `reports_public_read` is written `to anon,
+authenticated`, which only makes sense under production's grants. So the
+repository, applied as written, would give anonymous visitors an empty reports
+surface. This should be resolved in the same grant-hygiene work as §7.1 — it is
+a grant question, not an entitlement question.
+
+---
+
+## 8. Remaining risks
+
+| Risk | Severity | Note |
+|---|---|---|
+| Production still raises on every entitlement check | **high** for paid features, latent today | 0 subscriptions, so no user is observably wrong yet; the first subscriber gets nothing |
+| Staging unavailable | blocking | no Hatsi360 staging project; creation needs approval |
+| `anon` TRUNCATE grants (§7.1) | **high** | 73 tables, RLS cannot mitigate |
+| Local replica ≠ production grants | medium | the anon context in §3.2 is an emulation, clearly labelled |
+| Migration records disagree (7 / 32 / 51) | medium | no reliable deploy or rollback story |
+| Stage 3 (`0042`–`0045`) unvalidated | medium | enforcement will change access for watchlists, alerts, exports, bulk reads |
+| First subscriber arrives before Stage 1 applies | **high** | they would be charged and receive nothing, silently |
+
+---
+
+## 9. Decision requested
+
+1. **Approve provisioning of a staging project** so §3.1 can be cleared — the
+   only thing standing between Stage 1 and a production request.
+2. Note that Stage 1 is otherwise ready: payload fixed, dependencies mapped,
+   recovery documented, local acceptance green (31/31) with a passing negative
+   control.
+3. Confirm whether §7.1 (anon `TRUNCATE` on 73 tables) should be prepared as the
+   next security authorisation, in parallel with staging, since it is both
+   larger and more directly exploitable than the entitlement defect.

@@ -19,7 +19,8 @@
     "seed": "tsx scripts/seed.ts",
     "setup": "bash scripts/setup_env.sh",
     "verify:launch": "bash scripts/verify_launch.sh",
-    "verify:migrations": "bash scripts/validate_migrations.sh"
+    "verify:migrations": "bash scripts/validate_migrations.sh",
+    "verify:entitlements": "node supabase/tests/entitlement-stage1-matrix.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

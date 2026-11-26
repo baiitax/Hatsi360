@@ -5,7 +5,7 @@
 | Date | 2026-11-26 |
 | Branch | `arena/990d7ace-hatsi360` |
 | Project | `umxzsdepbrenqysabtlt` (production) |
-| Status | **SEC-01 remediated and verified in production.** P2.2–P2.6 remain blocked on a staging project and are **not** claimed as validated. Entitlement defect is **review only**, not applied. |
+| Status | **SEC-01 remediated and verified in production.** Entitlement Stage 1 **prepared and validated on the local replica (31/31)**; hosted staging **BLOCKED** — no staging project exists. Production entitlement change **not applied**. P2.2–P2.6 remain blocked on staging. |
 | Release recommendation | **NOT_READY_FOR_PRODUCTION** |
 
 ## 1. What this report is
@@ -206,6 +206,7 @@ project's existing public-read policies — consistent house style, not a findin
 | Unit/integration tests | 999 pass / 42 fail / 40 skip | **1018 pass / 23 fail / 40 skip** | 19 application failures fixed; all 23 remaining are environment-only |
 | Migration verification | fail (7 defects) | **pass** | 89/89 RLS, 203 policies, 210-statement RLS suite, 346-statement workflow suite |
 | Production build | **blocked** (Google Fonts) | **pass**, exit 0, 116 routes, offline | fonts vendored under `src/app/fonts/` (73 KB, OFL) |
+| Entitlement acceptance (new) | — | **pass on the local replica, 31/31** | `npm run verify:entitlements` — six contexts + negative control (§9.2). Staging equivalent still BLOCKED. |
 
 Twenty-three tests still fail and none is an application defect: ten
 `entitlements`, twelve `phase-08a`, one `auth` — each needs
@@ -225,7 +226,7 @@ or weakened to reach these numbers.
 CI runs `npm run lint -- --max-warnings 50`, so the 171 warnings fail the job on
 their own. The gate cannot go green by fixing errors alone.
 
-## 8. Entitlement remediation — separate proposal, not applied
+## 8. Entitlement defect — the finding, and the staged proposal
 
 Full review: **`ENTITLEMENT_REMEDIATION_REVIEW.md`**. Summary of the facts it
 establishes:
@@ -245,10 +246,111 @@ establishes:
   (`0052`), verify with a six-context matrix, then install enforcement
   (`0042`–`0045`, `0051`) one surface at a time.
 
-`0052` and repaired `0042`–`0045` remain **unapplied**. Applying them requires
-the separate written approval the authorisation requires.
+`0052` and repaired `0042`–`0045` remain **unapplied**. Stage 1 (the `0052`
+repair alone) has since been prepared and locally validated — status, evidence
+and the staging blocker are in §9.
 
-## 9. Operational metrics — definitions, ready to run
+## 9. Stage 1 — entitlement repair: prepared, validated locally, staging blocked
+
+Full detail in **`ENTITLEMENT_REMEDIATION_REVIEW.md`**. Stage 1 was authorised
+for "preparation and staging validation only"; production application was
+expressly not authorised, and nothing was applied.
+
+### 9.1 What was prepared
+
+`supabase/migrations/0052_fix_user_entitlements.sql` is the artifact: one
+`create or replace function public.user_entitlements()` plus a comment. It
+changes two identifiers (`e.k` → `e.key`, `e.v` → `e.value`) and removes the
+alias list that made them unresolvable. Every predicate in the 0016 body is
+preserved character for character, `create or replace` keeps the existing
+`EXECUTE` grants, and no table, policy, subscription or row is touched. The file
+was left byte-identical so the artifact under approval is the artifact reviewed.
+
+Dependencies, the exact production payload, the proposed migration name
+(`fix_user_entitlements`, version assigned at execution as SEC-01 was) and
+rollback text are in the review, §2.4–§2.6.
+
+### 9.2 What was validated, and where
+
+A new acceptance matrix — `supabase/tests/entitlement-stage1-matrix.mjs`, wired
+as `npm run verify:entitlements` — runs the six required contexts against the
+throwaway PostgreSQL 17 replica with synthetic records only. **31 of 31 checks
+pass.**
+
+| Context | `user_entitlements()` | `has_entitlement('reports')` | reports visible |
+|---|---|---|---|
+| anonymous | `(empty)` | false | 1 |
+| authenticated, no subscription | `(empty)` | false | 1 |
+| active entitled | `alerts, exports, reports, watchlists` | true | 4 |
+| expired subscription | `(empty)` | false | 1 |
+| trial ended | `(empty)` | false | 1 |
+| cancelled subscription | `(empty)` | false | 1 |
+| staff (analyst) | `(empty)` | false | 4 |
+| administrator | `(empty)` | false | 4 |
+
+The run also proves `"api": false` is honoured over the key's presence, a key
+absent from `entitlement_catalog` is excluded, and staff/admin do not inherit
+entitlements (they see reports through the policy's `is_staff()` branch, which
+is the intended design).
+
+**Negative control:** in a rolled-back transaction the production body is
+reinstated and the same calls are made — every one returns `42P01 missing
+FROM-clause entry for table "k"`, including a premium report read **as
+anonymous**. The defect and the fix are therefore both demonstrated on the same
+data, rather than asserted.
+
+### 9.3 Why this is not staging acceptance
+
+No Hatsi360 staging project exists. `list_projects` returns eight projects, none
+of them a Hatsi360 staging environment; the others belong to different products.
+Provisioning one is a project-creation action on the stop-and-ask list, so the
+request is made and the gate stays **BLOCKED** (review §3.1, §6).
+
+The matrix does not substitute for staging: it cannot exercise real PostgREST
+JWT claims, the React client shell, or production's actual grant state. That
+last point is not academic — see §9.4, where the replica and production disagree
+about what `anon` may read.
+
+### 9.4 New finding raised by the reconciliation: `anon` holds `TRUNCATE` on 73 of 80 tables
+
+Measured on production while reconciling the entitlement policies:
+
+| Privilege held by `anon` | Tables |
+|---|---|
+| `TRUNCATE` | **73 of 80** |
+| `INSERT` | 73 |
+| `DELETE` | 73 |
+
+All 80 tables have RLS, so `INSERT`/`DELETE` are policed — but **RLS is never
+applied to `TRUNCATE`**, the exact caveat the SEC-01 authorisation insisted on.
+`customer_subscriptions`, `entitlement_catalog` and `market_reports` are among
+the 73. SEC-01 closed six tables; this is the same defect class at an order of
+magnitude larger scale, sitting directly beneath the entitlement work: one
+unguarded `TRUNCATE` of `customer_subscriptions` removes every entitlement in
+the platform, policies notwithstanding.
+
+Exposure is currently constrained by there being no `TRUNCATE` channel through
+PostgREST, but the privilege is unnecessary and becomes directly exploitable
+through any SQL injection, any `SECURITY DEFINER` function taking SQL, or any
+credential exposure. The repository already revokes these grants, so production
+again trails the repository.
+
+Not fixed here: it needs its own authorisation, its own before/after evidence
+and a staging verification. Filed for decision (review §7.1).
+
+A related grant divergence: the repository leaves `anon` with no grant on
+`market_reports` while production grants it, which is why the matrix's anonymous
+row applies a temporary production-parity grant (labelled, and revoked in
+teardown). The repository applied as written would give anonymous visitors an
+empty reports surface.
+
+### 9.5 Migration records after Stage 1
+
+Unchanged from §4: CLI history 7, ledger 32 (last `0033`), repository 51. Stage
+1 applied **no** migration, so nothing was added to any record, and per the
+authorisation no attempt was made to reconcile them.
+
+## 10. Operational metrics — definitions, ready to run
 
 P2.5 asks for ten operational metrics from real records. Definitions are the
 queries; ✅ marks those already run against production.
@@ -267,7 +369,7 @@ queries; ✅ marks those already run against production.
 | 10 | Data-quality findings | `observation_quality_findings`, `data_quality_flags` | pending |
 | 11 | Failed scheduled jobs | `scheduled_job_runs where status='failed'` | pending — the runner has never been executed in production |
 
-## 10. The five outstanding Phase 2 documents
+## 11. The five outstanding Phase 2 documents
 
 | Document | Blocked on | What can already be stated |
 |---|---|---|
@@ -277,13 +379,14 @@ queries; ✅ marks those already run against production.
 | `OPERATIONAL_MONITORING_REPORT.md` | error-tracking decision | No error tracking, health endpoint or structured logging; §9 is the skeleton |
 | `PHASE_2_OPERATIONAL_READINESS_REPORT.md` | — | this document |
 
-## 11. Blockers, in priority order
+## 12. Blockers, in priority order
 
 1. ~~Six ungoverned tables with full DML for `authenticated`~~ — **closed**
    2026-11-26, migration `20261126224213_sec01_intelligence_table_rls`,
    verified §5.
 2. **`has_entitlement()` raises in production** — total, silent denial of paid
-   features; review written, **awaiting separate approval** (§8).
+   features. Stage 1 prepared and locally validated (31/31); **blocked on
+   staging**, which is blocked on approval to provision (§9).
 3. **No staging project** — still blocks P2.2–P2.5 entirely. Creating one is a
    project-creation action on the stop-and-ask list.
 4. **Migration records disagree** (7 / 32 / 51) — blocks reliable deploy and
@@ -292,8 +395,11 @@ queries; ✅ marks those already run against production.
    build and test suite are not enforced on future commits.
 6. **Publication integrity** — series are all `imported`; nothing prevents
    unverified series from being rendered as published.
+7. **`anon` holds `TRUNCATE` on 73 of 80 public tables** (§9.4) — RLS cannot
+   mitigate it; SEC-01's own lesson, unapplied at scale. Needs its own
+   authorisation.
 
-## 12. Release recommendation
+## 13. Release recommendation
 
 > **NOT_READY_FOR_PRODUCTION**
 
@@ -305,7 +411,14 @@ rest have not, and closing one defect does not make the platform releasable:
 - the schema still cannot be reconciled with its own history;
 - Phase 2's operational evidence — agent → verification → publication, jobs,
   monitoring — does not exist yet, because the environment to produce it does not;
-- the lint gate is red, so CI is not protecting any of the above.
+- the lint gate is red, so CI is not protecting any of the above;
+- a wider grant defect has been found and not yet fixed — `anon` holds
+  `TRUNCATE` on 73 of 80 public tables, which RLS cannot mitigate (§9.4).
+
+The pending decision is no longer "apply the entitlement fix": Stage 1 is ready
+and cannot progress without a staging project, which cannot be created without
+approval. That approval, and an authorisation for the `anon` grant defect, are
+the two things that would move this report forward.
 
 What changed materially today: SEC-01 is closed with before/after evidence rather
 than a claim; the fix was shaped by two things that would have broken production
