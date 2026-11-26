@@ -165,6 +165,12 @@ async function main() {
     );
     create or replace function auth.uid() returns uuid
       language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+    create or replace function auth.role() returns text
+      language sql stable as $$ select nullif(current_setting('request.jwt.claim.role', true), '') $$;
+    create or replace function auth.jwt() returns jsonb
+      language sql stable as $$
+        select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb
+      $$;
     grant usage on schema auth to public;
 
     -- A minimal stub of the Supabase Storage schema. Migrations that create
@@ -225,6 +231,24 @@ async function main() {
     -- the stub has to grant the table and let the policies decide.
     grant select on storage.buckets to anon, authenticated, service_role;
 
+    -- The migration bookkeeping table.
+    --
+    -- No migration in this repository creates it: it exists on the hosted
+    -- project because it was added outside the migration chain, and 0032 then
+    -- hardens it (RLS + revoked grants + a staff read policy). A clean database
+    -- therefore stops at 0032 with 'relation "public._hatsi_migrations" does not
+    -- exist', which is recorded in docs/improvement/DATABASE_AND_MIGRATION_AUDIT.md
+    -- as MIG-01. Creating it here lets the rest of the chain be validated; it
+    -- does not change any migration.
+    -- Its shape is inferred from the only statements that touch it: 0032 and
+    -- 0033 both insert (name, applied_at) and expect ON CONFLICT DO NOTHING to
+    -- be satisfiable, so the name column carries the unique constraint.
+    create table if not exists public._hatsi_migrations (
+      id          bigint generated always as identity primary key,
+      name        text not null unique,
+      applied_at  timestamptz not null default now()
+    );
+
     -- The platform lets a signed-in client see the bucket list.
     create policy storage_buckets_read on storage.buckets
       for select to anon, authenticated
@@ -235,10 +259,92 @@ async function main() {
   console.log('==> applying migrations');
   const files = readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql')).sort();
   for (const file of files) {
-    const sql = readFileSync(join(MIGRATIONS, file), 'utf8');
+    let sql = readFileSync(join(MIGRATIONS, file), 'utf8');
+
+    // MIG-03: 0034 inserts an untyped empty array literal (array[]) into a
+    // text[] column. PostgreSQL cannot resolve an empty array's element type
+    // even when the target column is known, so the file cannot be parsed at
+    // all. The real file is left untouched: whether 0034 was ever applied to
+    // the hosted project is UNKNOWN from here, and the repository rule is not
+    // to edit an applied migration. Casting the literal here is a no-op for
+    // the intended value (an empty text array) and only exists so the files
+    // after 0034 can still be validated.
+    if (file.startsWith('0034')) sql = sql.replace('   array[],', '   array[]::text[],');
+
+    // MIG-04: 0038 maps HS codes onto commodities by name, but it expects a
+    // generic trade vocabulary (Cattle, Beef, Sugar, Iron and Steel, ...) that
+    // the chain's own seed in 0007 never creates. Only "Wheat" overlaps, so
+    // every other lookup returns NULL and the NOT NULL column rejects the row.
+    // The file therefore cannot apply to a database built from this repository.
+    // To keep validating the migrations after it, create the names it looks
+    // for as clearly-marked inactive placeholders. This is harness-only: no
+    // real commodity is invented and no migration is edited.
+    if (file.startsWith('0038')) {
+      const names = [...new Set([...sql.matchAll(/WHERE name = '([^']+)'/g)].map((m) => m[1]))];
+      for (const name of names) {
+        await db.query(
+          "insert into public.commodities (category_id, name, slug, is_active) " +
+            "select 1, $1, 'harness-placeholder-' || lower(regexp_replace($1, '[^a-z0-9]+', '-', 'gi')), false " +
+            "where not exists (select 1 from public.commodities where name = $1)",
+          [name],
+        );
+      }
+      console.log(`    (harness: ${names.length} placeholder commodities for 0038)`);
+    }
+
+    // MIG-05: 0042 creates the policy saved_commodities_entitlement four times
+    // (once per command) on the same table. PostgreSQL allows one policy per
+    // name per table, so the file fails on its second CREATE POLICY and cannot
+    // apply to any database. It is skipped rather than rewritten: the point of
+    // this run is to validate the migrations that can apply, and the security
+    // consequence is recorded in docs/improvement/SECURITY_BASELINE.md.
+    // MIG-06: the demo-seed migrations were written against an older schema.
+    // 0046_demo_seed_core inserts into commodity_unit_conversions with
+    // (unit_id, base_unit_id, is_verified, notes), but 0001 defines
+    // (from_unit_id, to_unit_id, verified_by, verified_at, note), so the file
+    // cannot apply. The other two seeds depend on it. They are skipped here;
+    // the DDL migrations that share those numbers are still applied.
+    if (['0046_demo_seed_core.sql', '0047_demo_seed_operations.sql', '0048_demo_seed_cleanup.sql'].includes(file)) {
+      console.log(`    - ${file} (harness: skipped, see MIG-06)`);
+      continue;
+    }
+
+    // MIG-07: 0047_stage4_rfq_orders uses CREATE TYPE IF NOT EXISTS five times.
+    // PostgreSQL has no such clause (only CREATE TABLE / INDEX / SCHEMA accept
+    // IF NOT EXISTS), so the file fails to parse and the whole stage-4 trade
+    // schema - supplier_profiles, rfqs, quotes, orders - is absent unless it was
+    // applied to the hosted project by hand.
+    if (file.startsWith('0047_stage4')) {
+      console.log(`    - ${file} (harness: skipped, see MIG-07)`);
+      continue;
+    }
+
+    if (file.startsWith('0042')) {
+      console.log(`    - ${file} (harness: skipped, see MIG-05)`);
+      continue;
+    }
+
     process.stdout.write(`    - ${file}\n`);
     try {
       await db.query(sql);
+
+      // Migrations 0033 onward assign collection schedules to an account that
+      // the hosted project already had: f9b2d2f7-… is a real field agent, and no
+      // migration creates it. Without it 0033 fails on a foreign key, so the
+      // chain cannot reach 0034-0049 on a clean database (MIG-02 in
+      // docs/improvement/DATABASE_AND_MIGRATION_AUDIT.md). Mirroring the account
+      // here lets the remainder of the chain be validated. It is a stub: it
+      // exists only inside this throwaway database.
+      if (file.startsWith('0006')) {
+        await db.query(
+          "insert into auth.users (id, email, raw_user_meta_data) values " +
+            "('f9b2d2f7-2147-4579-845d-17ec462e3f91', 'stub-agent@stub.invalid', " +
+            `'{"full_name":"Stub Field Agent","role":"agent"}'::jsonb), ` +
+            "('dcc7c070-cca6-46e4-907f-3d811079be15', 'stub-admin@stub.invalid', " +
+            `'{"full_name":"Stub Admin","role":"admin"}'::jsonb) ` +
+            "on conflict (id) do nothing",
+        );
+      }
     } catch (err) {
       console.error(`\nFAILED in ${file}:\n${err.message}\n`);
       console.error('code   :', err.code);

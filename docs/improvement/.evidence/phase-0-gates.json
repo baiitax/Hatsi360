@@ -1,0 +1,200 @@
+{
+  "generated_at": "2026-11-26",
+  "branch": "arena/990d7ace-hatsi360",
+  "base_commit": "6cc044dc52796252ef754ee8f137520181a4afaf",
+  "environment": {
+    "sandbox_can_reach": [
+      "github.com",
+      "registry.npmjs.org",
+      "pypi.org"
+    ],
+    "cannot_reach": [
+      "*.supabase.co (TLS refused)",
+      "fonts.googleapis.com"
+    ],
+    "local_postgres": "PostgreSQL 19.0 (throwaway cluster, port 55432)"
+  },
+  "gates": {
+    "typecheck": {
+      "command": "npx tsc --noEmit",
+      "exit": 0,
+      "diagnostics": 0,
+      "verdict": "PASS"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exit": 1,
+      "errors": 45,
+      "warnings": 171,
+      "verdict": "FAIL",
+      "classification": "application (pre-existing)"
+    },
+    "test": {
+      "command": "npx vitest run",
+      "exit": 1,
+      "files": {
+        "total": 52,
+        "failed": 12,
+        "passed": 39,
+        "skipped": 1
+      },
+      "tests": {
+        "total": 1081,
+        "passed": 999,
+        "failed": 42,
+        "skipped": 40
+      },
+      "verdict": "FAIL",
+      "classification": "34 environment / 8 application"
+    },
+    "verify_migrations": {
+      "command": "npm run verify:migrations",
+      "exit": 1,
+      "verdict": "FAIL",
+      "classification": "database defect",
+      "workarounds_required": [
+        "MIG-01 ledger stub",
+        "MIG-02 stub accounts",
+        "MIG-03 array cast",
+        "MIG-04 placeholder commodities",
+        "MIG-05/06/07 skipped files"
+      ]
+    },
+    "build": {
+      "command": "npm run build",
+      "exit": 1,
+      "verdict": "BLOCKED",
+      "classification": "environment",
+      "reason": "next/font cannot fetch Inter and Manrope from fonts.googleapis.com"
+    }
+  },
+  "test_by_area": {
+    "admin": "1 failed | 27 passed (28)",
+    "analytics": "48 passed (48)",
+    "api": "26 passed | 28 skipped (54)",
+    "auth": "1 failed | 49 passed (50)",
+    "brand": "2 failed | 36 passed (38)",
+    "data-integrity": "61 passed (61)",
+    "design-system": "4 failed | 18 passed (22)",
+    "entitlements": "10 failed | 8 passed (18)",
+    "field": "80 passed (80)",
+    "formatting": "6 passed (6)",
+    "forms": "24 passed (24)",
+    "images": "1 failed | 68 passed (69)",
+    "intelligence": "32 passed (32)",
+    "loading": "3 failed | 26 passed (29)",
+    "operations": "12 passed (12)",
+    "phase-08a": "12 failed | 78 passed | 12 skipped (102)",
+    "quality": "39 passed (39)",
+    "reports": "9 passed (9)",
+    "routing": "7 passed (7)",
+    "security": "10 passed (10)",
+    "trade": "1 failed | 232 passed (233)",
+    "ux": "7 failed | 25 passed (32)",
+    "rls": "no vitest file - SQL suite executed only by validate-migrations.mjs"
+  },
+  "migrations": {
+    "files_total": 50,
+    "applied": [
+      "0001_core_reference_schema.sql",
+      "0002_price_observations.sql",
+      "0003_customer_intelligence.sql",
+      "0004_content_audit_settings.sql",
+      "0005_row_level_security.sql",
+      "0006_publication_integrity_views.sql",
+      "0007_seed_reference_data.sql",
+      "0008_contact_enquiries.sql",
+      "0009_grants.sql",
+      "0010_operations_core.sql",
+      "0011_operations_functions.sql",
+      "0012_operations_rls.sql",
+      "0013_operations_completion.sql",
+      "0014_test_fixture_source_value.sql",
+      "0015_test_fixture_provenance.sql",
+      "0016_commercial_entitlements.sql",
+      "0017_quality_rules_at_submission.sql",
+      "0018_hatsi360_brand_refresh.sql",
+      "0019_field_evidence_and_corrections.sql",
+      "0020_field_draft_submission.sql",
+      "0021_field_collection_session.sql",
+      "0022_field_visit_coordinates.sql",
+      "0023_seed_commodity_grades.sql",
+      "0024_trade_analytical_tables.sql",
+      "0026_commercial_offers.sql",
+      "0027_offer_workflow.sql",
+      "0028_offer_status_permission_fix.sql",
+      "0029_analytical_tables_rls.sql",
+      "0030_trade_table_grants.sql",
+      "0031_offer_verification_events_read_fix.sql",
+      "0032_phase00_security_and_integrity.sql",
+      "0033_collection_activation.sql",
+      "0034_commodity_intelligence.sql",
+      "0035_intelligence_analytics_views.sql",
+      "0036_geographic_expansion.sql",
+      "0037_trade_blocs.sql",
+      "0038_hs_classification.sql",
+      "0039_international_trade_data.sql",
+      "0040_tariff_schedules.sql",
+      "0041_trade_data_sources.sql",
+      "0043_enforce_alert_entitlement.sql",
+      "0044_enforce_exports_entitlement.sql",
+      "0045_enforce_bulk_entitlement.sql",
+      "0046_stage3_enhanced_features.sql",
+      "0049_whatsapp_subscribers.sql"
+    ],
+    "skipped_in_harness": {
+      "0042_enforce_watchlist_entitlement.sql": "MIG-05",
+      "0046_demo_seed_core.sql": "MIG-06",
+      "0047_demo_seed_operations.sql": "MIG-06",
+      "0047_stage4_rfq_orders.sql": "MIG-07",
+      "0048_demo_seed_cleanup.sql": "MIG-06"
+    },
+    "duplicate_numbers": {
+      "0046": [
+        "0046_demo_seed_core.sql",
+        "0046_stage3_enhanced_features.sql"
+      ],
+      "0047": [
+        "0047_demo_seed_operations.sql",
+        "0047_stage4_rfq_orders.sql"
+      ]
+    },
+    "missing_numbers": [
+      "0025"
+    ],
+    "schema_after_run": {
+      "public_tables": 83,
+      "tables_with_rls": 77,
+      "rls_policies": 166,
+      "public_views": 7,
+      "tables_without_rls": [
+        "commodity_demand",
+        "commodity_production",
+        "commodity_supply",
+        "commodity_trade",
+        "evidence_sources",
+        "source_sync_events"
+      ]
+    }
+  },
+  "ci": {
+    "run_id": 45772656337,
+    "branch": "main",
+    "steps": {
+      "TypeScript type check": "success",
+      "ESLint": "failure",
+      "Test suite": "skipped",
+      "Production build": "skipped"
+    },
+    "conclusion": "failure",
+    "implication": "the production build has never executed in CI"
+  },
+  "not_verified": [
+    "hosted Supabase schema and row counts",
+    "applied migration state",
+    "deployed commit",
+    "NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS in Vercel",
+    "notification provider configuration",
+    "physical device rendering"
+  ]
+}
