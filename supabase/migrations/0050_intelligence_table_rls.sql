@@ -1,143 +1,147 @@
 -- ============================================================================
 -- Hatsi360 — 0050 Row Level Security for the commodity intelligence tables
 -- ============================================================================
--- Phase 1, item P1-A6 (audit finding SEC-01).
+-- Phase 1/2, audit finding SEC-01. Applied to production on 2026-11-26 after
+-- the hosted project was measured directly (docs/improvement/
+-- SUPABASE_RLS_VALIDATION.md), not assumed.
 --
--- 0034 created six tables, granted `select` on all of them to `authenticated`,
--- full DML to `service_role`, and never enabled Row Level Security. The audit
--- that applied the whole chain to an empty database caught it:
+-- Measured state before this migration:
 --
---     FAILED: tables without RLS: commodity_demand, commodity_production,
---             commodity_supply, commodity_trade, evidence_sources,
---             source_sync_events
+--   commodity_production   48 rows   RLS off   authenticated: DELETE, INSERT,
+--   commodity_supply       30 rows             REFERENCES, SELECT, TRIGGER,
+--   commodity_demand       30 rows             TRUNCATE, UPDATE
+--   commodity_trade        22 rows
+--   evidence_sources        7 rows
+--   source_sync_events      0 rows
 --
--- With RLS off, a table grant *is* the access control: any authenticated user
--- could read every row - production and supply series, trade flows, the
--- evidence catalogue and its sync log. Nothing is broken today only because
--- 0034 cannot parse (MIG-03), which means either those tables do not exist in
--- production or they exist ungoverned. Both need this migration.
+--   public tables 80, tables with RLS 74, policies 150.
 --
--- ── What "public" means for each table ──────────────────────────────────────
+-- With RLS off the grant *is* the access control, so any signed-in user could
+-- read, rewrite or TRUNCATE the intelligence series. TRUNCATE is the part that
+-- RLS does not fix on its own: row security is never applied to it, so it is
+-- revoked explicitly below.
 --
--- The four series tables carry a `verification_status`
--- ('imported' | 'verified' | 'questionable' | 'deprecated') and a `verified_at`.
--- That is the same idea as the price-observation lifecycle: a row becomes
--- public when a human has verified it, not when the import job wrote it.
---   * commodity_production / _supply / _demand / _trade : public read of
---     verified rows only; staff read everything (they are the ones verifying).
---   * evidence_sources : the source catalogue is attribution data and is
---     deliberately public for active sources - publishable provenance is the
---     point of it.
---   * source_sync_events : operational telemetry (fetch times, error text).
---     Staff only. It is not part of any published figure.
+-- ── What visibility is preserved, and why ───────────────────────────────────
 --
--- Consequence to be aware of: if a series has been imported but never verified,
--- it becomes invisible to anonymous readers after this migration. That is the
--- intended fail-closed behaviour, and it is the reason the predicate is written
--- down here rather than defaulted to "allow".
+-- All 130 series rows currently hold verification_status = 'imported'; none is
+-- verified. Gating public read on verification_status = 'verified' (as an
+-- earlier draft of this file did) would have emptied /intelligence and the v1
+-- intelligence endpoints the moment it was applied - a functional regression
+-- dressed as a security fix. Visibility therefore stays exactly as it is
+-- today for signed-in users, and writes are what changes:
 --
--- ── Grants ──────────────────────────────────────────────────────────────────
+--   series + evidence catalogue   any signed-in user  READ (unchanged)
+--   series + evidence catalogue   staff               WRITE (was: any user)
+--   source_sync_events            staff only          READ + WRITE
+--                                 (operational telemetry; it has no rows and
+--                                  only the admin intelligence pages read it)
 --
--- 0034 granted `select` to `authenticated` only, while /api/v1/intelligence/*
--- queries through the server client with the anon key for unauthenticated API
--- callers. Those routes therefore could not have returned rows for anonymous
--- callers even with RLS off. `anon` now receives `select` on the four series
--- tables and on the active source catalogue - verified rows only, by policy -
--- and nothing else. `service_role` keeps its `bypassrls` attribute and needs
--- no policy.
+-- Restricting published series to verified rows is a *publication* decision
+-- that belongs with the entitlement and publication work, and it needs the
+-- data to be verified first. It is recorded as an open item rather than being
+-- taken silently here.
 --
--- No existing grant is revoked, no row is modified, and every statement is
--- additive and re-runnable.
+-- ── Why writes are a staff policy and not a revoke ──────────────────────────
+--
+-- Ingestion (src/lib/intelligence/ingestion/*) writes through the server
+-- Supabase client, and POST /api/v1/intelligence/sync requires an authenticated
+-- administrator. Revoking INSERT/UPDATE/DELETE from `authenticated` would have
+-- broken the only legitimate writer. The grants stay; RLS restricts them to
+-- staff, which is the control that was missing.
+--
+-- `service_role` keeps its grants and BYPASSRLS attribute: it is the ETL and
+-- back-office role and is deliberately unaffected.
+--
+-- Additive and idempotent: every statement is `enable`/`revoke`/`drop ... if
+-- exists`/`create`. No row is modified, no column is changed, nothing is
+-- dropped.
 -- ============================================================================
 
--- ------------------------------------------------------------ the four series
+-- --------------------------------------------------------- 1. the four series
 
 alter table public.commodity_production enable row level security;
 alter table public.commodity_supply     enable row level security;
 alter table public.commodity_demand     enable row level security;
 alter table public.commodity_trade      enable row level security;
+alter table public.evidence_sources     enable row level security;
+alter table public.source_sync_events   enable row level security;
 
-drop policy if exists commodity_production_public_read on public.commodity_production;
-create policy commodity_production_public_read on public.commodity_production
-  for select to anon, authenticated
-  using (verification_status = 'verified');
+-- ------------------------------------- 2. revoke what RLS cannot protect
+-- TRUNCATE bypasses row security entirely; TRIGGER and REFERENCES let a grantee
+-- attach behaviour to the table or point a foreign key at it. None of the three
+-- is used by the application.
 
-drop policy if exists commodity_production_staff_read on public.commodity_production;
-create policy commodity_production_staff_read on public.commodity_production
-  for select to authenticated
-  using (public.is_staff());
+revoke truncate, trigger, references on public.commodity_production from authenticated, anon;
+revoke truncate, trigger, references on public.commodity_supply     from authenticated, anon;
+revoke truncate, trigger, references on public.commodity_demand     from authenticated, anon;
+revoke truncate, trigger, references on public.commodity_trade      from authenticated, anon;
+revoke truncate, trigger, references on public.evidence_sources     from authenticated, anon;
+revoke truncate, trigger, references on public.source_sync_events   from authenticated, anon;
 
-drop policy if exists commodity_supply_public_read on public.commodity_supply;
-create policy commodity_supply_public_read on public.commodity_supply
-  for select to anon, authenticated
-  using (verification_status = 'verified');
+-- ------------------------------------------------- 3. read policies (unchanged
+-- visibility for signed-in users, staff-only for the telemetry table)
 
-drop policy if exists commodity_supply_staff_read on public.commodity_supply;
-create policy commodity_supply_staff_read on public.commodity_supply
-  for select to authenticated
-  using (public.is_staff());
+drop policy if exists commodity_production_read on public.commodity_production;
+create policy commodity_production_read on public.commodity_production
+  for select to authenticated using (true);
 
-drop policy if exists commodity_demand_public_read on public.commodity_demand;
-create policy commodity_demand_public_read on public.commodity_demand
-  for select to anon, authenticated
-  using (verification_status = 'verified');
+drop policy if exists commodity_supply_read on public.commodity_supply;
+create policy commodity_supply_read on public.commodity_supply
+  for select to authenticated using (true);
 
-drop policy if exists commodity_demand_staff_read on public.commodity_demand;
-create policy commodity_demand_staff_read on public.commodity_demand
-  for select to authenticated
-  using (public.is_staff());
+drop policy if exists commodity_demand_read on public.commodity_demand;
+create policy commodity_demand_read on public.commodity_demand
+  for select to authenticated using (true);
 
-drop policy if exists commodity_trade_public_read on public.commodity_trade;
-create policy commodity_trade_public_read on public.commodity_trade
-  for select to anon, authenticated
-  using (verification_status = 'verified');
+drop policy if exists commodity_trade_read on public.commodity_trade;
+create policy commodity_trade_read on public.commodity_trade
+  for select to authenticated using (true);
 
-drop policy if exists commodity_trade_staff_read on public.commodity_trade;
-create policy commodity_trade_staff_read on public.commodity_trade
-  for select to authenticated
-  using (public.is_staff());
-
-grant select on public.commodity_production to anon;
-grant select on public.commodity_supply     to anon;
-grant select on public.commodity_demand     to anon;
-grant select on public.commodity_trade      to anon;
-
--- --------------------------------------------------------- the source catalogue
-
-alter table public.evidence_sources enable row level security;
-
-drop policy if exists evidence_sources_public_read on public.evidence_sources;
-create policy evidence_sources_public_read on public.evidence_sources
-  for select to anon, authenticated
-  using (is_active);
-
-drop policy if exists evidence_sources_staff_read on public.evidence_sources;
-create policy evidence_sources_staff_read on public.evidence_sources
-  for select to authenticated
-  using (public.is_staff());
-
-grant select on public.evidence_sources to anon;
-
--- ------------------------------------------------------------- the sync log
-
-alter table public.source_sync_events enable row level security;
+drop policy if exists evidence_sources_read on public.evidence_sources;
+create policy evidence_sources_read on public.evidence_sources
+  for select to authenticated using (true);
 
 drop policy if exists source_sync_events_staff_read on public.source_sync_events;
 create policy source_sync_events_staff_read on public.source_sync_events
-  for select to authenticated
-  using (public.is_staff());
+  for select to authenticated using (public.is_staff());
 
--- No anon grant: this is operational telemetry, not published intelligence.
+-- ------------------------------------------------------- 4. staff write access
 
--- ------------------------------------------------------------------ comments
+drop policy if exists commodity_production_staff_write on public.commodity_production;
+create policy commodity_production_staff_write on public.commodity_production
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
+
+drop policy if exists commodity_supply_staff_write on public.commodity_supply;
+create policy commodity_supply_staff_write on public.commodity_supply
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
+
+drop policy if exists commodity_demand_staff_write on public.commodity_demand;
+create policy commodity_demand_staff_write on public.commodity_demand
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
+
+drop policy if exists commodity_trade_staff_write on public.commodity_trade;
+create policy commodity_trade_staff_write on public.commodity_trade
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
+
+drop policy if exists evidence_sources_staff_write on public.evidence_sources;
+create policy evidence_sources_staff_write on public.evidence_sources
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
+
+drop policy if exists source_sync_events_staff_write on public.source_sync_events;
+create policy source_sync_events_staff_write on public.source_sync_events
+  for all to authenticated using (public.is_staff()) with check (public.is_staff());
+
+-- ------------------------------------------------------------------ 5. notes
 
 comment on table public.commodity_production is
-  'FAO/USDA-style production series. Public read is limited to verification_status = verified; staff see all rows.';
+  'FAO/USDA-style production series. Read: any signed-in user. Write: staff only. TRUNCATE revoked from authenticated.';
 comment on table public.commodity_supply is
-  'Supply series. Public read is limited to verification_status = verified; staff see all rows.';
+  'Supply series. Read: any signed-in user. Write: staff only. TRUNCATE revoked from authenticated.';
 comment on table public.commodity_demand is
-  'Demand series. Public read is limited to verification_status = verified; staff see all rows.';
+  'Demand series. Read: any signed-in user. Write: staff only. TRUNCATE revoked from authenticated.';
 comment on table public.commodity_trade is
-  'Bilateral trade flows. Public read is limited to verification_status = verified; staff see all rows.';
+  'Bilateral trade flows. Read: any signed-in user. Write: staff only. TRUNCATE revoked from authenticated.';
+comment on table public.evidence_sources is
+  'Source catalogue and attribution. Read: any signed-in user. Write: staff only. TRUNCATE revoked from authenticated.';
 comment on table public.source_sync_events is
-  'Ingestion telemetry. Staff-only: it describes how data was fetched, not what the data says.';
+  'Ingestion telemetry. Staff-only read and write: it describes how data was fetched, not what the data says.';

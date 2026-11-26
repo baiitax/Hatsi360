@@ -8,6 +8,19 @@
 | Evidence class | `hosted Supabase` — this is the first document in the programme whose claims are measured on the hosted project rather than inferred from the repository |
 | Mutations | **none.** No DDL, no DML, no credential change, no migration applied. |
 
+> **Resolution note (added 2026-11-26, after the audit).** The SEC-01 finding in
+> this document — six tables with RLS off and full `authenticated` DML including
+> `TRUNCATE` — was remediated in production under written authorisation as
+> migration `20261126224213_sec01_intelligence_table_rls`. All six now have RLS,
+> `TRUNCATE`/`TRIGGER`/`REFERENCES` are revoked from `authenticated`, and writes
+> are staff-gated. Project-wide RLS coverage went from 74/80 tables to **80/80**,
+> policies from 150 to 162, with row counts unchanged. Before/after evidence and
+> role-context verification are in `PHASE_2_OPERATIONAL_READINESS_REPORT.md` §3
+> and §5. The remainder of this document is the **pre-remediation** measurement
+> and is preserved unchanged as the evidence base the fix was written against;
+> the entitlement finding (§ the `has_entitlement` raise) is **still open** and
+> is reviewed separately in `ENTITLEMENT_REMEDIATION_REVIEW.md`.
+
 ## 1. Verdict
 
 The hosted project is **not** the schema this repository describes, and two of the divergences are security defects that are live right now:
