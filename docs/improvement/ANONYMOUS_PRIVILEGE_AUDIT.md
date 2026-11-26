@@ -311,7 +311,8 @@ Mitigations, in order of preference:
    audit's recommended monitoring query (§9.2) catches it in production.
 
 This is recorded, not concealed: the authorisation asked for both grantors to be
-addressed, and only one could be.
+addressed, and only one could be. §13 carries the raw evidence,
+the authority assessment and the prepared migration.
 
 **Post-application preflight review (2026-11-26)** formally recorded this as the
 single failing condition of the six-point checklist
@@ -338,6 +339,108 @@ alter default privileges for role postgres in schema public
 That is deliberately a *reversal*, not a recommendation: re-granting these
 privileges restores the SEC-class exposure the migration removed. It exists for
 completeness of the control set, not as an expected action.
+
+## 13. The second default-ACL grantor — `supabase_admin` (2026-11-26)
+
+§12 closed the grantor `postgres`. This section records the grantor that could
+not be closed, with the evidence that establishes why.
+
+### 13.1 Raw evidence, expanded
+
+`pg_default_acl` for schema `public`, object type `r`, expanded with
+`aclexplode` — **56 privilege rows, no grant options** (`is_grantable` false
+throughout). ACL strings are never quoted from transcription; `anwdDxtm` is not
+a table privilege code and appears in no document — it was an artefact of an
+earlier summary, and the expansion below is the only authority.
+
+| Grantor | Grantee | Raw element | Privileges |
+|---|---|---|---|
+| `postgres` | `anon` | `anon=arwd/postgres` | INSERT, SELECT, UPDATE, DELETE |
+| `postgres` | `authenticated` | `authenticated=arwd/postgres` | INSERT, SELECT, UPDATE, DELETE |
+| `postgres` | `service_role` | `service_role=arwdDxtm/postgres` | all 8 |
+| `postgres` | `postgres` | `postgres=arwdDxtm/postgres` | all 8 |
+| `supabase_admin` | `anon` | `anon=arwdDxtm/supabase_admin` | **all 8** |
+| `supabase_admin` | `authenticated` | `authenticated=arwdDxtm/supabase_admin` | **all 8** |
+| `supabase_admin` | `service_role` | `service_role=arwdDxtm/supabase_admin` | all 8 (legitimate) |
+| `supabase_admin` | `postgres` | `postgres=arwdDxtm/supabase_admin` | all 8 (legitimate) |
+
+PostgreSQL 17.11. So the exposure is the wide one — `arwdDxtm`, including
+TRUNCATE, REFERENCES, TRIGGER and MAINTAIN — for both browser-facing roles.
+
+### 13.2 Authority assessment
+
+| Fact | Value |
+|---|---|
+| Session role | `postgres`, `rolsuper = false` |
+| `supabase_admin` | `rolsuper = true`, `rolcanlogin = true` |
+| `pg_auth_members` rows for `supabase_admin` / `postgres` | 0 |
+| Tables in `public` owned by `supabase_admin` | 0 |
+
+Requirement: superuser, or membership in `supabase_admin`. Neither is available.
+The statement was run as a probe inside a transaction and rolled back:
+
+```
+ERROR: 42501: permission denied to change default privileges
+```
+
+No escalation, no role-switching, no unrelated service credential was used.
+**The blocker is authority, not the SQL.**
+
+### 13.3 Why six blanket revokes cannot reach it
+
+`REVOKE ... ON ALL TABLES` and `ALTER DEFAULT PRIVILEGES FOR ROLE postgres`
+both operate on the objects and grantor this session controls. A default ACL
+entry belongs to its grantor; only that grantor (or a superuser) may alter it.
+This is also why `0053` — correctly — handled one of the two grantors.
+
+### 13.4 Proposed additive migration, unapplied
+
+`supabase/proposed/0055_supabase_admin_default_privileges.sql`, outside
+`supabase/migrations/`. It revokes TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on
+tables from `anon` and `authenticated` for grantor `supabase_admin`, leaves
+INSERT/SELECT/UPDATE/DELETE and all of `postgres`/`service_role` alone,
+self-checks, and raises `42501` rather than silently no-opping when the caller
+lacks authority.
+
+Expected result: `anon` and `authenticated` move to `arwd`, exactly matching
+what `0053` produced for the `postgres` grantor. Existing object privileges are
+unaffected — default ACLs are forward-looking only.
+
+Recovery:
+
+```sql
+alter default privileges for role supabase_admin in schema public
+  grant truncate, references, trigger, maintain on tables to anon, authenticated;
+```
+
+### 13.5 Local validation
+
+`npm run verify:default-privileges` — 9/9 checks, three branches (role absent →
+no-op; role present with authority → exact revoke, legitimate grants preserved;
+role present without authority → `42501`), all inside rolled-back transactions
+on the throwaway replica. This proves the SQL is correct; it does not make it
+executable in production.
+
+### 13.6 What the residual exposes
+
+Zero public tables are owned by `supabase_admin`, so **nothing existing is
+exposed today**. A default ACL binds only future creations by its grantor: the
+exposure materialises when `supabase_admin` creates a table in `public`, and
+that table would carry anonymous TRUNCATE that RLS cannot refuse. Latent, not
+active — and therefore a decision, not an incident.
+
+### 13.7 Status
+
+| Item | State |
+|---|---|
+| Object privileges (§12) | closed and verified |
+| `postgres` default ACL | closed and verified |
+| `supabase_admin` default ACL | **open — no authorised executor** |
+| Proposal | prepared, reviewed, locally validated, unapplied |
+| Monitoring | replica gate only; no production watch for new `supabase_admin` tables |
+
+Summary: **partly closed, precisely scoped, and honestly reported.** The next
+action is a decision about the credential, not more SQL.
 
 ## Appendix A — full anonymous privilege inventory (production, 2026-11-26)
 

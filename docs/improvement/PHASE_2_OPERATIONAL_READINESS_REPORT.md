@@ -5,7 +5,7 @@
 | Date | 2026-11-26 |
 | Branch | `arena/990d7ace-hatsi360` |
 | Project | `umxzsdepbrenqysabtlt` (production) |
-| Status | SEC-01 remediated. Privilege Phase 1 **applied and re-verified** (`20261126225938`; preflight review §13 — one condition fails: `supabase_admin` defaults). Entitlement Stage 1 prepared (31/31 locally). Staging **BLOCKED** on plan cost (§10). Phase 2 (`0054`) ready, unapplied. |
+| Status | SEC-01 remediated. Privilege Phase 1 **applied and re-verified** (`20261126225938`; preflight review §13 — one condition fails: `supabase_admin` defaults, blocked §14). Entitlement Stage 1 prepared (31/31 locally). Staging **BLOCKED** on plan cost (§10). Phase 2 (`0054`) ready, unapplied. |
 | Release recommendation | **NOT_READY_FOR_PRODUCTION** |
 
 ## 1. What this report is
@@ -132,7 +132,7 @@ The three records still disagree, and this remediation did **not** fix that: the
 new migration is recorded in the CLI history and in the repository file
 `0050_intelligence_table_rls.sql`, but not in `_hatsi_migrations`, which has no
 row for anything after `0033`. Reconciling them is a separate task, and it is a
-prerequisite for reliable deploy or rollback (§16, blocker 4).
+prerequisite for reliable deploy or rollback (§17, blocker 4).
 
 **Exact identifier applied:** `20261126224213_sec01_intelligence_table_rls`
 (name `sec01_intelligence_table_rls`), executed as one transaction and reported
@@ -592,26 +592,190 @@ environment does not have. Until then, the residual is monitored: the revoke
 loop is idempotent and re-runnable, and `npm run verify:privileges` catches any
 reappearance in the replica.
 
-Decision required (§15, request 4): obtain that credential, or formally accept
+Decision required (§16, request 4): obtain that credential, or formally accept
 the residual with monitoring.
 
-## 14. Risk register (consolidated)
+## 14. Default-privilege evidence — the `supabase_admin` residual (Workstreams A–E)
+
+This section closes the evidence question left open by §13.1. It records what
+production actually holds, why this environment could not change it, the
+migration that *would* change it, and what was validated locally. Nothing in
+this section has been applied to production.
+
+### 14.1 Baseline
+
+| Fact | Value |
+|---|---|
+| Project | `umxzsdepbrenqysabtlt` |
+| PostgreSQL | **17.11** |
+| Session role | `postgres` — `rolsuper = false`, `rolbypassrls = true` |
+| `supabase_admin` | `rolsuper = **true**`, `rolcanlogin = true` |
+| Membership rows for `supabase_admin` / `postgres` in `pg_auth_members` | **0** |
+| Public tables owned by `supabase_admin` | **0** (single owner: `postgres`) |
+| Applied migration | `20261126225938` (`0053`), last in `list_migrations` |
+
+`pg_default_acl` holds two rows for schema `public`, object type `r`: one for
+grantor `postgres`, one for grantor `supabase_admin`. `0053` corrected the
+first. The second is unchanged.
+
+### 14.2 Raw ACL evidence
+
+Read from `pg_default_acl` and expanded with `aclexplode` — 56 rows total, no
+grant options (`is_grantable` false throughout). Privileges are never quoted
+from a transcribed string.
+
+| Grantor | Grantee | Raw array element | Expanded privileges |
+|---|---|---|---|
+| `postgres` | `anon` | `anon=arwd/postgres` | INSERT, SELECT, UPDATE, DELETE |
+| `postgres` | `authenticated` | `authenticated=arwd/postgres` | INSERT, SELECT, UPDATE, DELETE |
+| `postgres` | `service_role` | `service_role=arwdDxtm/postgres` | all 8 |
+| `postgres` | `postgres` | `postgres=arwdDxtm/postgres` | all 8 |
+| `supabase_admin` | `anon` | `anon=arwdDxtm/supabase_admin` | **all 8 — TRUNCATE, REFERENCES, TRIGGER, MAINTAIN included** |
+| `supabase_admin` | `authenticated` | `authenticated=arwdDxtm/supabase_admin` | **all 8** |
+| `supabase_admin` | `service_role` | `service_role=arwdDxtm/supabase_admin` | all 8 (legitimate) |
+| `supabase_admin` | `postgres` | `postgres=arwdDxtm/supabase_admin` | all 8 (legitimate) |
+
+**The `arwdDxtm` vs `anwdDxtm` discrepancy is closed.** `n` is not a table
+privilege code; `anwdDxtm` appears in no workspace document and is not valid
+syntax. It was a transcription artefact introduced by an earlier chat summary,
+never production state. The expansion above is the authority, and it confirms
+`arwdDxtm` — the wide grant, not a narrower one.
+
+### 14.3 Execution authority — the blocker
+
+`ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin` requires superuser or
+membership in that role. This session has neither, and the statement says so:
+
+```
+alter default privileges for role supabase_admin in schema public
+  revoke truncate, references, trigger, maintain on tables from anon, authenticated;
+
+ERROR: 42501: permission denied to change default privileges
+```
+
+The probe was wrapped in a transaction and rolled back; production state is
+unchanged. `supabase_admin` is a superuser role the platform controls, the
+`postgres` session role is not a member of it, and there is no role-switching
+path through the connector. No escalation was attempted and no unrelated
+service credential was used, per instruction.
+
+**Workstream B verdict: no authorised execution path exists from this
+environment.** Workstream C is therefore gated, not skipped for convenience.
+
+### 14.4 Proposed remediation — `0055`, prepared and unapplied
+
+`supabase/proposed/0055_supabase_admin_default_privileges.sql`, kept outside
+`supabase/migrations/` so it cannot enter the active chain. `0053` is applied
+and is not edited. The proposal:
+
+- revokes **TRUNCATE, REFERENCES, TRIGGER, MAINTAIN** on tables from `anon` and
+  `authenticated`, for grantor `supabase_admin`, schema `public` — the four
+  privileges RLS cannot police;
+- preserves INSERT/SELECT/UPDATE/DELETE defaults, and all of `postgres`'s and
+  `service_role`'s defaults, including TRUNCATE;
+- **fails loudly** with `42501` if the caller lacks authority, rather than
+  reporting success while doing nothing — a migration that no-ops silently is
+  worse than one that fails;
+- self-checks afterwards and raises if any excess privilege survives.
+
+### 14.5 Before and after (expected)
+
+| Grantee | Before | After |
+|---|---|---|
+| `anon` | arwdDxtm | **arwd** |
+| `authenticated` | arwdDxtm | **arwd** |
+| `service_role` | arwdDxtm | arwdDxtm (unchanged) |
+| `postgres` | arwdDxtm | arwdDxtm (unchanged) |
+
+This puts the `supabase_admin` grantor in exactly the state `0053` produced for
+the `postgres` grantor. Existing object privileges are untouched: the change
+applies only to tables created *after* it runs.
+
+### 14.6 Recovery
+
+```sql
+alter default privileges for role supabase_admin in schema public
+  grant truncate, references, trigger, maintain on tables
+  to anon, authenticated;
+```
+
+Restores the prior default ACL. Nothing is retroactive in either direction, so
+recovery cannot affect an existing table.
+
+### 14.7 Local validation
+
+`npm run verify:default-privileges` (new, `supabase/tests/default-privilege-guard.mjs`)
+exercises the proposal on the throwaway replica, every branch inside a rolled-back
+transaction. **9/9 checks pass:**
+
+| Branch | Check | Result |
+|---|---|---|
+| role absent | proposal is a no-op, creates no default ACL | PASS |
+| role present + authority | reproduction matches production's 8-privilege ACL | PASS |
+| role present + authority | `anon` and `authenticated` reduced to INSERT/SELECT/UPDATE/DELETE | PASS |
+| role present + authority | no TRUNCATE/REFERENCES/TRIGGER/MAINTAIN left for browser roles | PASS |
+| role present + authority | `postgres` and `service_role` keep TRUNCATE | PASS |
+| role present, no authority | raises `42501` instead of skipping | PASS |
+
+Full gate run at this commit: `verify:migrations` PASS (89 tables, 89 with RLS,
+222 RLS statements, 346 workflow statements, no leftover rows) ·
+`verify:privileges` **14/14** · `verify:entitlements` **31/31** ·
+`verify:default-privileges` **9/9** · `tsc --noEmit` clean.
+
+Local validation is not production acceptance. Branch 2 proves the SQL is
+correct; it does not prove it can run where it needs to run.
+
+### 14.8 What the residual actually exposes
+
+Scoped honestly, because the severity matters: a default ACL applies only to
+objects created **by its grantor**. All 80 public tables are owned by
+`postgres`, and **zero** are owned by `supabase_admin`. So:
+
+- **today**, nothing is exposed by this row — object privileges were verified
+  unchanged (anon TRUNCATE 0, authenticated TRUNCATE 0, `service_role`
+  TRUNCATE 80, anon SELECT 73 tables + 2 views);
+- the exposure is **latent**: it materialises the moment `supabase_admin` (a
+  superuser the platform uses) creates a table in `public`, and that table
+  would be carry anonymous TRUNCATE that no policy can refuse.
+
+That is why risk 3a is Medium rather than High, and why the correct disposition
+is either a credential or a formal acceptance with monitoring — not a claim
+that it is closed.
+
+### 14.9 Outstanding risks
+
+1. No credential holding `supabase_admin` exists in this environment; the
+   proposal cannot be executed here at all.
+2. The residual is unmonitored in production. `verify:privileges` watches the
+   replica; nothing watches for a `supabase_admin`-created table appearing in
+   `public`.
+3. The existing object-privilege surface was verified, not re-baselined: a new
+   table created between now and the next audit would not appear in this
+   record.
+4. Reconciliation of migration records remains untouched and out of scope.
+
+**Decision required (§16, request 4):** obtain a credential that is a member of
+`supabase_admin` so `0055` can be applied, or formally accept the residual with
+monitoring. Neither is a release decision, and both are compatible with
+`NOT_READY_FOR_PRODUCTION`.
+
+## 15. Risk register (consolidated)
 
 | # | Risk | Severity | Status / next step |
 |---|---|---|---|
 | 1 | Entitlement resolver raises in production; every client user silently receives zero entitlements | **High** (latent — 0 subscriptions) | Stage 1 prepared, 31/31 locally; **blocked on staging** |
 | 2 | `anon`/`authenticated` held TRUNCATE/REFERENCES/TRIGGER on 73 public tables | ~~High~~ | **CLOSED 2026-11-26** — `20261126225938`, verified 73 → 0 |
 | 3 | `anon` still holds INSERT/UPDATE/DELETE on 73 tables, denied only by policy | Medium | Phase 2 `0054` ready for review; application needs staging |
-| 3a | `supabase_admin` default ACL still grants `arwdDxtm` to `anon` (§11.4, §13.1) — the one failing 0053 preflight condition | Medium | needs a `supabase_admin` credential; monitoring catches reappearance; decision open (§15.4) |
+| 3a | `supabase_admin` default ACL still grants `arwdDxtm` to `anon` (§11.4, §13.1, §14.2) — the one failing 0053 preflight condition | Medium | **latent only** — 0 tables owned by `supabase_admin` (§14.8); `0055` prepared and 9/9 locally (§14.4–§14.7); no authorised executor (§14.3); decision open (§16.4) |
 | 4 | Ten `{public}`-scoped write policies | Medium | Phase 3 proposed |
-| 5 | No staging project — blocks entitlement acceptance, Phase 2, and P2.2–P2.6 | **High** | free-tier limit; approval requested (§15, request 1) |
+| 5 | No staging project — blocks entitlement acceptance, Phase 2, and P2.2–P2.6 | **High** | free-tier limit; approval requested (§16, request 1) |
 | 6 | Migration records disagree (CLI 7 / ledger 32 / repo 51+1) | Medium | not reconciled by design; needs a separate approved plan |
 | 7 | Lint gate red (43 errors / 171 warnings) | Medium | CI cannot enforce the passing build |
 | 8 | Publication integrity: all series rows are `imported`, nothing prevents unverified rendering | Medium | open |
 | 9 | Staging HTTP/JWT/Vercel verification impossible from this environment | Medium | needs operator-run pass or networked environment |
-| 10 | `supabase_admin` default privileges outside Phase 1's reach | Low | residual, documented |
+| 10 | `supabase_admin` default privileges outside Phase 1's reach | Low | residual, documented in §14; latent, not active |
 
-## 15. Approval requests (separate, in priority order)
+## 16. Approval requests (separate, in priority order)
 
 1. **Staging capacity** — choose one: Pro at ≈ **$35/month** (≈ $420/year) for
    production + staging; the local Supabase Docker stack at $0 if Docker is
@@ -622,17 +786,21 @@ the residual with monitoring.
 3. **Privilege Phase 2 to staging, then production** — `0054`, ready for
    independent review; needs a staging run of the anonymous read surface.
 4. **`supabase_admin` default ACL** — the single failing preflight condition
-   (§13.1, §13.5). Requires a credential holding that role; this environment
-   cannot do it, and `0053` cannot be edited because it is applied. Decide:
-   obtain the credential for a follow-up migration, or formally accept the
-   residual with monitoring.
+   (§13.1, §13.5). Evidence in §14: the operation returns
+   `42501 permission denied to change default privileges`, because
+   `supabase_admin` is a superuser this session is not a member of. `0055` is
+   prepared and validated locally (9/9) but **cannot be executed from here**;
+   `0053` cannot be edited because it is applied. Decide: obtain a credential
+   that is a member of `supabase_admin` so `0055` can be applied, or formally
+   accept the residual — which is latent, since 0 public tables are owned by
+   that role — with production monitoring.
 5. **Phase 3 (policy scoping)** and **`0042`–`0045`** — not requested.
 
-**Already done this turn, no further approval needed:** Phase 1 (`0053`) applied
-and verified; the `assert_no_rows_affected` change plus its three self-tests;
-`0054` prepared outside the chain.
+**Already done, no further approval needed:** Phase 1 (`0053`) applied and
+verified; the `assert_no_rows_affected` change plus its three self-tests;
+`0054` and `0055` prepared outside the chain, both unapplied.
 
-## 16. Operational metrics — definitions, ready to run
+## 17. Operational metrics — definitions, ready to run
 
 P2.5 asks for ten operational metrics from real records. Definitions are the
 queries; ✅ marks those already run against production.
@@ -651,7 +819,7 @@ queries; ✅ marks those already run against production.
 | 10 | Data-quality findings | `observation_quality_findings`, `data_quality_flags` | pending |
 | 11 | Failed scheduled jobs | `scheduled_job_runs where status='failed'` | pending — the runner has never been executed in production |
 
-## 17. The five outstanding Phase 2 documents
+## 18. The five outstanding Phase 2 documents
 
 | Document | Blocked on | What can already be stated |
 |---|---|---|
@@ -661,7 +829,7 @@ queries; ✅ marks those already run against production.
 | `OPERATIONAL_MONITORING_REPORT.md` | error-tracking decision | No error tracking, health endpoint or structured logging; §9 is the skeleton |
 | `PHASE_2_OPERATIONAL_READINESS_REPORT.md` | — | this document |
 
-## 18. Blockers, in priority order
+## 19. Blockers, in priority order
 
 1. ~~Six ungoverned tables with full DML for `authenticated`~~ — **closed**
    2026-11-26, migration `20261126224213_sec01_intelligence_table_rls`,
@@ -672,7 +840,7 @@ queries; ✅ marks those already run against production.
 3. **No staging project, and provisioning is blocked on capacity** — the free
    tier allows 2 active projects and both slots are taken, so `hatsi360-staging`
    could not be created (§10). Blocks P2.2–P2.5, entitlement acceptance, and
-   Phase 2 of the privilege remediation. Approval requested (§15, request 1).
+   Phase 2 of the privilege remediation. Approval requested (§16, request 1).
 4. **Migration records disagree** (8 / 32 / 52) — blocks reliable deploy and
    rollback.
 5. **Lint gate red** (43 errors / 171 warnings) — CI cannot pass, so the passing
@@ -688,7 +856,7 @@ queries; ✅ marks those already run against production.
 9. **`supabase_admin` default ACL** still grants the full set to `anon` (§11.4) —
    outside this environment's credentials.
 
-## 19. Release recommendation
+## 20. Release recommendation
 
 > **NOT_READY_FOR_PRODUCTION**
 
@@ -703,11 +871,11 @@ rest have not, and closing one defect does not make the platform releasable:
 - the lint gate is red, so CI is not protecting any of the above;
 - the wider grant defect is **partly** closed: unpoliced privileges are gone
   (§11.3), but `anon` still holds INSERT/UPDATE/DELETE on 73 tables and
-  `supabase_admin`'s default ACL is unchanged (§11.4);
+  `supabase_admin`'s default ACL is unchanged and unreachable from here (§11.4, §14);
 - the environment that would let these fixes be proven does not exist, and
   cannot be created without a decision on capacity (§10).
 
-Three decisions would move this report forward, all recorded in §13: resolve the
+Three decisions would move this report forward, all recorded in §16: resolve the
 staging capacity limit, approve Phase 1 of the privilege remediation, and approve
 the Phase 2 test change. None of them is a release decision.
 
