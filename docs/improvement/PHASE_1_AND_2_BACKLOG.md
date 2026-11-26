@@ -6,6 +6,19 @@
 | Derived from | `PHASE_0_BASELINE_AUDIT.md`, `DATABASE_AND_MIGRATION_AUDIT.md`, `SECURITY_BASELINE.md`, `PRODUCTION_READINESS_BASELINE.md`, `FEATURE_IMPLEMENTATION_MATRIX.md` |
 | Rule | Every item is reversible and executes without approval, **except** those flagged `STOP` (stop-and-ask list). |
 
+## Session 2 status (stabilization + Phase 2.1)
+
+| Item | State |
+|---|---|
+| `P2-7` eight/nineteen application regressions | **done** — tests 42 failing → 23, all remaining environment-only |
+| `P2-8` chart conditional hooks | **done** (`d8f5999`) |
+| `P0-2` build gate | **done, build strategy fixed** — fonts vendored, `next build` exit 0 offline |
+| `P2-10` CI green | **not done** — lint 43 errors / 171 warnings; tests and build now pass, so lint is the only blocker |
+| `P1` hosted schema (P2.1) | **done** — measured on the hosted project; see `SUPABASE_RLS_VALIDATION.md` |
+| `P1-A6` apply `0050` to production | **awaiting approval** (live unauthorised-write path) |
+| `0052` + `0042`–`0045` to production | **awaiting approval** (`has_entitlement` raises) |
+| `P2-2` … `P2-6` | **blocked** — no staging project |
+
 ## Status at the end of this session
 
 | Item | State | Commit |
