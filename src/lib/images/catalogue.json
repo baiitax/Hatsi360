@@ -637,6 +637,18 @@
       "role": "ui",
       "decorative": true,
       "representation": "representative"
+    },
+    "hero.golden-harvest": {
+      "source": "hero-golden-harvest.jpg",
+      "folder": "hero",
+      "name": "golden-harvest",
+      "width": 1672,
+      "height": 941,
+      "alt": "A maize field at sunrise with grain silos, a loaded lorry and a tractor at a farm estate.",
+      "subject": "Maize field at golden hour in front of grain silos and a loading yard",
+      "licence": "Hatsi360 original asset — generated editorial illustration supplied for the homepage hero. The generating source is not recorded in this repository, so the rights should be confirmed before the image is used outside Hatsi360.",
+      "credit": "Hatsi360",
+      "role": "hero"
     }
   },
   "$ids": "The canonical catalogue identifiers from src/data/seed/reference-data.ts, mirrored here so the registry can be keyed by commodity id and market id as well as by slug. tests/images/registry.test.ts asserts that these maps agree with the canonical catalogue exactly.",
@@ -732,7 +744,7 @@
     "cash-crops-fallback": "commodity.gum-arabic"
   },
   "pages": {
-    "home.hero": "hero.market-warehouse",
+    "home.hero": "hero.golden-harvest",
     "home.categories": "hero.harvest-field",
     "home.coverage": "hero.aggregation-yard",
     "home.insights": "insights.sustainable-farming",

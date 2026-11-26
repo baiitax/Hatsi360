@@ -28,6 +28,7 @@ import {
   CommodityDetailModal,
   type CommodityDetail,
 } from '@/components/homepage/CommodityDetailModal';
+import { formatRelative } from '@/lib/money';
 
 /* ---------------------------------------------------------------- types --- */
 
@@ -428,7 +429,12 @@ function MarketWatchTableRow({
       <td className="px-5 py-3.5">
         <div className="flex items-center gap-1.5 text-[0.75rem] text-gray-500">
           <IconClock className="size-3.5 text-gray-400" />
-          {row.observedAt ? formatRelative(row.observedAt) : '—'}
+          {row.observedAt ? (
+            // A clock reading: the server's stand rather than a rebuild.
+            <span suppressHydrationWarning>{formatRelative(row.observedAt)}</span>
+          ) : (
+            '—'
+          )}
         </div>
       </td>
     </tr>
@@ -584,17 +590,4 @@ function getVerificationConfig(status: string) {
   }
 }
 
-function formatRelative(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return 'unknown';
-  const now = Date.now();
-  const diff = now - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString('en-NG', { day: '2-digit', month: 'short' });
-}
+

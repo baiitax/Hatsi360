@@ -318,7 +318,9 @@ describe('market matching', () => {
 describe('page and article images', () => {
   it('resolves the homepage hero', () => {
     const hero = getPageImage('home.hero');
-    expect(hero.id).toBe('hero.market-warehouse');
+    // The hero is deliberately a sunrise maize estate from here on; the sack
+    // yard remains registered (and used by other pages) under its own id.
+    expect(hero.id).toBe('hero.golden-harvest');
     expect(hero.role).toBe('hero');
     expect(hero.alt).toBeTruthy();
   });

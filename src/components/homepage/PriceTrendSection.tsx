@@ -10,6 +10,7 @@
 
 'use client';
 
+import { SITE_TIME_ZONE } from '@/lib/money';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { IconTrendingUp, IconTrendingDown, IconArrowRight } from '@/components/ui/icons';
@@ -193,7 +194,7 @@ export function PriceTrendSection({ commodities }: Props) {
                           className="text-[10px]"
                           fill="#9CA3AF"
                         >
-                          {new Date(date).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' })}
+                          {new Date(date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', timeZone: SITE_TIME_ZONE })}
                         </text>
                       );
                     })}

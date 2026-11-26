@@ -11,9 +11,25 @@ import { ROUTE_ALIASES } from './src/lib/route-map';
  *  2. Security headers. The legacy site served everything over plain HTTP
  *     with no CSP; this one does not.
  */
+/**
+ * Development-only preview origins.
+ *
+ * A remote preview (a sandbox or a tunnel) serves the app from a host other
+ * than localhost, and Next.js refuses cross-origin requests for its dev assets
+ * unless that host is named here. Has no effect on a production build.
+ */
+const previewDevOrigins = (process.env.NEXT_PUBLIC_PREVIEW_HOSTS ?? '')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean);
+
+const isProductionBuild = process.env.NODE_ENV === 'production';
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+
+  ...(isProductionBuild ? {} : { allowedDevOrigins: ['*.e2b.app', ...previewDevOrigins] }),
   /**
    * Image delivery.
    *
@@ -40,7 +56,11 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'X-Frame-Options', value: 'DENY' },
+          /*
+           * Framing is refused in production. In development it is omitted so
+           * a remote preview can embed the app; the deployed build keeps DENY.
+           */
+          ...(isProductionBuild ? [{ key: 'X-Frame-Options', value: 'DENY' }] : []),
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',

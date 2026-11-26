@@ -22,6 +22,7 @@ import {
   IconTrendingDown,
   IconClock,
 } from '@/components/ui/icons';
+import { formatRelative } from '@/lib/money';
 
 /* =========================================================== Types ===== */
 
@@ -103,17 +104,7 @@ function formatPrice(amount: number | null, currency: string): string {
 }
 
 function formatRelativeTime(isoString: string | null): string {
-  if (!isoString) return '';
-  const then = new Date(isoString).getTime();
-  if (Number.isNaN(then)) return '';
-  const now = Date.now();
-  const mins = Math.round((now - then) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.round(hrs / 24);
-  return `${days}d ago`;
+  return isoString ? formatRelative(isoString) : '';
 }
 
 function formatPercentage(pct: number | null): string {
