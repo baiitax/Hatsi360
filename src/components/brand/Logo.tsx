@@ -32,11 +32,11 @@ export const BRAND_ARTWORK = {
   /** The full lockup in a single light ink, for dark surfaces. */
   horizontalMonoLight: '/brand/hatsi360-logo-horizontal-mono-light.png',
   /** The mark and the name, for a header. */
-  compact: '/brand/hatsi360-logo-horizontal.png',
+  compact: '/brand/hatsi360-lockup-compact.png',
   /** The mark and the name, reversed for dark surfaces. */
-  compactLight: '/brand/hatsi360-logo-horizontal-light.png',
+  compactLight: '/brand/hatsi360-lockup-compact-light.png',
   /** The mark and the name in a single ink, for light surfaces. */
-  compactMono: '/brand/hatsi360-logo-horizontal-mono.png',
+  compactMono: '/brand/hatsi360-lockup-compact-mono.png',
   /** The mark on its own, for light surfaces. */
   mark: '/brand/hatsi360-mark.png',
   /** The mark reversed for dark surfaces. */

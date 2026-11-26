@@ -34,6 +34,7 @@ import {
 } from '@/components/market/MarketOverview';
 import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/marketing/StructuredData';
 import { DataCoverageNotice } from '@/components/data/DataCoverageNotice';
+import { getCommodityImage as getCommodityImageFromRegistry } from '@/lib/images/registry';
 import { ProfessionalMarketWatch, type MarketWatchRow } from '@/components/homepage/ProfessionalMarketWatch';
 import { PriceTracker, type PriceTrackerCommodity } from '@/components/homepage/PriceTracker';
 import { PriceTrendSection, type TrendCommodity } from '@/components/homepage/PriceTrendSection';
@@ -678,29 +679,15 @@ function generateSparkline(start: number, end: number, points: number): number[]
   return result;
 }
 
-/** Map commodity slugs to their public image paths. */
-const COMMODITY_IMAGE_MAP: Record<string, string> = {
-  'maize-white': '/images/hatsi360/commodities/maize-white.jpg',
-  'maize-yellow': '/images/hatsi360/commodities/maize-yellow.jpg',
-  'paddy-rice': '/images/hatsi360/commodities/paddy-rice.jpg',
-  'local-rice': '/images/hatsi360/commodities/local-rice.jpg',
-  'imported-rice': '/images/hatsi360/commodities/imported-rice.jpg',
-  'sorghum-white': '/images/hatsi360/commodities/sorghum-white.jpg',
-  'sorghum-red': '/images/hatsi360/commodities/sorghum-red.jpg',
-  'millet': '/images/hatsi360/commodities/millet.jpg',
-  'wheat': '/images/hatsi360/commodities/wheat.jpg',
-  'groundnut': '/images/hatsi360/commodities/groundnut.jpg',
-  'soya-beans': '/images/hatsi360/commodities/soya-beans.jpg',
-  'sesame-seed': '/images/hatsi360/commodities/sesame-seed.jpg',
-  'bambara-nuts': '/images/hatsi360/commodities/bambara-nuts.jpg',
-  'brown-beans-oloyin': '/images/hatsi360/commodities/brown-beans-oloyin.jpg',
-  'white-beans': '/images/hatsi360/commodities/white-beans.jpg',
-  'sweet-potato': '/images/hatsi360/commodities/sweet-potato.jpg',
-  'dried-ginger': '/images/hatsi360/commodities/dried-ginger.jpg',
-  'dried-chilli-pepper': '/images/hatsi360/commodities/dried-chilli-pepper.jpg',
-  'gum-arabic': '/images/hatsi360/commodities/gum-arabic.jpg',
-};
-
+/**
+ * The commodity photograph comes from the image registry.
+ *
+ * A served path may appear in exactly one place - `src/lib/images/registry.ts` -
+ * because that registry is what carries the provenance, the licence and the alt
+ * text for every asset. This page used to keep its own slug-to-path map, which
+ * meant the same photograph could be renamed in one place and silently 404 in
+ * the other, and the registry tests caught it.
+ */
 function getCommodityImage(slug: string): string | undefined {
-  return COMMODITY_IMAGE_MAP[slug];
+  return getCommodityImageFromRegistry(slug).src;
 }

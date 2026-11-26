@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Manrope } from 'next/font/google';
+import localFont from 'next/font/local';
 import { BRAND, CONTACT } from '@/lib/brand';
 import { getSiteUrl } from '@/lib/supabase/config';
 import { HatsiGlobalPreloader } from '@/components/loading/HatsiGlobalPreloader';
@@ -9,25 +9,39 @@ import { HatsiLoadingProvider } from '@/components/loading/HatsiLoadingProvider'
 import './globals.css';
 
 /**
- * Two families, both self-hosted by next/font at build time — no third-party
- * font request reaches a field agent's phone.
+ * Two families, both served from this repository — no third-party font request
+ * reaches a field agent's phone, and the production build needs no network.
  *
  *  - Inter carries the interface and the numbers. Its tabular figures keep
  *    price columns aligned.
  *  - Manrope carries the editorial voice: a humanist sans with wide apertures
  *    that reads as an intelligence publication rather than a trading desk.
+ *
+ * These used to be `next/font/google`, which downloads the family from
+ * fonts.googleapis.com during the build. That made the build non-reproducible:
+ * offline, behind a proxy, or with Google Fonts unreachable and `next build`
+ * fails before a single route is compiled — which is exactly what happened in
+ * the audit environment. The two variable woff2 files are now vendored under
+ * `src/app/fonts/` (73 KB total) with their OFL licences beside them, and
+ * `next/font/local` gives the same self-hosting, subsetting and `display: swap`
+ * behaviour with no external dependency.
  */
-const inter = Inter({
-  subsets: ['latin'],
+const inter = localFont({
+  src: './fonts/inter-variable-latin.woff2',
+  weight: '100 900',
   variable: '--font-inter',
   display: 'swap',
+  fallback: ['system-ui', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+  adjustFontFallback: 'Arial',
 });
 
-const manrope = Manrope({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+const manrope = localFont({
+  src: './fonts/manrope-variable-latin.woff2',
+  weight: '200 800',
   variable: '--font-manrope',
   display: 'swap',
+  fallback: ['system-ui', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+  adjustFontFallback: 'Arial',
 });
 
 const siteUrl = getSiteUrl();

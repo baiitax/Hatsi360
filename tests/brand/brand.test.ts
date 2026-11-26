@@ -160,6 +160,12 @@ describe('brand assets', () => {
     'hatsi360-apple-touch-icon.png',
     'hatsi360-social-1200x630.png',
     'hatsi360-wordmark.png',
+    // Supplied photography and the full lockup. Neither is a variant derived by
+    // `scripts/brand_assets.py`, but both are served from /brand, so the
+    // inventory has to name them or the "no unlisted asset" rule cannot hold.
+    'hatsi360-hero.png',
+    'hatsi360-lockup-full.png',
+    'hatsi360-social-preview.png',
   ];
 
   it('ships every variant of the logo system', () => {

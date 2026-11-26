@@ -33,6 +33,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         userEmail={profile?.email ?? null}
         workspaceHref={workspaceHref}
         freshness={summary.freshness}
+        coverageLine={summary.coverageLine}
       />
       <main className="flex-1">
         {children}

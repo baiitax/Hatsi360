@@ -140,7 +140,7 @@ export function HatsiGlobalPreloader() {
             {/* The full brand lockup — emblem, HATSI360, subtitle, underline, and "Powered by Pluck Agro". */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/hatsi360-lockup-full.png"
+              src="/brand/hatsi360-mark-light.png"
               alt="Hatsi360 — Agricultural Market Intelligence. Powered by Pluck Agro."
               width={220}
               height={80}
@@ -177,6 +177,9 @@ export function HatsiGlobalPreloader() {
           <div className="hatsi-boot__bar" aria-hidden="true">
             <span className="hatsi-boot__bar-fill" />
           </div>
+          {/* The caption states what the wait is for. It is not a progress
+              claim: the bar beside it carries the progress. */}
+          <p className="hatsi-boot__caption">Connecting to agricultural intelligence…</p>
 
           {/*
             The recovery panel. It appears only if the application has not

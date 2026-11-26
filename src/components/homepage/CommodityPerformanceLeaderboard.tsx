@@ -44,7 +44,7 @@ export interface CommodityPerformanceData {
   verificationStatus: string;
   /** Seven daily median prices for sparkline (oldest → newest). */
   dailyHistory: { date: string; value: number }[];
-  /** Commodity image path (e.g. '/images/hatsi360/commodities/maize-white.jpg'). */
+  /** Commodity image path, as resolved by the image registry. */
   imageUrl?: string;
 }
 

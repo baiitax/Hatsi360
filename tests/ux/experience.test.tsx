@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { CollectionFlow } from '@/components/agent/CollectionFlow';
+import { CollectionFlow, COLLECTION_STORAGE_KEYS } from '@/components/agent/CollectionFlow';
 import { CentralSignInForm } from '@/components/forms/CentralSignInForm';
 import { DataTable } from '@/components/ops/DataTable';
 import { KpiCard } from '@/components/ops/KpiCard';
@@ -126,7 +126,7 @@ describe('the collection flow', () => {
     renderFlow();
     fireEvent.click(screen.getByLabelText(/Dawanau International Grains Market/));
     await waitFor(() => {
-      const draft = window.localStorage.getItem('pluck-live.collection-draft');
+      const draft = window.localStorage.getItem(COLLECTION_STORAGE_KEYS.draft);
       expect(draft).toBeTruthy();
       expect(JSON.parse(draft as string).marketId).toBe(1);
     });
@@ -134,7 +134,7 @@ describe('the collection flow', () => {
 
   it('restores a saved draft and says that it did', async () => {
     window.localStorage.setItem(
-      'pluck-live.collection-draft',
+      COLLECTION_STORAGE_KEYS.draft,
       JSON.stringify({ marketId: 2, commodityId: null, priceType: 'farmgate', unitId: null, amount: '', packageWeightKg: '', packageCount: '', collectedAt: '2026-10-22T09:00', notes: '', taskId: null, idempotencyKey: 'pl-existing' }),
     );
 
@@ -156,7 +156,7 @@ describe('the collection flow', () => {
       expect(screen.getByText(/There is no connection/)).toBeTruthy();
     });
 
-    const queue = JSON.parse(window.localStorage.getItem('pluck-live.pending-submissions') as string);
+    const queue = JSON.parse(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.queue) as string);
     expect(queue).toHaveLength(1);
     expect(queue[0].amount).toBe('40550');
     expect(queue[0].idempotencyKey).toMatch(/^pl-/);
@@ -170,9 +170,9 @@ describe('the collection flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send for verification' }));
 
     await waitFor(() => {
-      expect(window.localStorage.getItem('pluck-live.pending-submissions')).toBeTruthy();
+      expect(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.queue)).toBeTruthy();
     });
-    const firstKey = JSON.parse(window.localStorage.getItem('pluck-live.pending-submissions') as string)[0]
+    const firstKey = JSON.parse(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.queue) as string)[0]
       .idempotencyKey;
 
     // The connection comes back.
@@ -184,7 +184,7 @@ describe('the collection flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try sending again' }));
 
     await waitFor(() => {
-      expect(window.localStorage.getItem('pluck-live.pending-submissions')).toBeNull();
+      expect(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.queue)).toBeNull();
     });
 
     const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.at(-1);
@@ -205,7 +205,7 @@ describe('the collection flow', () => {
     await waitFor(() => {
       expect(screen.getByText(/not assigned to you/)).toBeTruthy();
     });
-    expect(window.localStorage.getItem('pluck-live.pending-submissions')).toBeTruthy();
+    expect(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.queue)).toBeTruthy();
   });
 
   it('clears the draft and confirms only after the server accepts the price', async () => {
@@ -221,7 +221,7 @@ describe('the collection flow', () => {
     await waitFor(() => {
       expect(screen.getByText(/waiting for verification/i)).toBeTruthy();
     });
-    expect(window.localStorage.getItem('pluck-live.collection-draft')).toBeNull();
+    expect(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.draft)).toBeNull();
   });
 
   it('warns when the chosen unit does not state a measure', async () => {
@@ -243,19 +243,19 @@ describe('the collection flow', () => {
     renderFlow();
     await goToReview();
 
-    const before = JSON.parse(window.localStorage.getItem('pluck-live.collection-draft') as string)
+    const before = JSON.parse(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.draft) as string)
       .idempotencyKey;
 
     fireEvent.click(screen.getByRole('button', { name: 'Collect another commodity here' }));
 
     await waitFor(() => {
-      const after = JSON.parse(window.localStorage.getItem('pluck-live.collection-draft') as string)
+      const after = JSON.parse(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.draft) as string)
         .idempotencyKey;
       expect(after).not.toBe(before);
     });
 
     // The market and the price type are kept, so only one number is typed.
-    const draft = JSON.parse(window.localStorage.getItem('pluck-live.collection-draft') as string);
+    const draft = JSON.parse(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.draft) as string);
     expect(draft.marketId).toBe(1);
     expect(draft.priceType).toBe('wholesale_transaction');
     expect(screen.getByText(/Ready for the next commodity/)).toBeTruthy();
@@ -269,7 +269,7 @@ describe('the collection flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Collect another commodity here' }));
 
     await waitFor(() => {
-      const draft = JSON.parse(window.localStorage.getItem('pluck-live.collection-draft') as string);
+      const draft = JSON.parse(window.localStorage.getItem(COLLECTION_STORAGE_KEYS.draft) as string);
       expect(draft.amount).toBe('');
       expect(draft.commodityId).toBeNull();
     });

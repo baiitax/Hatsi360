@@ -37,6 +37,15 @@ export interface NavbarProps {
   workspaceHref?: string;
   unreadCount?: number;
   freshness?: { state: string; label: string; observedAt: string | null } | null;
+  /**
+   * The coverage line derived from published observations.
+   *
+   * It is the header's fallback when there is no freshness summary, and it is
+   * always computed from the data (see lib/terminal/summary), never from the
+   * fact that the page loaded. Without it the header said nothing at all about
+   * how current its figures were.
+   */
+  coverageLine?: string;
 }
 
 // Simplified navigation structure
@@ -96,6 +105,7 @@ export function Navbar({
   workspaceHref = '/dashboard',
   unreadCount = 0,
   freshness,
+  coverageLine,
 }: NavbarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -276,6 +286,13 @@ export function Navbar({
             </div>
           </div>
         </div>
+        {coverageLine ? (
+          <div className="border-t border-border bg-sand-50">
+            <p className="mx-auto max-w-7xl px-4 py-1.5 text-[0.6875rem] text-ink-500 sm:px-6 lg:px-8">
+              {coverageLine}
+            </p>
+          </div>
+        ) : null}
       </header>
 
       {/* Mobile Drawer */}

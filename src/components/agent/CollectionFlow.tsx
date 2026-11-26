@@ -61,8 +61,22 @@ const PRICE_TYPES = [
   { value: 'indicative', label: 'Indicative estimate' },
 ];
 
-const DRAFT_KEY = 'hatsi360.collection-draft';
-const QUEUE_KEY = 'hatsi360.pending-submissions';
+/**
+ * The two device-storage keys the flow owns.
+ *
+ * They are exported so the tests assert against the real keys instead of
+ * repeating string literals. When the product was renamed the keys changed
+ * here and the tests kept the old ones, which made
+ * seven genuine behaviour assertions fail against working code. Importing the
+ * constant removes that class of drift entirely.
+ */
+export const COLLECTION_STORAGE_KEYS = {
+  draft: 'hatsi360.collection-draft',
+  queue: 'hatsi360.pending-submissions',
+} as const;
+
+const DRAFT_KEY = COLLECTION_STORAGE_KEYS.draft;
+const QUEUE_KEY = COLLECTION_STORAGE_KEYS.queue;
 
 interface CollectionState {
   marketId: number | null;

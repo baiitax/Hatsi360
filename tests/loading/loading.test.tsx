@@ -252,10 +252,32 @@ describe('the error recovery', () => {
 
 /* -------------------------------------------------------- reduced motion -- */
 
+
+/**
+ * Every `prefers-reduced-motion` block in the stylesheet, joined.
+ *
+ * The stylesheet has more than one such block — the skeletons, the terminal, the
+ * boot curtain and the ticker each carry their own — so reading the *last* one
+ * only tested whichever block happened to be appended most recently. Joining
+ * them tests the union, which is what a reader with reduced motion actually
+ * gets, and it does not weaken any of the assertions below.
+ */
+function reducedMotionCss(css: string): string {
+  const marker = '@media (prefers-reduced-motion: reduce)';
+  return css
+    .split(marker)
+    .slice(1)
+    .map((part) => {
+      const end = part.indexOf('\n}');
+      return end === -1 ? part : part.slice(0, end);
+    })
+    .join('\n');
+}
+
 describe('reduced motion', () => {
   it('stops the loader animations when reduced motion is preferred', () => {
     const css = readFileSync(join(ROOT, 'src/app/globals.css'), 'utf8');
-    const block = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
+    const block = reducedMotionCss(css);
     expect(block).toContain('hatsi-boot__arc');
     expect(block).toContain('hatsi-boot__bar-fill');
     expect(block).toContain('hatsi-progress__bar');
@@ -266,7 +288,7 @@ describe('reduced motion', () => {
 
   it('keeps a visible progress indication under reduced motion', () => {
     const css = readFileSync(join(ROOT, 'src/app/globals.css'), 'utf8');
-    const block = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
+    const block = reducedMotionCss(css);
     expect(block).toContain('width: 38%');
   });
 });

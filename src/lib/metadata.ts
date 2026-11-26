@@ -103,9 +103,9 @@ export function buildShareMetadata(input: ShareInput): Metadata {
  * proposition.
  */
 export const PLATFORM_DESCRIPTION =
-  'Hatsi360 Markets provides agricultural commodity prices, market intelligence, price analytics, ' +
-  'commodity research and trade insights to help businesses, traders, producers and exporters make ' +
-  'informed decisions across African agricultural markets.';
+  'Hatsi360 Markets publishes agricultural commodity prices collected by field agents in Nigerian ' +
+  'markets, with the market, unit and collection time recorded for every figure and checked before publication, ' +
+  'alongside market intelligence and trade insights.';
 
 /** A shorter form, for cards and lists where space is tight. */
 export const PLATFORM_DESCRIPTION_SHORT =
