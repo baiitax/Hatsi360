@@ -22,7 +22,9 @@
     "verify:migrations": "bash scripts/validate_migrations.sh",
     "verify:entitlements": "node supabase/tests/entitlement-stage1-matrix.mjs",
     "verify:privileges": "node supabase/tests/privilege-invariants.mjs",
-    "verify:default-privileges": "node supabase/tests/default-privilege-guard.mjs"
+    "verify:default-privileges": "node supabase/tests/default-privilege-guard.mjs",
+    "verify:contract": "node supabase/tests/rpc-contract.mjs",
+    "verify:integration": "node supabase/tests/entitlement-integration.mjs && node supabase/tests/entitlement-rls-enforcement.mjs && node supabase/tests/b2b-security.mjs && node supabase/tests/rpc-contract.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

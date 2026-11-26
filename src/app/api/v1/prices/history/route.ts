@@ -2,7 +2,26 @@ import { z } from 'zod';
 import { createApiHandler } from '@/lib/api/handler';
 import { errors } from '@/lib/api/response';
 import { getDataSource } from '@/lib/data';
+import { hasEntitlement, type EntitlementSet } from '@/lib/entitlements';
+import type { ApiApplication } from '@/lib/api/auth';
 import { buildSeries } from '@/lib/pricing';
+
+/**
+ * How far back each caller class may read.
+ *
+ * Before this limit existed the endpoint accepted any `start_date` and
+ * returned the whole series, so "extended historical data" — the thing the
+ * paid tiers are sold on — was free and unlimited. The window is enforced
+ * here, on the server; the interface is not the control.
+ */
+const FREE_WINDOW_DAYS = 90;
+const ENTITLED_WINDOW_DAYS = 3650;
+
+function windowDaysFor(application: ApiApplication | null): number {
+  if (!application) return FREE_WINDOW_DAYS;
+  const set: EntitlementSet = application.entitlementSet;
+  return hasEntitlement(set, 'bulk') ? ENTITLED_WINDOW_DAYS : FREE_WINDOW_DAYS;
+}
 
 const querySchema = z
   .object({
@@ -49,11 +68,34 @@ export const GET = createApiHandler({
       return errors.notFound(`Unknown market slug "${context.market}".`);
     }
 
+    const windowDays = windowDaysFor(context.application);
+    const entitled = windowDays > FREE_WINDOW_DAYS;
+
+    // Resolve the effective range: an explicit request, or the largest window
+    // the caller is entitled to, anchored on today.
+    const endIso = context.end_date ? `${context.end_date}T23:59:59.999Z` : new Date().toISOString();
+    const requestedStart = context.start_date
+      ? Date.parse(`${context.start_date}T00:00:00.000Z`)
+      : Date.parse(endIso) - windowDays * 86_400_000;
+
+    if (!Number.isFinite(requestedStart)) {
+      return errors.badRequest('start_date is not a valid date.');
+    }
+
+    const spanDays = (Date.parse(endIso) - requestedStart) / 86_400_000;
+    if (spanDays > windowDays) {
+      return errors.forbidden(
+        `Historical prices are limited to the last ${windowDays} days on this access level` +
+          (entitled ? '.' : `. Longer ranges require the "bulk" entitlement.`) +
+          ' Narrow start_date, or request access.',
+      );
+    }
+
     const observations = await source.listObservationsForAnalysis({
       commodityId: commodity.id,
       marketId: market.id,
-      collectedFrom: context.start_date ? `${context.start_date}T00:00:00.000Z` : undefined,
-      collectedTo: context.end_date ? `${context.end_date}T23:59:59.999Z` : undefined,
+      collectedFrom: new Date(requestedStart).toISOString(),
+      collectedTo: endIso,
     });
 
     const series = buildSeries(observations);

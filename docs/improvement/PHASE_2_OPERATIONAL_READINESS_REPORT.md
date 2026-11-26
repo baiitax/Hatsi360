@@ -5,7 +5,7 @@
 | Date | 2026-11-26 |
 | Branch | `arena/990d7ace-hatsi360` |
 | Project | `umxzsdepbrenqysabtlt` (production) |
-| Status | Phase 3 entitlement audit complete (`PHASE_3_*.md`); **`NOT_READY_FOR_PRODUCTION` maintained**. SEC-01 remediated. Privilege Phase 1 **applied and re-verified** (`20261126225938`; preflight review §13 — one condition fails: `supabase_admin` defaults, blocked §14). Entitlement Stage 1 prepared (31/31 locally). Staging **BLOCKED** on plan cost (§10). Phase 2 (`0054`) ready, unapplied. |
+| Status | Phase 4 remediation prepared, implemented locally and locally validated (`PHASE_4_*.md`); **nothing applied to production**; **`NOT_READY_FOR_PRODUCTION` maintained**. SEC-01 remediated. Privilege Phase 1 **applied and re-verified** (`20261126225938`; preflight review §13 — one condition fails: `supabase_admin` defaults, blocked §14). Entitlement Stage 1 prepared (31/31 locally). Staging **BLOCKED** on plan cost (§10). Phase 2 (`0054`) ready, unapplied. |
 | Release recommendation | **NOT_READY_FOR_PRODUCTION** |
 
 ## 1. What this report is
@@ -775,13 +775,18 @@ monitoring. Neither is a release decision, and both are compatible with
 | 9 | Staging HTTP/JWT/Vercel verification impossible from this environment | Medium | needs operator-run pass or networked environment |
 | 9a | No entitlement/UI test exists: the 31-check matrix tests SQL directly, never PostgREST or a server action | Medium | this is why a green suite coexisted with a broken product (`PHASE_3_ENTITLEMENT_AUDIT.md` §7) |
 | 10 | `supabase_admin` default privileges outside Phase 1's reach | Low | residual, documented in §14; latent, not active |
-| 11 | **Entitlement resolver raises in production** (`42P01`); `0052` unapplied. Every watchlist, alert, export and premium-report check fails | **Critical** | `PHASE_3_ENTITLEMENT_AUDIT.md` E-1; production `pg_get_functiondef` |
-| 12 | **No database entitlement enforcement** — `0042`–`0045` unapplied; a JWT holder writes watchlists/alerts/export jobs directly | **Critical** | Audit E-2, §5; `pg_policies` |
-| 13 | **App calls `has_entitlement` with the wrong argument name** (`entitlement_key` vs `p_key`) → `42883`/PGRST202 | **Critical** | Audit E-3; locally reproduced |
-| 14 | **No API route declares an entitlement** (0 of 29); `/prices/history` unbounded | **High** | Audit E-5; feature matrix C-1 |
+| 11 | **Entitlement resolver raises in production** (`42P01`); `0052` unapplied. Every watchlist, alert, export and premium-report check fails | **Critical** | **Fix prepared** — `0056`, 23/23 local (`PHASE_4_INTEGRATION_TEST_REPORT.md`); **unapplied** |
+| 12 | **No database entitlement enforcement** — `0042`–`0045` unapplied; a JWT holder writes watchlists/alerts/export jobs directly | **Critical** | **Fix prepared** — `0057`, 22/22 local; **unapplied** |
+| 13 | **App calls `has_entitlement` with the wrong argument name** (`entitlement_key` vs `p_key`) → `42883`/PGRST202 | **Critical** | **Fixed in code** (5 call sites); `rpc-contract` 49/49; PGRST202 confirmation pending H-2/H-3 |
+| 14 | **No API route declares an entitlement** (0 of 29); `/prices/history` unbounded | **High** | **Partly fixed** — 90-day window + `bulk` extension implemented; per-route gating deferred (`PHASE_4_API_ACCESS_MATRIX.md`) |
 | 15 | **No subscription lifecycle machinery** — no expiry sweep, renewal, dunning, or alert evaluation job | **High** | `PHASE_3_SUBSCRIPTION_LIFECYCLE.md` §2 |
 | 16 | **Client subscription page advertises ₦25,000/₦75,000 with live upgrade buttons and payment copy**, contradicting the marketing site and the absence of a provider | **High** (commercial/legal) | Audit E-7; `(client)/client/subscription/page.tsx` |
-| 17 | **B2B controls inverted in the unapplied `0047`**: supplier self-verification; `create_order_from_quote` has no caller check and no `search_path`; `expire_old_rfqs` callable by any authenticated user | **High** (latent — tables absent) | `PHASE_3_B2B_READINESS.md` §4, B-1…B-3 |
+| 17 | **B2B controls inverted in the unapplied `0047`**: supplier self-verification; `create_order_from_quote` has no caller check and no `search_path`; `expire_old_rfqs` callable by any authenticated user | **High** (latent — tables absent) | **Corrections prepared** — `0059`, 22/22 negatives; must ship atomically with `0047` (`PHASE_4_B2B_SECURITY_REVIEW.md`) |
+| 18 | Three API routes bypass the shared handler (`charts/commodity`, `intelligence/production`, `intelligence/trade`): no auth, no rate limit, no logging, no result cap | Medium | `PHASE_4_API_ACCESS_MATRIX.md` A-1; prepared, not implemented |
+| 19 | **Anonymous API traffic is not logged at all** — `logApiUsage` only runs for keyed requests | Medium | Matrix A-3; needs a retention/PII decision |
+| 20 | **PostgREST/HTTP behaviour unverified** — the sandbox cannot run PostgREST, so H-1…H-10 remain outstanding | **High** | `PHASE_4_INTEGRATION_TEST_REPORT.md` §6 |
+| 21 | **`0057` will remove access from users who currently have it** (watchlists, alerts, exports) | Medium | Change management: staging run + comms before production |
+| 22 | Supplier ratings and completeness never update — trigger functions are not `SECURITY DEFINER` | Low | `PHASE_4_B2B_SECURITY_REVIEW.md` B-9; deferred by scope |
 
 ## 16. Approval requests (separate, in priority order)
 

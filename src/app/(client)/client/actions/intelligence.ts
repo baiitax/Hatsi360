@@ -15,7 +15,7 @@ export async function saveCommodity(commodityId: number, note?: string) {
 
   // Check entitlement
   const { data: hasEntitlement } = await supabase.rpc('has_entitlement', {
-    entitlement_key: 'watchlists',
+    p_key: 'watchlists',
   });
 
   if (!hasEntitlement) {
@@ -75,7 +75,7 @@ export async function saveMarket(marketId: number, note?: string) {
   }
 
   const { data: hasEntitlement } = await supabase.rpc('has_entitlement', {
-    entitlement_key: 'watchlists',
+    p_key: 'watchlists',
   });
 
   if (!hasEntitlement) {
@@ -144,7 +144,7 @@ export async function createPriceAlert(data: {
 
   // Check entitlement
   const { data: hasEntitlement } = await supabase.rpc('has_entitlement', {
-    entitlement_key: 'alerts',
+    p_key: 'alerts',
   });
 
   if (!hasEntitlement) {

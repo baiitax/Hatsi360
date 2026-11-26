@@ -74,7 +74,7 @@ export default async function AlertsPage() {
 
   // Check entitlement
   const { data: hasAlertEntitlement } = await supabase.rpc('has_entitlement', {
-    entitlement_key: 'alerts',
+    p_key: 'alerts',
   });
 
   return (

@@ -68,13 +68,30 @@ export function createApiHandler<TQuery extends object, TData>(
     // Entitlement gating. A premium endpoint is refused to a caller without
     // the entitlement, whatever their key's scopes say.
     if (options.entitlement) {
-      const entitled = auth.application
-        ? hasEntitlement(auth.application.entitlementSet, options.entitlement)
-        : false;
+      const set = auth.application?.entitlementSet ?? null;
+
+      // A degraded lookup is an outage, not a customer without a plan. Log it
+      // distinctly so an entitlement-engine failure is never mistaken for a
+      // paying customer being refused.
+      if (set?.error) {
+        console.error(
+          `[api] entitlement lookup failed on ${url.pathname} (${set.error.code}); ` +
+            'refusing the request as fail-closed',
+        );
+      }
+
+      const entitled = set ? hasEntitlement(set, options.entitlement) : false;
       if (!entitled) {
+        console.warn(
+          `[api] entitlement denied: ${options.entitlement} on ${url.pathname} ` +
+            `(key=${auth.application ? 'present' : 'none'}` +
+            `${set?.error ? `, service_error=${set.error.code}` : ''})`,
+        );
         return errorResponse(
           'forbidden',
-          `This endpoint requires the "${options.entitlement}" entitlement. Public price data is available without it at /api/v1/prices/latest.`,
+          set?.error
+            ? 'We could not verify your plan just now. Please retry shortly; this is a service problem, not a restriction on your account.'
+            : `This endpoint requires the "${options.entitlement}" entitlement. Public price data is available without it at /api/v1/prices/latest.`,
           403,
         );
       }

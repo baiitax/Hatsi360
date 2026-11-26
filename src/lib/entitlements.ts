@@ -43,19 +43,60 @@ export const ENTITLEMENT_KEYS: EntitlementKey[] = [
 /** The capabilities that are free to everyone, without an account. */
 export const PUBLIC_CAPABILITIES: EntitlementKey[] = [];
 
+/**
+ * A failed entitlement lookup.
+ *
+ * This is deliberately NOT collapsed into "no entitlements". An empty set and
+ * a broken engine produce the same authorisation outcome (deny), but they mean
+ * opposite things to the person holding the account: one says "your plan does
+ * not include this", the other says "we could not answer". The set carries the
+ * failure so callers can say which happened, and the failure is logged.
+ */
+export interface EntitlementFailure {
+  operation: 'getEntitlements' | 'getApplicationEntitlements' | 'user_entitlements';
+  code: string;
+  message: string;
+}
+
 export interface EntitlementSet {
   keys: Set<EntitlementKey>;
   /** The tier the caller currently sits in. */
   tier: 'public' | 'professional' | 'enterprise' | null;
   /** True when the tier is one a customer can actually be in right now. */
   tierActive: boolean;
+  /**
+   * Non-null when the lookup failed. The set is empty and the caller must say
+   * so. Optional so existing construction sites stay valid; every value this
+   * module produces sets it explicitly.
+   */
+  error?: EntitlementFailure | null;
 }
 
 export const EMPTY_ENTITLEMENTS: EntitlementSet = {
   keys: new Set<EntitlementKey>(),
   tier: null,
   tierActive: false,
+  error: null,
 };
+
+/**
+ * Build the degraded set and make the failure visible in the logs.
+ *
+ * Fail-closed is the right authorisation default, but silent failure is not:
+ * before this existed, a broken resolver produced "upgrade your plan" for
+ * every customer and left no trace anywhere.
+ */
+function degraded(
+  operation: EntitlementFailure['operation'],
+  code: string,
+  message: string,
+): EntitlementSet {
+  console.error(
+    `[entitlements] ${operation} failed (${code}): ${message}. ` +
+      'Returning no entitlements; this is a service failure, not a plan limit.',
+  );
+  return { keys: new Set<EntitlementKey>(), tier: null, tierActive: false, error: { operation, code, message } };
+}
 
 export function hasEntitlement(set: EntitlementSet, key: EntitlementKey): boolean {
   if (PUBLIC_CAPABILITIES.includes(key)) return true;
@@ -89,7 +130,10 @@ export async function getEntitlements(): Promise<EntitlementSet> {
       .select('entitlements, status, ends_at, trial_ends_at')
       .in('status', ['active', 'trialing']);
 
-    if (error || !data || data.length === 0) return EMPTY_ENTITLEMENTS;
+    if (error) {
+      return degraded('getEntitlements', error.code ?? 'unknown', error.message);
+    }
+    if (!data || data.length === 0) return EMPTY_ENTITLEMENTS;
 
     const now = Date.now();
     const keys = new Set<EntitlementKey>();
@@ -113,11 +157,14 @@ export async function getEntitlements(): Promise<EntitlementSet> {
       // Only the public tier is currently purchasable, so only it can be
       // "active" in the product sense.
       tierActive: tier === 'public',
+      error: null,
     };
-  } catch {
+  } catch (cause) {
     // An entitlement lookup must never crash a page. Failing closed — no
-    // entitlement — is the safe direction.
-    return EMPTY_ENTITLEMENTS;
+    // entitlement — is the safe direction, and the failure is recorded rather
+    // than disguised as an empty plan.
+    const message = cause instanceof Error ? cause.message : String(cause);
+    return degraded('getEntitlements', 'exception', message);
   }
 }
 
@@ -141,7 +188,10 @@ export async function getApplicationEntitlements(
       .eq('user_id', userId)
       .in('status', ['active', 'trialing']);
 
-    if (error || !data || data.length === 0) return EMPTY_ENTITLEMENTS;
+    if (error) {
+      return degraded('getApplicationEntitlements', error.code ?? 'unknown', error.message);
+    }
+    if (!data || data.length === 0) return EMPTY_ENTITLEMENTS;
 
     const now = Date.now();
     const keys = new Set<EntitlementKey>();
@@ -159,9 +209,10 @@ export async function getApplicationEntitlements(
     }
 
     const tier = tierFor(keys);
-    return { keys, tier, tierActive: tier === 'public' };
-  } catch {
-    return EMPTY_ENTITLEMENTS;
+    return { keys, tier, tierActive: tier === 'public', error: null };
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    return degraded('getApplicationEntitlements', 'exception', message);
   }
 }
 
@@ -221,11 +272,27 @@ export class EntitlementError extends Error {
  * // Continue with alert creation...
  * ```
  */
+export class EntitlementServiceError extends Error {
+  constructor(public readonly failure: EntitlementFailure) {
+    super(
+      'We could not verify your plan just now. This is a temporary service ' +
+        'problem, not a restriction on your account — please try again.',
+    );
+    this.name = 'EntitlementServiceError';
+  }
+}
+
 export async function requireEntitlement(
   key: EntitlementKey,
   options?: { message?: string },
 ): Promise<EntitlementSet> {
   const entitlements = await getEntitlements();
+
+  // A failed lookup is not a missing entitlement. Saying "upgrade" here would
+  // be a false statement about the customer's account.
+  if (entitlements.error) {
+    throw new EntitlementServiceError(entitlements.error);
+  }
 
   if (!hasEntitlement(entitlements, key)) {
     throw new EntitlementError(key, entitlements.tier, options?.message);

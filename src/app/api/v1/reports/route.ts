@@ -21,9 +21,16 @@ const querySchema = z.object({
  * figures behind a report are the substance, and they are returned here as
  * they are on the page — the same numbers, computed the same way.
  *
- * Premium reports stored in `market_reports` with `is_premium = true` are not
- * exposed through this endpoint without the `reports` entitlement. The
- * database policy enforces that independently of this code.
+ * Scope, stated precisely: this endpoint serves the computed reports defined
+ * in `src/lib/content/reports`, and those are public — the method notes and
+ * the figures are the same numbers the page shows. It does not read
+ * `market_reports`.
+ *
+ * `market_reports` is a separate, staff-published table. Its premium rows are
+ * gated by the `reports_public_read` policy (see
+ * `supabase/proposed/0058_reports_access_policy.sql`), not by this route. The
+ * earlier comment claimed this handler withheld premium rows; it never did,
+ * because it never read that table.
  */
 export const GET = createApiHandler({
   query: querySchema,

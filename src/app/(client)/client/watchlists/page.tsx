@@ -65,7 +65,7 @@ export default async function WatchlistsPage() {
 
   // Check entitlement
   const { data: hasWatchlistEntitlement } = await supabase.rpc('has_entitlement', {
-    entitlement_key: 'watchlists',
+    p_key: 'watchlists',
   });
 
   return (
