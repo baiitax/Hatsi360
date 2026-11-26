@@ -5,7 +5,7 @@
 | Date | 2026-11-26 |
 | Branch | `arena/990d7ace-hatsi360` |
 | Project | `umxzsdepbrenqysabtlt` (production) |
-| Status | **SEC-01 remediated and verified in production.** Entitlement Stage 1 **prepared and validated on the local replica (31/31)**; hosted staging **BLOCKED** — no staging project exists. Production entitlement change **not applied**. P2.2–P2.6 remain blocked on staging. |
+| Status | **SEC-01 remediated and verified in production.** Entitlement Stage 1 prepared and validated locally (31/31). **Staging provisioning BLOCKED** — free-tier project limit, approval requested. Anonymous privilege audit complete; Phase 1 proposed and validated, not applied. No production change this turn. |
 | Release recommendation | **NOT_READY_FOR_PRODUCTION** |
 
 ## 1. What this report is
@@ -132,7 +132,7 @@ The three records still disagree, and this remediation did **not** fix that: the
 new migration is recorded in the CLI history and in the repository file
 `0050_intelligence_table_rls.sql`, but not in `_hatsi_migrations`, which has no
 row for anything after `0033`. Reconciling them is a separate task, and it is a
-prerequisite for reliable deploy or rollback (§11, blocker 4).
+prerequisite for reliable deploy or rollback (§16, blocker 4).
 
 **Exact identifier applied:** `20261126224213_sec01_intelligence_table_rls`
 (name `sec01_intelligence_table_rls`), executed as one transaction and reported
@@ -308,7 +308,7 @@ request is made and the gate stays **BLOCKED** (review §3.1, §6).
 
 The matrix does not substitute for staging: it cannot exercise real PostgREST
 JWT claims, the React client shell, or production's actual grant state. That
-last point is not academic — see §9.4, where the replica and production disagree
+last point is not academic — see §11, where the replica and production disagree
 about what `anon` may read.
 
 ### 9.4 New finding raised by the reconciliation: `anon` holds `TRUNCATE` on 73 of 80 tables
@@ -350,7 +350,129 @@ Unchanged from §4: CLI history 7, ledger 32 (last `0033`), repository 51. Stage
 1 applied **no** migration, so nothing was added to any record, and per the
 authorisation no attempt was made to reconcile them.
 
-## 10. Operational metrics — definitions, ready to run
+## 10. Workstream A — staging provisioning: BLOCKED on a capacity limit
+
+`create_project` was called for `hatsi360-staging`: free plan, `us-east-1`
+(matching production), PostgreSQL 17, independent credentials generated for the
+purpose and not recorded anywhere.
+
+**The platform rejected it:**
+
+> The following organization members have reached their maximum limits for the
+> number of active free projects … (2 project limit). To continue, these users
+> will need to either delete, pause or upgrade one or more of these projects.
+
+The two active free projects are `umxzsdepbrenqysabtlt` (production) and
+`kwari-pos-manager-test` (a different product). The other six projects in the
+organisation are already inactive.
+
+The authorisation is explicit: "If provisioning requires an unexpected paid
+upgrade or material additional cost, stop and request approval." Freeing a slot
+means either upgrading the organisation to a paid plan or pausing/deleting one
+of two active projects — one of which is production, and the other of which is
+not this product. Both are decisions for the account owner, so **nothing was
+changed and the workstream stops here.**
+
+Consequences, stated plainly:
+
+| Staging verification item | Status |
+|---|---|
+| 1. Migration reproducibility | **BLOCKED on hosted** — validated only on the local replica (89/89 RLS, 203 policies, both suites, `ALL MIGRATIONS APPLIED CLEANLY`). Not hosted evidence. |
+| 2. RLS and grants | BLOCKED on hosted — measured on the replica and, for production, read-only |
+| 3. Entitlement resolver behaviour | BLOCKED on hosted — 31/31 on the replica including the negative control |
+| 4. PostgREST JWT authentication | BLOCKED twice: no project, and this environment has no network egress to `*.supabase.co` |
+| 5. Six-context entitlement matrix | BLOCKED on hosted — done on the replica |
+| 6. Public report access | BLOCKED — same two reasons |
+| 7. React client-shell behaviour | BLOCKED — same two reasons |
+| 8. Vercel staging integration | BLOCKED — needs both a project and a deployment decision |
+
+Items 4, 6, 7 and 8 need something this environment cannot supply even once a
+project exists: reachable network access to the staging API and a deployment.
+They will need an operator-run pass or a networked environment.
+
+## 11. Workstream B — anonymous privilege audit: complete, remediation proposed
+
+Full report: **`ANONYMOUS_PRIVILEGE_AUDIT.md`**. Headline findings:
+
+- **73 of 80 public tables grant `anon` SELECT, INSERT, UPDATE, DELETE,
+  TRUNCATE, REFERENCES and TRIGGER.** The seven that do not are the six SEC-01
+  tables plus `_hatsi_migrations`.
+- The grants are **not** from any Hatsi360 migration. They are the platform's
+  default privileges for schema `public`, granted independently by **both**
+  `postgres` and `supabase_admin`, measured in `pg_default_acl`
+  (`anon=arwdDxtm`). No migration in the repository changes default privileges,
+  and only four tables were ever explicitly revoked.
+- **No anonymous write is reachable through the API.** All eleven
+  non-contact-form write policies that reach `anon` are predicated on
+  `is_staff()` or `auth.role() = 'authenticated'`; where `WITH CHECK` is omitted
+  on an `ALL` policy, PostgreSQL reuses `USING`. This was checked
+  predicate by predicate rather than assumed.
+- The risk is the **unpoliced privileges**: `TRUNCATE` (row security never
+  applies), `REFERENCES`, `TRIGGER` and PostgreSQL 17's `MAINTAIN`. They convert
+  any SQL-level foothold into platform-wide data loss, and they remove the
+  defence-in-depth layer that makes a policy mistake survivable.
+- The **repository is not the intended state either**: it grants `anon` SELECT
+  on only 28 tables while 44 tables carry anon-reachable read policies, and it
+  still leaves TRUNCATE on 8 and INSERT on 9.
+
+Proposed in two phases, both unapplied to any hosted project:
+
+| Phase | File | Content | Validation |
+|---|---|---|---|
+| 1 | `supabase/migrations/0053_least_privilege_anonymous_grants.sql` | revoke TRUNCATE/REFERENCES/TRIGGER/MAINTAIN from `anon` and `authenticated` on every public relation, plus the matching default-privilege revocation; self-checking | in the chain: `ALL MIGRATIONS APPLIED CLEANLY`, 89/89 RLS, 203 policies, 210-statement RLS suite, 346-statement workflow suite, no leftovers |
+| 2 | `supabase/proposed/0054_anonymous_dml_revocation.sql` | revoke *all* anonymous privileges, then grant back the measured minimum (SELECT on 36 tables + 2 public views, INSERT on `contact_enquiries` only) | **not applied and not in the chain**; requires a reviewed test change first (§11.1) |
+
+Phase 1 touches only privileges no policy or code path uses, so it is
+behaviour-neutral by construction. Phase 2 changes how a denial is reported
+(0 rows versus `42501`) and the RLS suite asserts the looser form in places, so
+it is deliberately held out of the chain until that test update is reviewed —
+which is the authorisation's "regression test plan" made concrete rather than
+asserted.
+
+Regression plan, executable now: `npm run verify:privileges` —
+**14/14 invariants hold**, including "anon reads the public surface", "anon can
+submit a contact enquiry", "anon is refused a write to `market_reports`
+(42501)", and "authenticated lost TRUNCATE but kept its DML".
+
+### 11.1 Policy hygiene finding
+
+Ten write policies are *named* for authenticated users but *scoped* to
+`{public}`, and four are `ALL` where write-only is intended. They deny `anon`
+today only because their predicates carry the restriction. A future predicate
+edit would re-open anonymous writes with the grant already in place. Proposed as
+a separate Phase 3, no grant change.
+
+## 12. Risk register (consolidated)
+
+| # | Risk | Severity | Status / next step |
+|---|---|---|---|
+| 1 | Entitlement resolver raises in production; every client user silently receives zero entitlements | **High** (latent — 0 subscriptions) | Stage 1 prepared, 31/31 locally; **blocked on staging** |
+| 2 | `anon` holds TRUNCATE on 73 public tables; RLS cannot mitigate | **High** | Phase 1 proposed and validated; awaiting production approval |
+| 3 | `anon` holds INSERT/UPDATE/DELETE on 73 tables, denied only by policy | Medium | Phase 2 proposed; needs test change + staging |
+| 4 | Ten `{public}`-scoped write policies | Medium | Phase 3 proposed |
+| 5 | No staging project — blocks entitlement acceptance, Phase 2, and P2.2–P2.6 | **High** | free-tier limit; approval requested (§13, request 1) |
+| 6 | Migration records disagree (CLI 7 / ledger 32 / repo 51+1) | Medium | not reconciled by design; needs a separate approved plan |
+| 7 | Lint gate red (43 errors / 171 warnings) | Medium | CI cannot enforce the passing build |
+| 8 | Publication integrity: all series rows are `imported`, nothing prevents unverified rendering | Medium | open |
+| 9 | Staging HTTP/JWT/Vercel verification impossible from this environment | Medium | needs operator-run pass or networked environment |
+| 10 | `supabase_admin` default privileges outside Phase 1's reach | Low | residual, documented |
+
+## 13. Approval requests (separate, in priority order)
+
+1. **Staging capacity.** Either (a) upgrade the organisation to a paid plan, or
+   (b) nominate an active free project to pause. *(Pricing was not verified and
+   is deliberately not quoted.)* Until one is chosen, §10 stays blocked.
+2. **Phase 1 to production** — apply `0053` (unpoliced privileges only; no
+   policy, no DML, no data). Before/after evidence would follow the SEC-01
+   pattern.
+3. **Phase 2 test change** — allow `assert_no_rows_affected` to accept `42501`,
+   so `0054` can be prepared for review.
+4. **Entitlement Stage 1 to production** — `fix_user_entitlements` (`0052`),
+   *after* staging acceptance.
+5. **Phase 2 / Phase 3 / `0042`–`0045`** — not requested yet; each needs staging
+   and its own evidence.
+
+## 14. Operational metrics — definitions, ready to run
 
 P2.5 asks for ten operational metrics from real records. Definitions are the
 queries; ✅ marks those already run against production.
@@ -369,7 +491,7 @@ queries; ✅ marks those already run against production.
 | 10 | Data-quality findings | `observation_quality_findings`, `data_quality_flags` | pending |
 | 11 | Failed scheduled jobs | `scheduled_job_runs where status='failed'` | pending — the runner has never been executed in production |
 
-## 11. The five outstanding Phase 2 documents
+## 15. The five outstanding Phase 2 documents
 
 | Document | Blocked on | What can already be stated |
 |---|---|---|
@@ -379,7 +501,7 @@ queries; ✅ marks those already run against production.
 | `OPERATIONAL_MONITORING_REPORT.md` | error-tracking decision | No error tracking, health endpoint or structured logging; §9 is the skeleton |
 | `PHASE_2_OPERATIONAL_READINESS_REPORT.md` | — | this document |
 
-## 12. Blockers, in priority order
+## 16. Blockers, in priority order
 
 1. ~~Six ungoverned tables with full DML for `authenticated`~~ — **closed**
    2026-11-26, migration `20261126224213_sec01_intelligence_table_rls`,
@@ -387,19 +509,24 @@ queries; ✅ marks those already run against production.
 2. **`has_entitlement()` raises in production** — total, silent denial of paid
    features. Stage 1 prepared and locally validated (31/31); **blocked on
    staging**, which is blocked on approval to provision (§9).
-3. **No staging project** — still blocks P2.2–P2.5 entirely. Creating one is a
-   project-creation action on the stop-and-ask list.
+3. **No staging project, and provisioning is blocked on capacity** — the free
+   tier allows 2 active projects and both slots are taken, so `hatsi360-staging`
+   could not be created (§10). Blocks P2.2–P2.5, entitlement acceptance, and
+   Phase 2 of the privilege remediation. Approval requested (§13, request 1).
 4. **Migration records disagree** (7 / 32 / 51) — blocks reliable deploy and
    rollback.
 5. **Lint gate red** (43 errors / 171 warnings) — CI cannot pass, so the passing
    build and test suite are not enforced on future commits.
 6. **Publication integrity** — series are all `imported`; nothing prevents
    unverified series from being rendered as published.
-7. **`anon` holds `TRUNCATE` on 73 of 80 public tables** (§9.4) — RLS cannot
-   mitigate it; SEC-01's own lesson, unapplied at scale. Needs its own
-   authorisation.
+7. **`anon` holds `TRUNCATE` on 73 of 80 public tables** (§11) — RLS cannot
+   mitigate it; SEC-01's own lesson, unapplied at scale. Phase 1 remediation is
+   written and locally validated, awaiting production approval (§13, request 2).
+8. **`anon` holds INSERT/UPDATE/DELETE on 73 tables**, denied only by policy,
+   and ten write policies are mis-scoped to `{public}` — Phase 2 (proposed,
+   unapplied) and Phase 3 (proposed) address these.
 
-## 13. Release recommendation
+## 17. Release recommendation
 
 > **NOT_READY_FOR_PRODUCTION**
 
@@ -413,12 +540,13 @@ rest have not, and closing one defect does not make the platform releasable:
   monitoring — does not exist yet, because the environment to produce it does not;
 - the lint gate is red, so CI is not protecting any of the above;
 - a wider grant defect has been found and not yet fixed — `anon` holds
-  `TRUNCATE` on 73 of 80 public tables, which RLS cannot mitigate (§9.4).
+  `TRUNCATE` on 73 of 80 public tables, which RLS cannot mitigate (§11);
+- the environment that would let these fixes be proven does not exist, and
+  cannot be created without a decision on capacity (§10).
 
-The pending decision is no longer "apply the entitlement fix": Stage 1 is ready
-and cannot progress without a staging project, which cannot be created without
-approval. That approval, and an authorisation for the `anon` grant defect, are
-the two things that would move this report forward.
+Three decisions would move this report forward, all recorded in §13: resolve the
+staging capacity limit, approve Phase 1 of the privilege remediation, and approve
+the Phase 2 test change. None of them is a release decision.
 
 What changed materially today: SEC-01 is closed with before/after evidence rather
 than a claim; the fix was shaped by two things that would have broken production
