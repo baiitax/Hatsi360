@@ -152,9 +152,9 @@ export function Navbar({
               <img
                 src="/brand/hatsi360-lockup-full.png"
                 alt="Hatsi360"
-                width={140}
-                height={40}
-                className="h-auto w-auto"
+                width={2075}
+                height={758}
+                className="h-auto w-28 sm:w-32 lg:w-36"
               />
             </Link>
 
@@ -297,9 +297,9 @@ export function Navbar({
               <img
                 src="/brand/hatsi360-lockup-full.png"
                 alt="Hatsi360"
-                width={120}
-                height={34}
-                className="h-auto w-auto"
+                width={2075}
+                height={758}
+                className="h-auto w-28 sm:w-32"
               />
               <button
                 type="button"
