@@ -185,6 +185,22 @@ insert into public.price_alerts (user_id, commodity_id, direction, threshold_amo
 values ('55555555-5555-5555-5555-555555555555', 1, 'above', 50000)
 on conflict do nothing;
 
+-- The customer holds a real subscription.
+--
+-- Watchlists and alerts are paid capabilities, and 0042/0043 enforce that in the
+-- database rather than in the UI. A customer with no subscription row therefore
+-- sees nothing, which is correct but would make every "the owner can see their
+-- own row" assertion below fail for the wrong reason. This row is what a paying
+-- customer looks like: an active, non-expired subscription carrying the two
+-- entitlements. Section 4b then proves the negative case by removing it.
+insert into public.customer_subscriptions (user_id, plan, status, entitlements)
+values (
+  '55555555-5555-5555-5555-555555555555',
+  'standard',
+  'active',
+  '{"watchlists": true, "alerts": true, "exports": true}'::jsonb
+);
+
 -- =============================================================================
 -- 1. Anonymous visitors
 -- =============================================================================
@@ -424,6 +440,41 @@ begin;
     $q$insert into public.profiles (id, full_name, role)
       values ('77777777-7777-7777-7777-777777777777', 'Escalator', 'public_user')$q$,
     1
+  );
+rollback;
+
+-- =============================================================================
+-- 4b. The same customer, without the entitlement
+-- =============================================================================
+-- 0042 and 0043 do not merely add a column to a policy: they make the paid
+-- capability disappear when the subscription does. This block is the half of
+-- the rule that a screenshot cannot prove - strip the entitlements and the rows
+-- the customer owns become invisible to them.
+begin;
+  update public.customer_subscriptions
+     set entitlements = '{}'::jsonb
+   where user_id = '55555555-5555-5555-5555-555555555555';
+
+  set local role authenticated;
+  set local request.jwt.claim.sub = '55555555-5555-5555-5555-555555555555';
+
+  select rls_test.assert_true(
+    (select count(*) from public.saved_commodities) = 0,
+    'without the watchlists entitlement a customer must see no saved commodities'
+  );
+
+  -- Alerts are deliberately asymmetric (0043): reading your own existing alerts
+  -- is not gated, so a customer who lapses keeps sight of what they set up and
+  -- can decide to resubscribe. Creating a new one is gated.
+  select rls_test.assert_true(
+    (select count(*) from public.price_alerts) = 1,
+    'a lapsed customer can still read the alerts they already created'
+  );
+
+  select rls_test.assert_raises(
+    'a customer without the alerts entitlement cannot create a new alert',
+    $q$insert into public.price_alerts (user_id, commodity_id, direction, threshold_amount)
+       values ('55555555-5555-5555-5555-555555555555', 2, 'below', 1000)$q$
   );
 rollback;
 

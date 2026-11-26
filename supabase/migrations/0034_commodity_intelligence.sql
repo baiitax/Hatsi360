@@ -250,7 +250,10 @@ values
    'government', 0.95, 'daily', 'public_domain', 'api',
    'https://www.cbn.gov.ng/rates/exchRate.asp',
    array['NGA'],
-   array[],
+   -- P1-A2 (MIG-03): a bare empty array has no element type, so PostgreSQL can
+   -- not parse this file at all (42P18) - it never applied anywhere. The cast
+   -- states the intended type; the value is still an empty text array.
+   array[]::text[],
    'Official NGN exchange rates. Used for currency normalisation across all price observations. Primary authority for NGN/USD conversion.');
 
 -- ── 7. Grants ───────────────────────────────────────────────────────────────

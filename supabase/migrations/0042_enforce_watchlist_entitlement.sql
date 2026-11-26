@@ -25,9 +25,19 @@
 DROP POLICY IF EXISTS saved_commodities_owner ON public.saved_commodities;
 DROP POLICY IF EXISTS saved_markets_owner ON public.saved_markets;
 
--- Create new policies with entitlement checks
+-- P1-A4 (MIG-05): PostgreSQL allows one policy per (name, table) pair, but this
+-- file created `saved_commodities_entitlement` once per command. The second
+-- CREATE POLICY failed with 42710, so the file could never apply - which is why
+-- the watchlist entitlement was enforced only in application code. Each policy
+-- now carries a command-specific name, the pattern 0043/0044/0045 already use,
+-- and each is dropped first so the file is repeatable.
+--
+-- The predicate is unchanged: ownership AND (entitlement OR staff). Nothing is
+-- weakened by the rename.
+
 -- For SELECT: user must own the record AND have the entitlement (or be staff)
-CREATE POLICY saved_commodities_entitlement ON public.saved_commodities
+DROP POLICY IF EXISTS saved_commodities_entitlement_select ON public.saved_commodities;
+CREATE POLICY saved_commodities_entitlement_select ON public.saved_commodities
   FOR SELECT TO authenticated
   USING (
     user_id = auth.uid()
@@ -38,7 +48,8 @@ CREATE POLICY saved_commodities_entitlement ON public.saved_commodities
   );
 
 -- For INSERT: user must be inserting their own record AND have the entitlement (or be staff)
-CREATE POLICY saved_commodities_entitlement ON public.saved_commodities
+DROP POLICY IF EXISTS saved_commodities_entitlement_insert ON public.saved_commodities;
+CREATE POLICY saved_commodities_entitlement_insert ON public.saved_commodities
   FOR INSERT TO authenticated
   WITH CHECK (
     user_id = auth.uid()
@@ -49,7 +60,8 @@ CREATE POLICY saved_commodities_entitlement ON public.saved_commodities
   );
 
 -- For UPDATE: user must own the record AND have the entitlement (or be staff)
-CREATE POLICY saved_commodities_entitlement ON public.saved_commodities
+DROP POLICY IF EXISTS saved_commodities_entitlement_update ON public.saved_commodities;
+CREATE POLICY saved_commodities_entitlement_update ON public.saved_commodities
   FOR UPDATE TO authenticated
   USING (
     user_id = auth.uid()
@@ -67,7 +79,8 @@ CREATE POLICY saved_commodities_entitlement ON public.saved_commodities
   );
 
 -- For DELETE: user must own the record AND have the entitlement (or be staff)
-CREATE POLICY saved_commodities_entitlement ON public.saved_commodities
+DROP POLICY IF EXISTS saved_commodities_entitlement_delete ON public.saved_commodities;
+CREATE POLICY saved_commodities_entitlement_delete ON public.saved_commodities
   FOR DELETE TO authenticated
   USING (
     user_id = auth.uid()
@@ -78,7 +91,8 @@ CREATE POLICY saved_commodities_entitlement ON public.saved_commodities
   );
 
 -- Same policies for saved_markets
-CREATE POLICY saved_markets_entitlement ON public.saved_markets
+DROP POLICY IF EXISTS saved_markets_entitlement_select ON public.saved_markets;
+CREATE POLICY saved_markets_entitlement_select ON public.saved_markets
   FOR SELECT TO authenticated
   USING (
     user_id = auth.uid()
@@ -88,7 +102,8 @@ CREATE POLICY saved_markets_entitlement ON public.saved_markets
     )
   );
 
-CREATE POLICY saved_markets_entitlement ON public.saved_markets
+DROP POLICY IF EXISTS saved_markets_entitlement_insert ON public.saved_markets;
+CREATE POLICY saved_markets_entitlement_insert ON public.saved_markets
   FOR INSERT TO authenticated
   WITH CHECK (
     user_id = auth.uid()
@@ -98,7 +113,8 @@ CREATE POLICY saved_markets_entitlement ON public.saved_markets
     )
   );
 
-CREATE POLICY saved_markets_entitlement ON public.saved_markets
+DROP POLICY IF EXISTS saved_markets_entitlement_update ON public.saved_markets;
+CREATE POLICY saved_markets_entitlement_update ON public.saved_markets
   FOR UPDATE TO authenticated
   USING (
     user_id = auth.uid()
@@ -115,7 +131,8 @@ CREATE POLICY saved_markets_entitlement ON public.saved_markets
     )
   );
 
-CREATE POLICY saved_markets_entitlement ON public.saved_markets
+DROP POLICY IF EXISTS saved_markets_entitlement_delete ON public.saved_markets;
+CREATE POLICY saved_markets_entitlement_delete ON public.saved_markets
   FOR DELETE TO authenticated
   USING (
     user_id = auth.uid()
@@ -127,10 +144,24 @@ CREATE POLICY saved_markets_entitlement ON public.saved_markets
 
 -- ----------------------------------------------------------------- comments --
 
-COMMENT ON POLICY saved_commodities_entitlement ON public.saved_commodities IS
+-- All four commodity policies share one predicate; the comment is attached to
+-- each so a reader of pg_policies is never left guessing.
+COMMENT ON POLICY saved_commodities_entitlement_select ON public.saved_commodities IS
+  'Users can only access their own saved commodities if they have the watchlists entitlement or are staff.';
+COMMENT ON POLICY saved_commodities_entitlement_insert ON public.saved_commodities IS
+  'Users can only access their own saved commodities if they have the watchlists entitlement or are staff.';
+COMMENT ON POLICY saved_commodities_entitlement_update ON public.saved_commodities IS
+  'Users can only access their own saved commodities if they have the watchlists entitlement or are staff.';
+COMMENT ON POLICY saved_commodities_entitlement_delete ON public.saved_commodities IS
   'Users can only access their own saved commodities if they have the watchlists entitlement or are staff.';
 
-COMMENT ON POLICY saved_markets_entitlement ON public.saved_markets IS
+COMMENT ON POLICY saved_markets_entitlement_select ON public.saved_markets IS
+  'Users can only access their own saved markets if they have the watchlists entitlement or are staff.';
+COMMENT ON POLICY saved_markets_entitlement_insert ON public.saved_markets IS
+  'Users can only access their own saved markets if they have the watchlists entitlement or are staff.';
+COMMENT ON POLICY saved_markets_entitlement_update ON public.saved_markets IS
+  'Users can only access their own saved markets if they have the watchlists entitlement or are staff.';
+COMMENT ON POLICY saved_markets_entitlement_delete ON public.saved_markets IS
   'Users can only access their own saved markets if they have the watchlists entitlement or are staff.';
 
 -- ------------------------------------------------------------------- grants --

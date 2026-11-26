@@ -284,7 +284,18 @@ INSERT INTO hs_codes (code, level, parent_id, revision_id, description, primary_
 ('4412', 'heading', (SELECT id FROM hs_codes WHERE code = '44' AND level = 'chapter'), (SELECT id FROM hs_revisions WHERE is_current), 'Plywood, veneered panels and similar laminated wood', 'kg', TRUE, FALSE);
 
 -- Insert commodity-to-HS code mappings
-INSERT INTO commodity_hs_mappings (commodity_id, hs_code_id, mapping_confidence, notes, is_primary) VALUES
+-- P1-A3 (MIG-04): this block resolves commodities by name, but the names it
+-- uses (Cattle, Beef, Sugar, Iron and Steel, ...) are a generic trade
+-- vocabulary. The reference data created by 0007 holds the 22 Nigerian
+-- commodities, and only 'Wheat' appears in both. Every other lookup
+-- returns NULL and violated the NOT NULL column, so the file could never
+-- apply. Rather than invent commodity rows, unresolved mappings are now
+-- filtered out: the file applies, and the missing HS coverage for the
+-- real commodities stays visible as a data gap (COMMODITY_UNIT_GRADE_STANDARD.md)
+-- instead of being papered over with made-up reference data.
+INSERT INTO commodity_hs_mappings (commodity_id, hs_code_id, mapping_confidence, notes, is_primary)
+SELECT m.commodity_id, m.hs_code_id, m.mapping_confidence, m.notes, m.is_primary
+FROM (VALUES
 -- Cattle -> 0102
 ((SELECT id FROM commodities WHERE name = 'Cattle'), (SELECT id FROM hs_codes WHERE code = '0102' AND level = 'heading' AND revision_id = (SELECT id FROM hs_revisions WHERE is_current)), 'high', 'Live bovine animals', TRUE),
 -- Beef -> 0201, 0202
@@ -339,7 +350,9 @@ INSERT INTO commodity_hs_mappings (commodity_id, hs_code_id, mapping_confidence,
 -- Paper -> 4802
 ((SELECT id FROM commodities WHERE name = 'Paper'), (SELECT id FROM hs_codes WHERE code = '4802' AND level = 'heading' AND revision_id = (SELECT id FROM hs_revisions WHERE is_current)), 'high', 'Writing and printing paper', TRUE),
 -- Wood -> 4407
-((SELECT id FROM commodities WHERE name = 'Wood'), (SELECT id FROM hs_codes WHERE code = '4407' AND level = 'heading' AND revision_id = (SELECT id FROM hs_revisions WHERE is_current)), 'high', 'Sawn wood', TRUE);
+((SELECT id FROM commodities WHERE name = 'Wood'), (SELECT id FROM hs_codes WHERE code = '4407' AND level = 'heading' AND revision_id = (SELECT id FROM hs_revisions WHERE is_current)), 'high', 'Sawn wood', TRUE)
+) AS m(commodity_id, hs_code_id, mapping_confidence, notes, is_primary)
+WHERE m.commodity_id IS NOT NULL AND m.hs_code_id IS NOT NULL;
 
 -- Enable RLS
 ALTER TABLE hs_revisions ENABLE ROW LEVEL SECURITY;

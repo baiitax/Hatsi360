@@ -98,14 +98,21 @@ comment on table public.supplier_profiles is
 -- 2. REQUESTS FOR QUOTE (RFQ)
 -- ================================================================
 
-create type if not exists public.rfq_status as enum (
+-- P1-A5 (MIG-07): this file used `CREATE TYPE IF NOT EXISTS`, which PostgreSQL
+-- does not support (IF NOT EXISTS exists for TABLE, INDEX, SCHEMA, EXTENSION --
+-- not TYPE). It failed at parse time, so the whole stage-4 trade schema had no
+-- migration that could create it. The enums are now created inside DO blocks
+-- with an exception handler, which is the supported equivalent: repeatable, and
+-- identical in effect. Enum members are unchanged.
+do $$ begin
+  create type public.rfq_status as enum (
   'draft',
   'published',
   'closed',
   'awarded',
   'cancelled',
-  'expired'
-);
+  'expired');
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.rfqs (
   id uuid primary key default gen_random_uuid(),
@@ -140,7 +147,14 @@ create table if not exists public.rfqs (
   budget_min numeric(18,4),
   budget_max numeric(18,4),
   currency_code char(3) not null default 'NGN',
-  price_type public.price_type default 'spot',
+-- P1-A5b (MIG-07, continued): the column defaults referenced the enum value
+-- 'spot', which public.price_type does not contain (it holds farmgate,
+-- wholesale_asking, wholesale_transaction, retail, processor_procurement,
+-- export_buy, export_sell, indicative, unspecified). 'indicative' is the
+-- existing member with that meaning: a budget expectation, not a quoted market
+-- price. Nothing is added to the enum, because altering an enum that production
+-- already uses would change a shared type for every table that references it.
+  price_type public.price_type default 'indicative',
   
   -- Timeline
   valid_from timestamptz not null default now(),
@@ -183,15 +197,16 @@ comment on table public.rfqs is
 -- 3. QUOTES (Responses to RFQs)
 -- ================================================================
 
-create type if not exists public.quote_status as enum (
+do $$ begin
+  create type public.quote_status as enum (
   'draft',
   'submitted',
   'under_review',
   'accepted',
   'rejected',
   'withdrawn',
-  'expired'
-);
+  'expired');
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.quotes (
   id uuid primary key default gen_random_uuid(),
@@ -203,7 +218,7 @@ create table if not exists public.quotes (
   -- Pricing
   unit_price numeric(18,4) not null check (unit_price > 0),
   currency_code char(3) not null default 'NGN',
-  price_type public.price_type not null default 'spot',
+  price_type public.price_type not null default 'indicative',
   
   -- Quantity
   offered_quantity numeric(18,4) not null check (offered_quantity > 0),
@@ -260,7 +275,8 @@ comment on table public.quotes is
 -- 4. ORDERS (Created from accepted quotes)
 -- ================================================================
 
-create type if not exists public.order_status as enum (
+do $$ begin
+  create type public.order_status as enum (
   'draft',
   'confirmed',
   'in_progress',
@@ -268,15 +284,16 @@ create type if not exists public.order_status as enum (
   'delivered',
   'completed',
   'cancelled',
-  'disputed'
-);
+  'disputed');
+exception when duplicate_object then null; end $$;
 
-create type if not exists public.order_payment_status as enum (
+do $$ begin
+  create type public.order_payment_status as enum (
   'pending',
   'partial',
   'paid',
-  'refunded'
-);
+  'refunded');
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
@@ -357,7 +374,8 @@ comment on table public.orders is
 -- 5. ORDER EVENTS (Audit trail)
 -- ================================================================
 
-create type if not exists public.order_event_type as enum (
+do $$ begin
+  create type public.order_event_type as enum (
   'created',
   'confirmed',
   'updated',
@@ -369,8 +387,8 @@ create type if not exists public.order_event_type as enum (
   'cancelled',
   'dispute_opened',
   'dispute_resolved',
-  'note_added'
-);
+  'note_added');
+exception when duplicate_object then null; end $$;
 
 create table if not exists public.order_events (
   id uuid primary key default gen_random_uuid(),
