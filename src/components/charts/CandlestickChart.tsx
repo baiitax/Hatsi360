@@ -128,31 +128,11 @@ export function CandlestickChart({
     [maxVolume],
   );
 
-  if (displayCandles.length === 0) {
-    return (
-      <div className="flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 py-16">
-        <div className="text-center">
-          <p className="text-[0.875rem] font-medium text-gray-600">No chart data available</p>
-          <p className="mt-1 text-[0.75rem] text-gray-400">
-            Candle data will appear once enough observations are collected.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Generate Y-axis ticks
-  const yTicks = Array.from({ length: 6 }, (_, i) => {
-    const range = maxPrice - minPrice;
-    return minPrice + (range * i) / 5;
-  });
-
-  // Generate X-axis labels (show ~6 dates)
-  const xLabelStep = Math.max(1, Math.floor(displayCandles.length / 6));
-  const xLabels = displayCandles
-    .map((c, i) => ({ date: formatDate(c.periodStart), index: i }))
-    .filter((_, i) => i % xLabelStep === 0 || i === displayCandles.length - 1);
-
+  // The pointer handlers are hooks, so they must be declared before the empty
+  // state returns: a component that returns early and then gains hooks on the
+  // next render changes hook order and React throws "Rendered fewer hooks
+  // than expected" (react-hooks/rules-of-hooks, lines 156 and 181 before
+  // this fix).
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
       if (!containerRef.current) return;
@@ -182,6 +162,32 @@ export function CandlestickChart({
     setCrosshairX(null);
     setTooltip(null);
   }, []);
+
+  if (displayCandles.length === 0) {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 py-16">
+        <div className="text-center">
+          <p className="text-[0.875rem] font-medium text-gray-600">No chart data available</p>
+          <p className="mt-1 text-[0.75rem] text-gray-400">
+            Candle data will appear once enough observations are collected.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Generate Y-axis ticks
+  const yTicks = Array.from({ length: 6 }, (_, i) => {
+    const range = maxPrice - minPrice;
+    return minPrice + (range * i) / 5;
+  });
+
+  // Generate X-axis labels (show ~6 dates)
+  const xLabelStep = Math.max(1, Math.floor(displayCandles.length / 6));
+  const xLabels = displayCandles
+    .map((c, i) => ({ date: formatDate(c.periodStart), index: i }))
+    .filter((_, i) => i % xLabelStep === 0 || i === displayCandles.length - 1);
+
 
   return (
     <div ref={containerRef} className="relative w-full">

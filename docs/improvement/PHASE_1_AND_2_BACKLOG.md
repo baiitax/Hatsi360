@@ -6,6 +6,30 @@
 | Derived from | `PHASE_0_BASELINE_AUDIT.md`, `DATABASE_AND_MIGRATION_AUDIT.md`, `SECURITY_BASELINE.md`, `PRODUCTION_READINESS_BASELINE.md`, `FEATURE_IMPLEMENTATION_MATRIX.md` |
 | Rule | Every item is reversible and executes without approval, **except** those flagged `STOP` (stop-and-ask list). |
 
+## Status at the end of this session
+
+| Item | State | Commit |
+|---|---|---|
+| `P0-1` chain applies from scratch | **done** — `verify:migrations` green, 89/89 tables with RLS, 210-statement RLS suite and 346-statement workflow suite passing | `5b83d65` |
+| `P1-A1` `0000_migration_ledger.sql` | **done** | `5b83d65` |
+| `P1-A2` `0034` array cast | **done** | `5b83d65` |
+| `P1-A3` `0038` null lookups filtered | **done** (content gap remains: 1 of 25 mappings survives) | `5b83d65` |
+| `P1-A4` `0042` policies renamed per command | **done** | `5b83d65` |
+| `P1-A5` `0047_stage4` enums + `price_type` | **done** | `5b83d65` |
+| `P1-A6` RLS on the six intelligence tables | **done** (`0050`) | `5b83d65` |
+| `P1-A7` demo seeds out of the chain | **done** (moved to `supabase/seeds/`, needs repair before use) | `5b83d65` |
+| `P1-A8` duplicate numbering | **done** for `0046`/`0047`; `0025` absence documented | `5b83d65` |
+| `P1-A9` harness workarounds removed | **done** except account provisioning (`MIG-02`) | `5b83d65` |
+| `P1-A10` harness runs the RLS suite | **done** — the suite now executes and has already caught two runtime defects | `5b83d65` |
+| new: `0051` bulk role check, `0052` entitlement resolver | **done** — both were raising at run time | `5b83d65` |
+| `P1-B1`, `P1-B3`, `P1-B4` | **done** (`PHASE_1_DATA_INTEGRITY_REPORT.md`, `COMMODITY_UNIT_GRADE_STANDARD.md`, `DATA_PUBLICATION_RULES.md`) | `2b179b5` |
+| `P1-B2` reconciliation | **written, production column blocked** — twelve queries listed in the report | `2b179b5` |
+| `P2-8` chart conditional hooks | **done** (lint errors 45 → 43) | see log |
+| `P2-7`, `P2-9`, `P2-10` | not started | — |
+| `P2-2` … `P2-6` (Phase 2 evidence) | not started | — |
+| `P1-B5` … `P1-B7` (pricing review, data-source guards, regression tests) | not started | — |
+| `MIG-02` account provisioning | open, documented, environment step | — |
+
 ## Execution model
 
 - **Phase 1** removes the reasons the system cannot be rebuilt, and establishes what the data actually is. Exit criterion: `npm run verify:migrations` applies the whole chain to an empty database with **zero** workarounds, and every published figure has a documented, reproducible source.
