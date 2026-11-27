@@ -31,7 +31,7 @@ is the review catching the proposals rather than the proposals catching themselv
 
 | ID | Severity | Title | State |
 |---|---|---|---|
-| S-1 | High | Every public function is executable by `anon` (184/184) | **Open** — no safe one-line remedy, see §2.1 |
+| S-1 | High | Every public function is executable by `anon` (184/184) | **Remediation prepared (Phase 6)** — `0061` narrows 69 application functions to 3 anonymous helpers, proven 60/60; **unapplied**. See `PHASE_6_FUNCTION_PRIVILEGE_DESIGN.md` |
 | S-1a | Low | `can_perform_bulk_operations()` executable by `anon` | Instance of S-1 |
 | S-2 | High | Order economics unpinned on direct insert (was D-1) | **Closed** by 0059 amendment, asserted by test 8 |
 | S-3 | Medium | Payment state writable by a party with no payment record (was D-2) | **Closed** by 0059 amendment, asserted by tests 9/9b |
@@ -70,9 +70,17 @@ missed, and a single missed `null` check becomes an unauthenticated privileged a
 |---|---|
 | `anon` reads `markets` | ok, 11 rows |
 | `anon` reads `price_observations` | **`42501`** (was: rows) |
-| `anon` reads `market_reports` | **`42501`** (was: rows) |
+| `anon` reads `market_reports` | **`42501`** (was: rows) — see the note below |
 | `anon` calls `has_entitlement('bulk_exports')` | `42501` |
 | `authenticated` resolves entitlements | ok |
+
+**Measurement note (Phase 6).** The replica lacks production's
+`grant select on public.market_reports to anon, authenticated` — a documented Phase 4 gap — so part
+of that `market_reports` failure was a *table* privilege error rather than a function one. Re-measured
+in Phase 6 with the table grant present: the same `42501` returns, and it is attributable to
+`has_entitlement_safe()` in the premium branch of `reports_public_read`. The conclusion holds; the
+attribution is now precise. Phase 6 also found that a `limit 1` probe hides this failure entirely,
+because the plan stops at the public row.
 
 RLS policies are evaluated with the *caller's* privileges, so any policy that calls a helper
 function requires that the caller can execute it. A blanket revoke silently converts public reads
@@ -99,8 +107,9 @@ a legitimate path. See `PHASE_5_B2B_SECURITY_TESTS.md` §4.
 ### 2.3 S-4 / S-5 — `service_role` grant drift, closed by 0060
 
 `0009_grants.sql:92` declares `grant all on all tables in schema public to service_role`. That
-statement covers only the tables that existed at the time. **60 of 89 public tables created since
-then grant `service_role` nothing**, including `export_jobs`, `orders`, `quotes`, `rfqs`,
+statement covers only the tables that existed at the time. **43 of 89 public tables lack complete
+`service_role` DML — 42 of them grant it nothing at all** (corrected in Phase 6, which measured the
+exact split; the finding is unchanged), including `export_jobs`, `orders`, `quotes`, `rfqs`,
 `notifications`, `scheduled_job_runs` and `international_trade_records`. `0053` narrowed `anon`
 but never addressed `service_role`, and no default privileges were ever set for it.
 

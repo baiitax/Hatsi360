@@ -31,11 +31,28 @@
 -- in their own file so that a policy regression and a privilege regression can
 -- never be confused during review or rollback.
 --
--- SCOPE
+-- SCOPE  (revised in Phase 6 — see PHASE_6_SERVICE_ROLE_GRANT_MATRIX.md)
 --
--- DML only: SELECT, INSERT, UPDATE, DELETE. TRUNCATE, REFERENCES and TRIGGER
--- stay with `postgres`/`supabase_admin`, matching 0053's narrowing. Sequence
--- usage is included because inserts into serial/identity columns need it.
+-- SELECT, INSERT and UPDATE on every public table.
+-- DELETE everywhere EXCEPT the five append-only evidence tables below.
+-- TRUNCATE, REFERENCES and TRIGGER are never granted here, matching 0053.
+-- Sequence usage is included because inserts into serial/identity columns need it.
+--
+-- WHY DELETE IS WITHHELD ON FIVE TABLES
+--
+-- `service_role` is a trusted server key and it already bypasses RLS, so
+-- per-table narrowing buys little confidentiality. What it does buy is
+-- integrity against a *bug*, not an attacker: a mistaken or runaway server-side
+-- delete of the audit trail is unrecoverable in a way that a wrong UPDATE is
+-- not. These five tables are evidence — rows that exist to say what happened:
+--
+--   audit_events, order_events, offer_verification_events, publication_events,
+--   price_observation_evidence
+--
+-- Deleting from them stays a deliberate act by `postgres`/`supabase_admin`.
+-- Everything else keeps DELETE, because a retention or cleanup path that
+-- silently fails with 42501 is the exact class of failure this file exists to
+-- remove.
 --
 -- RISK
 --
@@ -49,6 +66,13 @@
 do $$
 declare
   r record;
+  evidence text[] := array[
+    'audit_events',
+    'order_events',
+    'offer_verification_events',
+    'publication_events',
+    'price_observation_evidence'
+  ];
 begin
   for r in
     select c.relname
@@ -58,9 +82,23 @@ begin
       and c.relkind in ('r', 'p')
   loop
     execute format(
-      'grant select, insert, update, delete on public.%I to service_role',
+      'grant select, insert, update on public.%I to service_role',
       r.relname
     );
+    if not (r.relname = any (evidence)) then
+      execute format(
+        'grant delete on public.%I to service_role',
+        r.relname
+      );
+    else
+      -- an evidence table may hold DELETE or TRUNCATE from an earlier blanket
+      -- grant (0009 granted `all`); remove both. TRUNCATE is the worse of the
+      -- two: row security never applies to it.
+      execute format(
+        'revoke delete, truncate on public.%I from service_role',
+        r.relname
+      );
+    end if;
   end loop;
 end $$;
 
@@ -82,7 +120,7 @@ end $$;
 -- Stop the drift recurring for tables created by the migration role. As with
 -- 0053, `supabase_admin`'s own defaults are outside this file's reach.
 alter default privileges for role postgres in schema public
-  grant select, insert, update, delete on tables to service_role;
+  grant select, insert, update on tables to service_role;
 alter default privileges for role postgres in schema public
   grant usage, select on sequences to service_role;
 
@@ -101,10 +139,38 @@ begin
       has_table_privilege('service_role', c.oid, 'SELECT')
       and has_table_privilege('service_role', c.oid, 'INSERT')
       and has_table_privilege('service_role', c.oid, 'UPDATE')
-      and has_table_privilege('service_role', c.oid, 'DELETE')
     );
 
   if bad is not null then
-    raise exception '0060 incomplete: service_role still lacks DML on %', bad;
+    raise exception '0060 incomplete: service_role still lacks select/insert/update on %', bad;
+  end if;
+
+  -- evidence tables must not be deletable by the service key
+  select string_agg(c.relname, ', ' order by c.relname)
+  into bad
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relkind in ('r', 'p')
+    and c.relname = any (array['audit_events','order_events','offer_verification_events','publication_events','price_observation_evidence'])
+    and has_table_privilege('service_role', c.oid, 'DELETE');
+
+  if bad is not null then
+    raise exception '0060: evidence tables still deletable by service_role: %', bad;
+  end if;
+
+  -- this file grants no TRUNCATE. The five evidence tables had no service_role
+  -- privilege at all before it ran, so TRUNCATE there can only have come from here.
+  select string_agg(c.relname, ', ' order by c.relname)
+  into bad
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'public'
+    and c.relkind in ('r', 'p')
+    and c.relname = any (array['audit_events','order_events','offer_verification_events','publication_events','price_observation_evidence'])
+    and has_table_privilege('service_role', c.oid, 'TRUNCATE');
+
+  if bad is not null then
+    raise exception '0060 granted TRUNCATE on evidence tables: %', bad;
   end if;
 end $$;

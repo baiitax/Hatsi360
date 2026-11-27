@@ -5,7 +5,7 @@
 | Date | 2026-11-26 |
 | Branch | `arena/990d7ace-hatsi360` |
 | Project | `umxzsdepbrenqysabtlt` (production) |
-| Status | Phase 5 security acceptance complete: **179 executed checks in three new suites** (33 review + 126 matrix + 20 B2B), five review findings (S-1…S-6), two closed by amending unapplied proposals, one closed by a new proposal (`0060`). **Nothing applied to production or staging**; **`NOT_READY_FOR_PRODUCTION` maintained**. SEC-01 remediated. Privilege Phase 1 **applied and re-verified** (`20261126225938`; §13 — one condition fails: `supabase_admin` defaults, blocked §14). Entitlement Stage 1 prepared (31/31 locally). Staging **BLOCKED** on plan cost (§10); verified price for the option that would close it: **$45/mo**. |
+| Status | Phase 6 privilege design complete: S-1 and S-4 each have a curated, tested remedy (**87 new checks**), **nothing applied**; **`NOT_READY_FOR_PRODUCTION` maintained**. SEC-01 remediated. Privilege Phase 1 **applied and re-verified** (`20261126225938`). Entitlement Stage 1 prepared (31/31 locally). Staging **BLOCKED** on plan cost (§10); verified price for the option that would close it: **$45/mo**, unchanged. |
 | Release recommendation | **NOT_READY_FOR_PRODUCTION** |
 
 ## 1. What this report is
@@ -792,6 +792,12 @@ monitoring. Neither is a release decision, and both are compatible with
 | 25 | **Order economics and payment state were unguarded at insert** (Phase 5 deviations D-1/D-2). A buyer could insert an order on their own accepted quote with any `unit_price`/`total_amount`, confirm it legally, then mark it paid | **High** *(latent — `0047` unapplied)* | **Closed in the unapplied `0059`** — `orders_pin_quote_economics` + payment fields in the immutable set; `b2b-acceptance` 20/20 including the honest-path controls. Ships only with `0047` |
 | 26 | **No hosted validation has ever run** — H-1…H-10 unchanged; the runner `supabase/tests/hosted/phase5-hosted.mjs` is written but never executed | **High** | `PHASE_5_HOSTED_TEST_STRATEGY.md`; costed at $45/mo in `PHASE_5_STAGING_COST_ANALYSIS.md` |
 | 27 | **`0055` has no authorised executor** — it needs `supabase_admin` membership that this environment does not have, so its SQL cannot be dry-run here | Low | `PHASE_5_INDEPENDENT_SQL_REVIEW.md` §3; unchanged since Phase 2 §14.3 |
+| 28 | **`write_audit()` has no authorization check at all** and is executable by `anon` and `authenticated`; no application call site exists. Audit rows can be attributed to anybody | **High** | **Contained** by `0061` (service-only class) and proved `42501` (`function-privileges` 5); the guard itself still needs a rewrite |
+| 29 | **Five `SECURITY DEFINER` functions are unpinned** (`complete_onboarding`, `update_onboarding_step`, three trigger functions) | Low | `PHASE_6_FUNCTION_PRIVILEGE_AUDIT.md` §3; no user-controlled search path |
+| 30 | **115 extension functions remain `anon`-executable** in `public`; revoking them breaks `citext`/`trgm` operators used by anonymous reads | Medium | Residual R-1 in `PHASE_6_FUNCTION_PRIVILEGE_DESIGN.md` §8; needs a platform-level extension schema move, not a migration |
+| 31 | **35 tables still grant `service_role` `TRUNCATE`** from `0009`'s blanket `all` (the five evidence tables are now excepted) | Low | Residual R-5 in `PHASE_6_SERVICE_ROLE_GRANT_MATRIX.md` §6; recommend a `0053`-style sweep |
+| 32 | **Two service-key paths fail `42501` today**: `offer_verification_events` and `whatsapp_subscribers` grant `service_role` nothing | Medium | Measured in `PHASE_6_SERVICE_ROLE_GRANT_MATRIX.md` §5; repaired by `0060`, unapplied |
+| 33 | **`0060` grants `SELECT/INSERT/UPDATE` on 69 tables with no measured service-key usage** — accepted provisionally, **not approved** | Medium (review item) | **LS-1 in `PHASE_6_SERVICE_ROLE_GRANT_MATRIX.md` §4** — needs explicit least-privilege sign-off before apply; the narrow alternative and its test impact are documented there |
 
 ## 16. Approval requests (separate, in priority order)
 
@@ -819,9 +825,12 @@ monitoring. Neither is a release decision, and both are compatible with
    self-checking, applies twice cleanly, and proven to turn the acceptance matrix from
    122/126 to 126/126 without changing an expectation. It must precede any service-key
    work, including H-10. Unapplied pending approval.
-7. **S-1 decision (`anon` executes all 184 public functions)** — either authorise a curated
-   `revoke … from public, anon` with a policy-referenced allowlist and its own test update
-   (Phase 6 scope), or formally accept the residual and record why. §2.1 of the Phase 5
+7. **S-1 decision (`anon` executes all 184 public functions)** — **designed in Phase 6**:
+   `0061` narrows the 69 application functions to three anonymous helpers, with 60/60 local
+   evidence and a documented ordering dependency on `0056`/`0058`. Unapplied; needs approval and
+   a staging replay in that order.
+8. **`0060` as amended (Phase 6)** — `SELECT/INSERT/UPDATE` everywhere, `DELETE` withheld on five
+   evidence tables, no `TRUNCATE`. Approved shape, unapplied. §2.1 of the Phase 5
    review shows the naive version breaks public reads, so this is a decision, not a patch.
 
 **Already done, no further approval needed:** Phase 1 (`0053`) applied and
@@ -939,6 +948,27 @@ Phase 5 documents: `PHASE_5_INDEPENDENT_SQL_REVIEW.md`,
 `PHASE_5_RLS_ACCEPTANCE_MATRIX.md`, `PHASE_5_B2B_SECURITY_TESTS.md`,
 `PHASE_5_HOSTED_TEST_STRATEGY.md`, `PHASE_5_STAGING_COST_ANALYSIS.md`,
 `PHASE_5_RELEASE_RUNBOOK.md`.
+
+Phase 6 turned the two privilege findings into designs with tested remedies, and
+found one more thing worth saying plainly:
+
+- **S-1 is narrower than it looked and worse than it looked.** Of the 184
+  functions, 115 are extension functions that must keep `PUBLIC` `EXECUTE` or
+  anonymous reads break. The remaining 69 can be cut to **three** anonymous
+  helpers — measured by leave-one-out probing, not reasoned — which is what
+  `0061` does (risk 23, now "remediation prepared", 60/60);
+- **`write_audit()` has no guard and never had one** (risk 28). It is now
+  service-only by grant and proved refused, but the function itself still trusts
+  its caller; that rewrite is application work;
+- **`0060` did not survive review unchanged** (risk 24): it granted `DELETE` on
+  five append-only evidence tables. That is withdrawn, and `TRUNCATE` with it
+  (risks 31, 32);
+- **the hosted gap is untouched.** Phase 6 adds 87 more local checks and still
+  proves nothing about PostgREST, which is where release is blocked.
+
+Phase 6 documents: `PHASE_6_FUNCTION_PRIVILEGE_AUDIT.md`,
+`PHASE_6_FUNCTION_PRIVILEGE_DESIGN.md`, `PHASE_6_SERVICE_ROLE_GRANT_MATRIX.md`,
+`PHASE_6_PRIVILEGE_TEST_REPORT.md`.
 
 Three decisions would move this report forward, all recorded in §16: resolve the
 staging capacity limit, approve Phase 1 of the privilege remediation, and approve
