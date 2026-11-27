@@ -5,7 +5,7 @@
 | Date | 2026-11-26 |
 | Branch | `arena/990d7ace-hatsi360` |
 | Project | `umxzsdepbrenqysabtlt` (production) |
-| Status | Phase 4 remediation prepared, implemented locally and locally validated (`PHASE_4_*.md`); **nothing applied to production**; **`NOT_READY_FOR_PRODUCTION` maintained**. SEC-01 remediated. Privilege Phase 1 **applied and re-verified** (`20261126225938`; preflight review §13 — one condition fails: `supabase_admin` defaults, blocked §14). Entitlement Stage 1 prepared (31/31 locally). Staging **BLOCKED** on plan cost (§10). Phase 2 (`0054`) ready, unapplied. |
+| Status | Phase 5 security acceptance complete: **179 executed checks in three new suites** (33 review + 126 matrix + 20 B2B), five review findings (S-1…S-6), two closed by amending unapplied proposals, one closed by a new proposal (`0060`). **Nothing applied to production or staging**; **`NOT_READY_FOR_PRODUCTION` maintained**. SEC-01 remediated. Privilege Phase 1 **applied and re-verified** (`20261126225938`; §13 — one condition fails: `supabase_admin` defaults, blocked §14). Entitlement Stage 1 prepared (31/31 locally). Staging **BLOCKED** on plan cost (§10); verified price for the option that would close it: **$45/mo**. |
 | Release recommendation | **NOT_READY_FOR_PRODUCTION** |
 
 ## 1. What this report is
@@ -787,12 +787,19 @@ monitoring. Neither is a release decision, and both are compatible with
 | 20 | **PostgREST/HTTP behaviour unverified** — the sandbox cannot run PostgREST, so H-1…H-10 remain outstanding | **High** | `PHASE_4_INTEGRATION_TEST_REPORT.md` §6 |
 | 21 | **`0057` will remove access from users who currently have it** (watchlists, alerts, exports) | Medium | Change management: staging run + comms before production |
 | 22 | Supplier ratings and completeness never update — trigger functions are not `SECURITY DEFINER` | Low | `PHASE_4_B2B_SECURITY_REVIEW.md` B-9; deferred by scope |
+| 23 | **Every public function is executable by `anon`** — 184 of 184, including `set_user_role`, `set_account_status`, `write_audit`, `create_order_from_quote`. Each relies on its own internal guard; one missed `null` check is an unauthenticated privileged action | **High** | **Open** — `PHASE_5_INDEPENDENT_SQL_REVIEW.md` §2.1. A blanket revoke was tested and **breaks public reads** (`price_observations`, `market_reports` → `42501`) because policies call helper functions with the caller's privileges; the fix needs a curated allowlist and its own test update |
+| 24 | **`service_role` grant drift** — 60 of 89 public tables grant it nothing (`export_jobs`, `orders`, `quotes`, `rfqs`, `notifications`, `scheduled_job_runs`, …). `0009`'s `grant all … to service_role` only covered tables existing at the time; no default privileges were ever set | Medium | **Fix prepared and proven** — `0060`, matrix 122/126 → **126/126**; unapplied |
+| 25 | **Order economics and payment state were unguarded at insert** (Phase 5 deviations D-1/D-2). A buyer could insert an order on their own accepted quote with any `unit_price`/`total_amount`, confirm it legally, then mark it paid | **High** *(latent — `0047` unapplied)* | **Closed in the unapplied `0059`** — `orders_pin_quote_economics` + payment fields in the immutable set; `b2b-acceptance` 20/20 including the honest-path controls. Ships only with `0047` |
+| 26 | **No hosted validation has ever run** — H-1…H-10 unchanged; the runner `supabase/tests/hosted/phase5-hosted.mjs` is written but never executed | **High** | `PHASE_5_HOSTED_TEST_STRATEGY.md`; costed at $45/mo in `PHASE_5_STAGING_COST_ANALYSIS.md` |
+| 27 | **`0055` has no authorised executor** — it needs `supabase_admin` membership that this environment does not have, so its SQL cannot be dry-run here | Low | `PHASE_5_INDEPENDENT_SQL_REVIEW.md` §3; unchanged since Phase 2 §14.3 |
 
 ## 16. Approval requests (separate, in priority order)
 
-1. **Staging capacity** — choose one: Pro at ≈ **$35/month** (≈ $420/year) for
-   production + staging; the local Supabase Docker stack at $0 if Docker is
-   available; or defer hosted HTTP/UI acceptance. §10.1–§10.3. Nothing is
+1. **Staging capacity** — choose one: Pro at ≈ **$45/month** for production +
+   staging (re-verified 2026-11-26: $25 plan + $10 additional project + $20 compute
+   − $10 credit; the earlier $35 figure omitted the additional-project fee — see
+   `PHASE_5_STAGING_COST_ANALYSIS.md` §3); the local Supabase Docker stack at $0 if
+   Docker is available; or defer hosted HTTP/UI acceptance. §10.1–§10.3. Nothing is
    actioned until you choose.
 2. **Entitlement Stage 1 to production** — `fix_user_entitlements` (`0052`),
    still gated on staging acceptance per the earlier decision.
@@ -808,6 +815,14 @@ monitoring. Neither is a release decision, and both are compatible with
    accept the residual — which is latent, since 0 public tables are owned by
    that role — with production monitoring.
 5. **Phase 3 (policy scoping)** and **`0042`–`0045`** — not requested.
+6. **`0060` (service_role grant drift) to staging** — new in Phase 5. Widening only,
+   self-checking, applies twice cleanly, and proven to turn the acceptance matrix from
+   122/126 to 126/126 without changing an expectation. It must precede any service-key
+   work, including H-10. Unapplied pending approval.
+7. **S-1 decision (`anon` executes all 184 public functions)** — either authorise a curated
+   `revoke … from public, anon` with a policy-referenced allowlist and its own test update
+   (Phase 6 scope), or formally accept the residual and record why. §2.1 of the Phase 5
+   review shows the naive version breaks public reads, so this is a decision, not a patch.
 
 **Already done, no further approval needed:** Phase 1 (`0053`) applied and
 verified; the `assert_no_rows_affected` change plus its three self-tests;
@@ -904,6 +919,26 @@ all of which are production-facing:
 
 Documents: `PHASE_3_ENTITLEMENT_AUDIT.md`, `PHASE_3_COMMERCIAL_FEATURE_MATRIX.md`,
 `PHASE_3_SUBSCRIPTION_LIFECYCLE.md`, `PHASE_3_B2B_READINESS.md`.
+
+Phase 5 did not change that verdict, and it added three reasons to keep it:
+
+- **the anonymous attack surface is larger than it looked** — 184 of 184 public
+  functions are executable by `anon` (risk 23). Nothing was exploited, and every
+  guard tested still holds, but the entire privileged function surface depends on
+  in-function checks with no privilege layer behind them;
+- **two transaction defects were found by executing the B2B cases rather than
+  reading them** (risk 25): order economics were forgeable at insert and payment
+  state was client-writable. Both are now closed *inside the unapplied proposal*,
+  which is the only reason this is a fix rather than a second critical finding;
+- **the gap that blocks release is still the HTTP layer** (risk 26). Phase 5 added
+  a further 179 executed local checks and proved nothing new about PostgREST,
+  which is where the production defect lives. Local evidence cannot be converted
+  into hosted evidence by adding more of it.
+
+Phase 5 documents: `PHASE_5_INDEPENDENT_SQL_REVIEW.md`,
+`PHASE_5_RLS_ACCEPTANCE_MATRIX.md`, `PHASE_5_B2B_SECURITY_TESTS.md`,
+`PHASE_5_HOSTED_TEST_STRATEGY.md`, `PHASE_5_STAGING_COST_ANALYSIS.md`,
+`PHASE_5_RELEASE_RUNBOOK.md`.
 
 Three decisions would move this report forward, all recorded in §16: resolve the
 staging capacity limit, approve Phase 1 of the privilege remediation, and approve

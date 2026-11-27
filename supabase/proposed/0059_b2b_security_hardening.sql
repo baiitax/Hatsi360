@@ -214,6 +214,67 @@ $$;
 revoke execute on function public.generate_order_number() from public, anon, authenticated;
 grant execute on function public.generate_order_number() to service_role;
 
+-- ------------------------------------------ order economics pinned at insert --
+-- `orders_insert` lets a buyer insert against their own accepted quote, which
+-- is intended. What it does not do is constrain the money columns, so a direct
+-- PostgREST insert could name any unit_price/total_amount and then take a legal
+-- draft -> confirmed transition. The RPC sets these from the quote; this
+-- trigger enforces that every non-privileged insert does the same.
+--
+-- SECURITY INVOKER: the decision depends on who is inserting, so the caller's
+-- role and session identity must be observable.
+create or replace function public.pin_order_quote_economics()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+declare
+  v_internal boolean := current_user not in ('authenticated', 'anon');
+  v_quote public.quotes;
+begin
+  -- create_order_from_quote() runs as its definer, and staff may correct an
+  -- order deliberately; both are trusted paths.
+  if v_internal or public.is_staff() then
+    return new;
+  end if;
+
+  if new.quote_id is null then
+    raise exception 'Orders: an order must reference an accepted quote.'
+      using errcode = '42501';
+  end if;
+
+  select * into v_quote from public.quotes where id = new.quote_id;
+  if not found then
+    raise exception 'Orders: quote % does not exist.', new.quote_id
+      using errcode = '42501';
+  end if;
+  if v_quote.status <> 'accepted' then
+    raise exception 'Orders: quote % is not accepted (status %).', new.quote_id, v_quote.status
+      using errcode = '42501';
+  end if;
+
+  if new.unit_price is distinct from v_quote.unit_price
+     or new.currency_code is distinct from v_quote.currency_code
+     or new.quantity is distinct from v_quote.offered_quantity
+     or new.total_amount is distinct from v_quote.unit_price * v_quote.offered_quantity then
+    raise exception 'Orders: pricing, quantity and currency must come from quote %.', new.quote_id
+      using errcode = '42501';
+  end if;
+
+  if new.payment_status is distinct from 'pending' or coalesce(new.paid_amount, 0) <> 0 then
+    raise exception 'Orders: payment state cannot be set when the order is created.'
+      using errcode = '42501';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists orders_pin_quote_economics on public.orders;
+create trigger orders_pin_quote_economics
+  before insert on public.orders
+  for each row execute function public.pin_order_quote_economics();
+
 -- ------------------------------------------------- B-4/B-5/B-8 order guard --
 -- SECURITY INVOKER, for the same reason as guard_supplier_verification: the
 -- party and transition checks are about the caller, so the caller's role must
@@ -241,6 +302,17 @@ begin
      or new.quantity is distinct from old.quantity
      or new.commodity_id is distinct from old.commodity_id then
     raise exception 'Orders: identity and pricing are immutable after creation.'
+      using errcode = '42501';
+  end if;
+
+  -- Payment state is evidence, not a client-editable field. Until a payment
+  -- integration writes these through a trusted path, a buyer must not be able
+  -- to declare an order paid. Staff and internal roles returned above.
+  if new.payment_status is distinct from old.payment_status
+     or new.paid_amount is distinct from old.paid_amount
+     or new.payment_method is distinct from old.payment_method
+     or new.invoice_number is distinct from old.invoice_number then
+    raise exception 'Orders: payment state may only be changed by staff or a payment service.'
       using errcode = '42501';
   end if;
 
