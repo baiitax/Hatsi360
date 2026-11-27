@@ -1,0 +1,3 @@
+# Evidence runs are produced at execution time and are never committed.
+*
+!.gitignore

@@ -147,6 +147,24 @@ try {
   check('7. anon-reachable policies only call anon-executable functions', 'broken references', 'none',
     broken.rows.length ? broken.rows.map((r) => r.bad).join('; ') : 'none', broken.rows.length === 0);
 
+  // ── 7b. the same guarantee for authenticated-reachable policies ─────────
+  // 0061's own self-check only scans anon-reachable policies, so a policy on a
+  // `TO authenticated` table (all of 0057's) is outside its guard. This check
+  // closes that asymmetry in the test layer rather than editing the proposal.
+  const brokenAuth = await client.query(`
+    select distinct pol.polname || ' -> ' || f.proname as bad
+    from pg_policy pol
+    join pg_class rel on rel.oid = pol.polrelid
+    join pg_namespace rn on rn.oid = rel.relnamespace
+    cross join pg_proc f join pg_namespace fn on fn.oid = f.pronamespace
+    where rn.nspname='public' and fn.nspname='public'
+      and (pol.polroles = '{0}'::oid[] or 'authenticated'::regrole::oid = any(pol.polroles))
+      and position(f.proname || '(' in coalesce(pg_get_expr(pol.polqual, pol.polrelid),'') || ' ' ||
+                   coalesce(pg_get_expr(pol.polwithcheck, pol.polrelid),'')) > 0
+      and not has_function_privilege('authenticated', f.oid, 'EXECUTE')`);
+  check('7b. authenticated-reachable policies only call executable functions', 'broken references', 'none',
+    brokenAuth.rows.length ? brokenAuth.rows.map((r) => r.bad).join('; ') : 'none', brokenAuth.rows.length === 0);
+
   // ── 8. staff paths still work for an authenticated session ──────────────
   const staffRole = await runAs(client, 'authenticated', IDs.staff, `select public.set_user_role($1,'analyst'::user_role,'p6')`, [IDs.nosub]);
   check('8. staff override still reachable', 'executes (guard decides)', 'executed',

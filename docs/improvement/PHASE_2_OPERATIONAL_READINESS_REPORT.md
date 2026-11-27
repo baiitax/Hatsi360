@@ -795,9 +795,44 @@ monitoring. Neither is a release decision, and both are compatible with
 | 28 | **`write_audit()` has no authorization check at all** and is executable by `anon` and `authenticated`; no application call site exists. Audit rows can be attributed to anybody | **High** | **Contained** by `0061` (service-only class) and proved `42501` (`function-privileges` 5); the guard itself still needs a rewrite |
 | 29 | **Five `SECURITY DEFINER` functions are unpinned** (`complete_onboarding`, `update_onboarding_step`, three trigger functions) | Low | `PHASE_6_FUNCTION_PRIVILEGE_AUDIT.md` §3; no user-controlled search path |
 | 30 | **115 extension functions remain `anon`-executable** in `public`; revoking them breaks `citext`/`trgm` operators used by anonymous reads | Medium | Residual R-1 in `PHASE_6_FUNCTION_PRIVILEGE_DESIGN.md` §8; needs a platform-level extension schema move, not a migration |
-| 31 | **35 tables still grant `service_role` `TRUNCATE`** from `0009`'s blanket `all` (the five evidence tables are now excepted) | Low | Residual R-5 in `PHASE_6_SERVICE_ROLE_GRANT_MATRIX.md` §6; recommend a `0053`-style sweep |
+| 31 | **39 tables still grant `service_role` `TRUNCATE`** from `0009`'s blanket `all` after `0060` (40 today; **corrected from 35** — R-5 subtracted all five evidence tables, but only `price_observation_evidence` holds `TRUNCATE`) | Low | Residual R-5 in `PHASE_6_SERVICE_ROLE_GRANT_MATRIX.md` §6; corrected in `PHASE_7B_SERVICE_ROLE_ACCEPTANCE.md` §2; recommend a `0053`-style sweep |
 | 32 | **Two service-key paths fail `42501` today**: `offer_verification_events` and `whatsapp_subscribers` grant `service_role` nothing | Medium | Measured in `PHASE_6_SERVICE_ROLE_GRANT_MATRIX.md` §5; repaired by `0060`, unapplied |
 | 33 | **`0060` grants `SELECT/INSERT/UPDATE` on 69 tables with no measured service-key usage** — accepted provisionally, **not approved** | Medium (review item) | **LS-1 in `PHASE_6_SERVICE_ROLE_GRANT_MATRIX.md` §4** — needs explicit least-privilege sign-off before apply; the narrow alternative and its test impact are documented there |
+| 34 | **H-1…H-10 have never been executed on a hosted project** — the entire hosted acceptance layer is unproven | **High** | Package prepared, nothing run: `PHASE_7B_HOSTED_ACCEPTANCE_SPEC.md`. All ten are `not-executed`; no risk in this register may be closed on a local result |
+| 35 | **No staging project exists**, so H-1…H-10 are blocked behind the capacity decision in §16.1 | **High** | Unchanged from Phase 5; the harness refuses to run without an explicitly confirmed disposable target |
+| 36 | **`0061`'s policy self-check only scans anon-reachable policies** — `0057`'s fourteen policies are `TO authenticated` and therefore outside its guard | Low | Measured in Phase 7B: no policy of either audience references a non-executable function, and the gap is now closed by `function-privileges` check **7b** (61/61) rather than by editing the unapplied proposal |
+| 37 | **`0055` cannot be validated here**: the credential-holder dependency (Vercel/Supabase service key scopes) is unexecutable on the replica and untested on a hosted project | Medium | Row 27 unchanged; H-10 partially exercises the same key |
+| 38 | **The harness itself is untested against a real target** — its guards are proven offline (57 self-checks), but no hosted run has exercised its request paths | Medium | `tests/hosted-security/test/`; first real run will be the first test of the client, the fixtures and the cleanup |
+| 39 | **Evidence-table cleanup is impossible by design** — H-9 writes `order_events`, which `0060` makes undeletable with the service key, so the project must be discarded after that test | Medium | Fixture README §4; the runbook must record the disposable-project decision before H-9 |
+| 40 | **Five baseline checks remain red and must stay red until fixed, not hidden**: `proposal-review` 32/33 and the acceptance matrix 122/126 (`WITH_PROPOSED_0060=1` → 126/126 is an opt-in, not the baseline) | Medium | Preserved unchanged by Phase 7B; see §15.1 |
+
+### 15.1 Phase 7B status of the hosted acceptance layer (2026-11-26)
+
+Prepared, reviewed, not executed. Nothing in this subsection closes a risk.
+
+| Item | Status | Where |
+|---|---|---|
+| H-1 resolver over PostgREST | **not-executed** | spec §6 H-1 |
+| H-2 `p_key` argument binding | **not-executed** | spec §6 H-2 |
+| H-3 old argument name rejected | **not-executed** | spec §6 H-3 |
+| H-4 watchlist write, entitled + unentitled | **not-executed** (manual, browser) | spec §6 H-4 |
+| H-5 direct PostgREST bypass refused | **not-executed** | spec §6 H-5 |
+| H-6 anonymous report read | **not-executed** | spec §6 H-6 |
+| H-7 90-day history window | **not-executed** (manual, cookie) | spec §6 H-7 |
+| H-8 degraded resolver | **not-executed** (destructive) | spec §6 H-8 |
+| H-9 B2B apply over HTTP | **blocked** — needs `0047`+`0059` applied by an operator | spec §6 H-9 |
+| H-10 service role reachability | **not-executed** | spec §6 H-10 |
+| Staging availability | **blocked** — no project; §16.1 choice outstanding | risk 35 |
+| LS-1 broad `service_role` grant | **open**, unchanged, still not approved | risk 33 |
+| `write_audit()` application hardening | **open** — grant containment is not authorisation | risk 28 |
+| `0055` credential-holder dependency | **open**, unexecutable here | risk 37 |
+| `0061` dependency and policy coverage | **sequence verified by execution**; policy-coverage asymmetry closed by test 7b | risk 36, `PHASE_7B_FUNCTION_PRIVILEGE_ACCEPTANCE.md` §2–3 |
+| Five baseline failures | **preserved**: `proposal-review` 32/33, matrix 122/126 | risk 40 |
+
+New prerequisites introduced by this phase, all of which must exist before the first real run:
+an explicitly confirmed disposable staging project; `HATSI360_ANON_KEY`; `HATSI360_SERVICE_KEY` for
+H-5/H-6/H-10; an operator-run prereq manifest; two synthetic accounts (unentitled, entitled); and a
+deployed application pointed at staging for H-4/H-7/H-8.
 
 ## 16. Approval requests (separate, in priority order)
 
